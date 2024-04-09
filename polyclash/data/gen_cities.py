@@ -46,7 +46,8 @@ plotter.set_background('white')
 # Add the snub dodecahedron mesh and the cities to the plot
 # 将扭棱十二面体网格和城市添加到绘图中
 plotter.add_mesh(mesh, show_edges=True, color='lightblue')
-plotter.add_points(cities_array, point_size=10, render_points_as_spheres=True)
+plotter.add_point_labels(cities_array[:60], range(60), font_size=100, shape_opacity=0.0, render_points_as_spheres=True)
+plotter.add_points(cities_array[60:], point_size=10, render_points_as_spheres=True)
 
 # Enhance the visualization with interactive axes
 # 使用交互式坐标轴增强可视化

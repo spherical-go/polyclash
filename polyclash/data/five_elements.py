@@ -35,35 +35,22 @@ relationship_matrix = np.array([
 ])
 
 
+pentagons = pentagons.flatten()
 distsq_matrix = np.zeros((60, 60))
 for i in range(60):
     for j in range(i+1, 60):  # Only fill upper triangle
-        dist = np.linalg.norm(vertices[i] - vertices[j])
+        dist = np.linalg.norm(vertices[pentagons[i]] - vertices[pentagons[j]])
         distsq_matrix[i, j] = dist * dist
         distsq_matrix[j, i] = dist * dist
+np.fill_diagonal(distsq_matrix, 1)
 
 
-def potential_energy(vertices, charges):
-    energy = 0
-    for i in range(12):
-        p1 = pentagons[i]
-        group1 = charges[i]
-        for j in range(5):
-            k = i * 5 + j
-            v1 = p1[j]
-            charge1 = group1[j]
-            for m in range(12):
-                p2 = pentagons[m]
-                group2 = charges[m]
-                for n in range(5):
-                    l = m * 5 + n
-                    v2 = p2[n]
-                    charge2 = group2[n]
-                    if k != l:
-                        distsq = distsq_matrix[v1, v2]
-                        rel = relationship_matrix[charge1, charge2]
-                        energy += rel / distsq  # Energy calculation
-    return energy
+def potential_energy(charges):
+    interaction_matrix = relationship_matrix[charges[:, None], charges]
+    energy_matrix = interaction_matrix / distsq_matrix
+    np.fill_diagonal(energy_matrix, 0)
+    total_energy = np.sum(energy_matrix)
+    return total_energy
 
 
 min_energy = np.inf
@@ -77,7 +64,7 @@ single_face_permutations = [
 
 counter = 0
 for charges in product(single_face_permutations, repeat=12):
-    energy = potential_energy(vertices, charges)
+    energy = potential_energy(np.stack(charges).flatten())
     if energy < min_energy:
         min_energy = energy
         optimal_charges = charges

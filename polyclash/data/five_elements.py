@@ -11,7 +11,20 @@ vertices = np.array(mesh.points)
 
 data_path = 'model3d/snub_dodecahedron.npz'
 npz_data = np.load(data_path)
-pentagons = npz_data['pentagons']
+pentagons = np.array([
+    [0, 2, 6, 12, 8],
+    [35, 23, 13, 16, 39],
+    [14, 27, 36, 40, 17],
+    [1, 5, 11, 20, 15],
+    [47, 57, 50, 45, 46],
+    [44, 34, 22, 26, 49],
+    [21, 25, 48, 43, 31],
+    [56, 59, 55, 54, 53],
+    [58, 41, 37, 38, 51],
+    [29, 33, 52, 42, 30],
+    [32, 9, 7, 18, 28],
+    [4, 24, 19, 10, 3],
+], dtype=np.int_)
 
 relationship_matrix = np.array([
     [3, -1, 1, 1, 1],
@@ -22,6 +35,14 @@ relationship_matrix = np.array([
 ])
 
 
+distsq_matrix = np.zeros((60, 60))
+for i in range(60):
+    for j in range(i+1, 60):  # Only fill upper triangle
+        dist = np.linalg.norm(vertices[i] - vertices[j])
+        distsq_matrix[i, j] = dist * dist
+        distsq_matrix[j, i] = dist * dist
+
+
 def potential_energy(vertices, charges):
     energy = 0
     for i in range(12):
@@ -29,25 +50,24 @@ def potential_energy(vertices, charges):
         group1 = charges[i]
         for j in range(5):
             k = i * 5 + j
-            v1 = vertices[p1[j]]
+            v1 = p1[j]
             charge1 = group1[j]
             for m in range(12):
                 p2 = pentagons[m]
                 group2 = charges[m]
                 for n in range(5):
                     l = m * 5 + n
-                    v2 = vertices[p2[n]]
+                    v2 = p2[n]
                     charge2 = group2[n]
                     if k != l:
-                        dist = np.linalg.norm(v1 - v2)
+                        distsq = distsq_matrix[v1, v2]
                         rel = relationship_matrix[charge1, charge2]
-                        energy += rel / (dist**2)  # Energy calculation
+                        energy += rel / distsq  # Energy calculation
     return energy
 
 
 min_energy = np.inf
 optimal_charges = None
-
 
 single_face_permutations = [
     np.array((0, 1, 2, 3, 4), dtype=np.int_), np.array((1, 2, 3, 4, 0), dtype=np.int_),
@@ -69,4 +89,3 @@ for charges in product(single_face_permutations, repeat=12):
 
 print("Optimal charges:", optimal_charges)
 print("Minimum potential energy:", min_energy)
-

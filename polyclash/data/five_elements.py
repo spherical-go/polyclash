@@ -59,7 +59,9 @@ optimal_charges = None
 single_face_permutations = [
     np.array((0, 1, 2, 3, 4), dtype=np.int_), np.array((1, 2, 3, 4, 0), dtype=np.int_),
     np.array((2, 3, 4, 0, 1), dtype=np.int_), np.array((3, 4, 0, 1, 2), dtype=np.int_),
-    np.array((4, 0, 1, 2, 3), dtype=np.int_)
+    np.array((4, 0, 1, 2, 3), dtype=np.int_), np.array((4, 3, 2, 1, 0), dtype=np.int_),
+    np.array((3, 2, 1, 0, 4), dtype=np.int_), np.array((2, 1, 0, 4, 3), dtype=np.int_),
+    np.array((1, 0, 4, 3, 2), dtype=np.int_), np.array((0, 4, 3, 2, 1), dtype=np.int_),
 ]
 
 counter = 0
@@ -71,9 +73,9 @@ for charges in product(single_face_permutations, repeat=12):
     counter += 1
     if counter % 100 == 0:
         # give the percentage of completion
-        percentage = counter / 5**12 * 100
+        percentage = counter / 10**12 * 100
         print(f"Progress: {percentage:.2f}% - Minimum energy: {min_energy} - Counter: {counter} - Energy: {energy}")
-        if percentage > 20:
+        if percentage > 10:
             break
 
 print("Optimal charges:", optimal_charges)

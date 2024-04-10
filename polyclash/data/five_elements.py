@@ -66,7 +66,10 @@ single_face_permutations = [
 
 counter = 0
 for charges in product(single_face_permutations, repeat=12):
-    energy = potential_energy(np.stack(charges).flatten())
+    charges = np.stack(charges)
+    if np.diff(charges, axis=1).sum() != 0:
+        continue
+    energy = potential_energy(charges.flatten())
     if energy < min_energy:
         min_energy = energy
         optimal_charges = charges

@@ -1,5 +1,6 @@
 import numpy as np
 
+from numba import njit
 from itertools import product
 
 
@@ -62,45 +63,62 @@ num_of_balanced = len(all_balanced)
 total_combinations = 5**12 * num_of_balanced
 
 
+@njit
+def calculate_interaction_matrix(relationship_matrix, charges):
+    n = charges.shape[0]
+    interaction_matrix = np.empty((n, n), dtype=relationship_matrix.dtype)
+    for i in range(n):
+        for j in range(n):
+            interaction_matrix[i, j] = relationship_matrix[charges[i], charges[j]]
+    return interaction_matrix
+
+
+@njit
 def potential_energy(charges):
-    interaction_matrix = relationship_matrix[charges[:, None], charges]
+    interaction_matrix = calculate_interaction_matrix(relationship_matrix, charges)
     energy_matrix = interaction_matrix / distsq_matrix
     np.fill_diagonal(energy_matrix, 0)
-    total_energy = np.sum(energy_matrix)
-    return total_energy
+    return np.sum(energy_matrix)
 
 
-min_energy = np.inf
-optimal_charges = None
+@njit
+def check_energy(charges, case, min_energy, optimal_charges):
+    charges[0:5] = case[0]
+    charges[5:10] = case[1]
+    charges[10:15] = case[2]
+    charges[15:20] = case[3]
+    charges[20:25] = case[4]
+    charges[25:30] = case[5]
+    charges[30:35] = case[6]
+    charges[35:40] = case[7]
+    charges[40:45] = case[8]
+    charges[45:50] = case[9]
+    charges[50:55] = case[10]
+    charges[55:60] = case[11]
 
-counter = 0
-charges = np.zeros((60,), dtype=np.int_)
-for balanced in all_balanced:
-    for case in product(*balanced):
-        counter += 1
-        if counter % 10000 == 0:
-            percentage = counter / total_combinations * 100
-            print(f"Progress: {percentage:.4f}% - Minimum energy: {min_energy}")
-            if percentage > 20:
-                break
+    energy = potential_energy(charges)
+    if energy < min_energy:
+        return energy, charges
+    return min_energy, optimal_charges
 
-        charges[0:5] = case[0]
-        charges[5:10] = case[1]
-        charges[10:15] = case[2]
-        charges[15:20] = case[3]
-        charges[20:25] = case[4]
-        charges[25:30] = case[5]
-        charges[30:35] = case[6]
-        charges[35:40] = case[7]
-        charges[40:45] = case[8]
-        charges[45:50] = case[9]
-        charges[50:55] = case[10]
-        charges[55:60] = case[11]
 
-        energy = potential_energy(charges)
-        if energy < min_energy:
-            min_energy = energy
-            optimal_charges = charges
+if __name__ == '__main__':
+    counter = 0
+    charges = np.zeros((60,), dtype=np.int_)
 
-print("Optimal charges:", optimal_charges)
-print("Minimum potential energy:", min_energy)
+    most_min_energy = np.inf
+    most_optimal_charges = None
+
+    for balanced in all_balanced:
+        for case in product(*balanced):
+            counter += 1
+            if counter % 10000 == 0:
+                percentage = counter / total_combinations * 100
+                print(f"Progress: {percentage:.4f}% - Minimum energy: {most_min_energy}")
+                if percentage > 20:
+                    break
+
+            most_min_energy, most_optimal_charges = check_energy(charges, case, most_min_energy, most_optimal_charges)
+
+    print("Optimal charges:", most_optimal_charges)
+    print("Minimum potential energy:", most_min_energy)

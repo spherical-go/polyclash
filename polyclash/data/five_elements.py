@@ -1,16 +1,11 @@
 import numpy as np
-import pyvista as pv
 
-from itertools import product, permutations
+from itertools import product
 
-# Load the snub dodecahedron model from a VTK file
-# 从 VTK 文件加载扭棱十二面体模型
-model_path = 'model3d/snub_dodecahedron.vtk'
-mesh = pv.read(model_path)
-vertices = np.array(mesh.points)
 
 data_path = 'model3d/snub_dodecahedron.npz'
 npz_data = np.load(data_path)
+vertices = npz_data['vertices']
 pentagons = np.array([
     [0, 2, 6, 12, 8],
     [1, 5, 11, 20, 15],
@@ -34,7 +29,6 @@ relationship_matrix = np.array([
    [-1, 1, 1, -1, 2],
 ], dtype=np.int_)  # symmetrical
 
-
 pentagons = pentagons.flatten()
 distsq_matrix = np.zeros((60, 60))
 for i in range(60):
@@ -56,30 +50,44 @@ def potential_energy(charges):
 min_energy = np.inf
 optimal_charges = None
 
-single_face_permutations = [
-    np.array((0, 1, 2, 3, 4), dtype=np.int_), np.array((1, 2, 3, 4, 0), dtype=np.int_),
-    np.array((2, 3, 4, 0, 1), dtype=np.int_), np.array((3, 4, 0, 1, 2), dtype=np.int_),
-    np.array((4, 0, 1, 2, 3), dtype=np.int_), np.array((4, 3, 2, 1, 0), dtype=np.int_),
-    np.array((3, 2, 1, 0, 4), dtype=np.int_), np.array((2, 1, 0, 4, 3), dtype=np.int_),
-    np.array((1, 0, 4, 3, 2), dtype=np.int_), np.array((0, 4, 3, 2, 1), dtype=np.int_),
-]
+
+left_or_right = {
+    1: [
+        np.array((0, 1, 2, 3, 4), dtype=np.int_), np.array((1, 2, 3, 4, 0), dtype=np.int_),
+        np.array((2, 3, 4, 0, 1), dtype=np.int_), np.array((3, 4, 0, 1, 2), dtype=np.int_),
+        np.array((4, 0, 1, 2, 3), dtype=np.int_)
+    ],
+    -1: [
+        np.array((4, 3, 2, 1, 0), dtype=np.int_), np.array((3, 2, 1, 0, 4), dtype=np.int_),
+        np.array((2, 1, 0, 4, 3), dtype=np.int_), np.array((1, 0, 4, 3, 2), dtype=np.int_),
+        np.array((0, 4, 3, 2, 1), dtype=np.int_)
+    ]
+}
+
+
+def gen_balanced_cases():
+    return [[left_or_right[face] for face in case] for case in product([-1, 1], repeat=12) if np.sum(case) == 0]
+
+
+all_balanced = gen_balanced_cases()
+num_of_balanced = len(all_balanced)
+total_combinations = 5**12 * num_of_balanced
 
 counter = 0
-for charges in product(single_face_permutations, repeat=12):
-    counter += 1
-    if counter % 1000 == 0:
-        percentage = counter / 10**12 * 100
-        print(f"Progress: {percentage:.4f}% - Minimum energy: {min_energy}")
-        if percentage > 10:
-            break
+for balanced in all_balanced:
+    for case in product(*balanced):
+        counter += 1
+        if counter % 10000 == 0:
+            percentage = counter / total_combinations * 100
+            print(f"Progress: {percentage:.4f}% - Minimum energy: {min_energy}")
+            if percentage > 20:
+                break
 
-    charges = np.stack(charges)
-    if np.diff(charges, axis=1).sum() != 0:
-        continue
-    energy = potential_energy(charges.flatten())
-    if energy < min_energy:
-        min_energy = energy
-        optimal_charges = charges
+        charges = np.stack(case)
+        energy = potential_energy(charges.flatten())
+        if energy < min_energy:
+            min_energy = energy
+            optimal_charges = charges
 
 print("Optimal charges:", optimal_charges)
 print("Minimum potential energy:", min_energy)

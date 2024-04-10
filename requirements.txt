@@ -1,5 +1,6 @@
 numpy
 scipy
+numba
 networkx
 
 PyQt5

@@ -27,12 +27,12 @@ pentagons = np.array([
 ], dtype=np.int_)
 
 relationship_matrix = np.array([
-    [1, -2, 0, 0, 0],
-    [0, 1, -2, 0, 0],
-    [0, 0, 1, -2, 0],
-    [0, 0, 0, 1, -2],
-    [-2, 0, 0, 0, 1],
-])
+   [2, -1, 1, 1, -1],
+   [-1, 2, -1, 1, 1],
+   [1, -1, 2, -1, 1],
+   [1, 1, -1, 2, -1],
+   [-1, 1, 1, -1, 2],
+], dtype=np.int_)  # symmetrical
 
 
 pentagons = pentagons.flatten()

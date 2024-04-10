@@ -2,5 +2,7 @@ numpy
 scipy
 networkx
 
+PyQt5
 pyvista
+pyvistaqt
 

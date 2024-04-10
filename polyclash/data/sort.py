@@ -7,10 +7,6 @@ model_path = 'model3d/snub_dodecahedron.vtk'
 mesh = pv.read(model_path)
 vertices = mesh.points
 
-cities = []
-for vertex in vertices:
-    cities.append(vertex.tolist())
-
 index = [
     [0, 2, 6, 12, 8],      # _rr
     [35, 23, 13, 16, 39],  # rll
@@ -26,7 +22,7 @@ index = [
     [4, 24, 19, 10, 3],    # rr_
 ]
 
-charges = [
+charges = np.array([
     [0, 1, 2, 3, 4],
     [3, 4, 0, 1, 2],
     [0, 1, 2, 3, 4],
@@ -39,8 +35,12 @@ charges = [
     [0, 1, 2, 3, 4],
     [3, 4, 0, 1, 2],
     [1, 2, 3, 4, 0]
-]
+]).flatten()
 
+
+cities = []
+for i in np.array(index).flatten():
+    cities.append(vertices[i].tolist())
 cities_array = np.array(cities, dtype=np.float_)
 charges_array = np.array(charges, dtype=np.int_).flatten()
 

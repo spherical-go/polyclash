@@ -1,19 +1,26 @@
-import pyvista as pv
+class Board:
+    def __init__(self):
+        self.current_player = "blue"
 
-# Load the VTK format 3D model
-model_path = 'model3d/snub_dodecahedron.vtk'  # Replace with the path to your model file
-mesh = pv.read(model_path)
+    def place_stone(self, position):
+        pass
 
-# Create a plotting window with a white background
-plotter = pv.Plotter(window_size=(1600, 1200))
-plotter.set_background('white')
+    def check_capture(self, position):
+        pass
 
-# Add the model to the plotting window
-plotter.add_mesh(mesh, show_edges=True, color='lightblue')
+    def switch_player(self):
+        if self.current_player == "blue":
+            self.current_player = "red"
+        else:
+            self.current_player = "blue"
 
-plotter.show_axes = True
-# Show the coordinate axes in the corner
-plotter.add_axes(interactive=True)
+    def calculate_score(self):
+        pass
 
-# Display the model
-plotter.show()
+    def play(self, position):
+        self.place_stone(position)
+        self.check_capture(position)
+        self.calculate_score()
+        self.switch_player()
+
+

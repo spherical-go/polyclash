@@ -11,6 +11,6 @@ We combine these two to create a new game: PolyClash.
 
 The snub dodecahedron has 60 vertices, 150 edges, and 92 faces. The sum of the number of points, lines, and faces is 302, which makes the complexity of PolyClash comparable to Go. If we consider the complex connectivity of points, lines, and faces, the complexity of this game will be even higher.
 
-我们能否创建出一个尽量简单的规则集合，同时使得这个游戏也非常有趣呢？从而使得这个游戏也是一个永恒的游戏。这是我们的目标。
+我们能否创建出一个尽量简单的规则集合，同时还使得游戏也非常有趣？从而使得这个游戏也能成为一个永恒的游戏。这就是我们的目标。
 
 Can we create a set of rules that are as simple as possible while making this game very interesting? So that this game is also an eternal game. This is our goal.

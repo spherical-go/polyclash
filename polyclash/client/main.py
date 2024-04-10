@@ -4,6 +4,7 @@ import pyvista as pv
 
 from scipy.spatial import cKDTree
 from PyQt5 import QtWidgets
+from PyQt5.QtGui import QScreen
 from pyvistaqt import QtInteractor
 from vtkmodules.vtkCommonCore import vtkCommand
 
@@ -91,6 +92,12 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     window = MainWindow()
     window.resize(1600, 1200)
+
+    screen = app.primaryScreen().geometry()
+    x = (screen.width() - window.width()) / 2
+    y = (screen.height() - window.height()) / 2
+    window.move(int(x), int(y))
+
     window.show()
     sys.exit(app.exec_())
 

@@ -3,8 +3,12 @@ import numpy as np
 import pyvista as pv
 
 from scipy.spatial import cKDTree
+
 from PyQt5 import QtWidgets
-from PyQt5.QtGui import QScreen
+from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
+from PyQt5.QtCore import Qt, QRectF
+from PyQt5.QtGui import QPainter, QColor, QBrush, QScreen
+
 from pyvistaqt import QtInteractor
 from vtkmodules.vtkCommonCore import vtkCommand
 
@@ -34,6 +38,8 @@ class CityManager:
 board = Board()
 city_manager = CityManager(npz_data['cities'])
 
+overlay = None
+
 
 # Pick event handling
 class CustomInteractor(QtInteractor):
@@ -53,18 +59,56 @@ class CustomInteractor(QtInteractor):
             nearest_city = city_manager.find_nearest_city(position)
             if board.current_player == "blue":
                 picked_actor.GetProperty().SetColor(0, 0, 1)
+                if overlay:
+                    overlay.change_color(Qt.red)
             else:
                 picked_actor.GetProperty().SetColor(1, 0, 0)
+                if overlay:
+                    overlay.change_color(Qt.blue)
             board.play(nearest_city)
 
         self.interactor.GetRenderWindow().Render()
         return
 
 
+class Overlay(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.color = Qt.blue  # set default color
+        self.setAttribute(Qt.WA_TranslucentBackground)  # set transparent background
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+
+        # set opacity
+        painter.setOpacity(0.5)  # 50% transparent
+
+        # 绘制半透明背景
+        painter.setBrush(QBrush(QColor(255, 255, 255, 127)))  # 浅灰色，半透明
+        painter.drawRect(self.rect())  # 覆盖整个Widget区域
+
+        # 绘制小圆盘，不透明
+        painter.setOpacity(1.0)  # 重置为不透明
+        painter.setBrush(QBrush(self.color))
+        painter.drawEllipse(10, 10, 50, 50)  # 绘制小圆盘
+
+    def change_color(self, color):
+        self.color = color
+        self.update()  # 更新Widget，触发重绘
+
+
 # Main window
-class MainWindow(QtWidgets.QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
+        self.setWindowTitle("Polyclash")
+
+        self.overlay = Overlay(self)
+        self.overlay.setGeometry(700, 20, 70, 80)
+
+        # 设置状态栏
+        self.status_bar = self.statusBar()
+        self.status_bar.showMessage("Ready")
 
         self.frame = QtWidgets.QFrame()
         self.layout = QtWidgets.QGridLayout()
@@ -76,6 +120,17 @@ class MainWindow(QtWidgets.QMainWindow):
         self.setCentralWidget(self.frame)
 
         self.init_pyvista()
+        self.update_overlay_position()
+        self.overlay.raise_()
+
+    def update_overlay_position(self):
+        overlay_width = 70
+        overlay_height = 80
+        self.overlay.setGeometry(self.width() - overlay_width - 20, 20, overlay_width, overlay_height)
+
+    def resizeEvent(self, event):
+        self.update_overlay_position()
+        super().resizeEvent(event)
 
     def init_pyvista(self):
         self.vtk_widget.add_mesh(mesh, color="lightblue", pickable=False)
@@ -89,9 +144,10 @@ class MainWindow(QtWidgets.QMainWindow):
 
 
 if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     window = MainWindow()
     window.resize(1600, 1200)
+    overlay = window.overlay
 
     screen = app.primaryScreen().geometry()
     x = (screen.width() - window.width()) / 2

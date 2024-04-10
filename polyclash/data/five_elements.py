@@ -69,7 +69,7 @@ for charges in product(single_face_permutations, repeat=12):
     counter += 1
     if counter % 1000 == 0:
         percentage = counter / 10**12 * 100
-        print(f"Progress: {percentage:.2f}% - Minimum energy: {min_energy}")
+        print(f"Progress: {percentage:.4f}% - Minimum energy: {min_energy}")
         if percentage > 10:
             break
 

@@ -39,18 +39,6 @@ for i in range(60):
 np.fill_diagonal(distsq_matrix, 1)
 
 
-def potential_energy(charges):
-    interaction_matrix = relationship_matrix[charges[:, None], charges]
-    energy_matrix = interaction_matrix / distsq_matrix
-    np.fill_diagonal(energy_matrix, 0)
-    total_energy = np.sum(energy_matrix)
-    return total_energy
-
-
-min_energy = np.inf
-optimal_charges = None
-
-
 left_or_right = {
     1: [
         np.array((0, 1, 2, 3, 4), dtype=np.int_), np.array((1, 2, 3, 4, 0), dtype=np.int_),
@@ -73,7 +61,20 @@ all_balanced = gen_balanced_cases()
 num_of_balanced = len(all_balanced)
 total_combinations = 5**12 * num_of_balanced
 
+
+def potential_energy(charges):
+    interaction_matrix = relationship_matrix[charges[:, None], charges]
+    energy_matrix = interaction_matrix / distsq_matrix
+    np.fill_diagonal(energy_matrix, 0)
+    total_energy = np.sum(energy_matrix)
+    return total_energy
+
+
+min_energy = np.inf
+optimal_charges = None
+
 counter = 0
+charges = np.zeros((60,), dtype=np.int_)
 for balanced in all_balanced:
     for case in product(*balanced):
         counter += 1
@@ -83,8 +84,20 @@ for balanced in all_balanced:
             if percentage > 20:
                 break
 
-        charges = np.stack(case)
-        energy = potential_energy(charges.flatten())
+        charges[0:5] = case[0]
+        charges[5:10] = case[1]
+        charges[10:15] = case[2]
+        charges[15:20] = case[3]
+        charges[20:25] = case[4]
+        charges[25:30] = case[5]
+        charges[30:35] = case[6]
+        charges[35:40] = case[7]
+        charges[40:45] = case[8]
+        charges[45:50] = case[9]
+        charges[50:55] = case[10]
+        charges[55:60] = case[11]
+
+        energy = potential_energy(charges)
         if energy < min_energy:
             min_energy = energy
             optimal_charges = charges

@@ -84,7 +84,7 @@ class MainWindow(QtWidgets.QMainWindow):
             self.vtk_widget.show_axes = True
             self.vtk_widget.add_axes(interactive=True)
             sphere = pv.Sphere(radius=0.01, center=city)
-            self.vtk_widget.add_mesh(sphere, color="gray", pickable=True)
+            self.vtk_widget.add_mesh(sphere, color="lightgray", pickable=True)
 
 
 if __name__ == "__main__":

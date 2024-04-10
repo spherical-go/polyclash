@@ -50,7 +50,7 @@ class CustomInteractor(QtInteractor):
             center = picked_actor.GetCenter()
             position = np.array([center[0], center[1], center[2]])
             nearest_city = city_manager.find_nearest_city(position)
-            if board.current_player == "black":
+            if board.current_player == "blue":
                 picked_actor.GetProperty().SetColor(0, 0, 1)
             else:
                 picked_actor.GetProperty().SetColor(1, 0, 0)

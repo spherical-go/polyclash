@@ -27,7 +27,7 @@ class CityManager:
         self.kd_tree = cKDTree(self.cities)
 
     def find_nearest_city(self, position):
-        return self.kd_tree.data[self.kd_tree.query(position)[1]]
+        return self.kd_tree.query(position)[1]
 
 
 # Create a board and a city manager

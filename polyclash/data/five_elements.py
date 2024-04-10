@@ -73,6 +73,8 @@ for charges in product(single_face_permutations, repeat=12):
         # give the percentage of completion
         percentage = counter / 5**12 * 100
         print(f"Progress: {percentage:.2f}% - Minimum energy: {min_energy} - Counter: {counter} - Energy: {energy}")
+        if percentage > 20:
+            break
 
 print("Optimal charges:", optimal_charges)
 print("Minimum potential energy:", min_energy)

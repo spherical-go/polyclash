@@ -66,13 +66,6 @@ single_face_permutations = [
 
 counter = 0
 for charges in product(single_face_permutations, repeat=12):
-    charges = np.stack(charges)
-    if np.diff(charges, axis=1).sum() != 0:
-        continue
-    energy = potential_energy(charges.flatten())
-    if energy < min_energy:
-        min_energy = energy
-        optimal_charges = charges
     counter += 1
     if counter % 100 == 0:
         # give the percentage of completion
@@ -80,6 +73,14 @@ for charges in product(single_face_permutations, repeat=12):
         print(f"Progress: {percentage:.2f}% - Minimum energy: {min_energy} - Counter: {counter} - Energy: {energy}")
         if percentage > 10:
             break
+
+    charges = np.stack(charges)
+    if np.diff(charges, axis=1).sum() != 0:
+        continue
+    energy = potential_energy(charges.flatten())
+    if energy < min_energy:
+        min_energy = energy
+        optimal_charges = charges
 
 print("Optimal charges:", optimal_charges)
 print("Minimum potential energy:", min_energy)

@@ -3,13 +3,13 @@ import numpy as np
 
 class Board:
     def __init__(self):
-        self.grid = np.zeros([302])
-        self.current_player = "blue"
+        self.grid = np.zeros([60])
+        self.current_player = "black"
 
     def place_stone(self, position):
         if self.grid[position] != 0:
             raise ValueError("Position already occupied")
-        if self.current_player == "blue":
+        if self.current_player == "black":
             self.grid[position] = -1
         else:
             self.grid[position] = 1
@@ -18,10 +18,10 @@ class Board:
         pass
 
     def switch_player(self):
-        if self.current_player == "blue":
-            self.current_player = "red"
+        if self.current_player == "black":
+            self.current_player = "white"
         else:
-            self.current_player = "blue"
+            self.current_player = "black"
 
     def calculate_score(self):
         pass

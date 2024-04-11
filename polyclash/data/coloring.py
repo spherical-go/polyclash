@@ -34,11 +34,6 @@ sea_color = (0.3, 0.5, 0.7, 1.0)  # Ocean blue
 city_color = (0.8, 0.8, 0.8, 1.0)  # City marker color
 font_color = (0.2, 0.2, 0.2, 1.0)  # Text color
 
-
-# Initialize an array for face colors
-# 初始化面的颜色数组
-face_colors = np.zeros((mesh.n_cells, 4))
-
 # Initialize the color array for all faces
 # 初始化所有面的颜色数组
 face_colors = np.zeros((mesh.n_cells, 4))

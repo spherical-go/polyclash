@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 import pyvista as pv
+import colorsys
 
 from scipy.spatial import cKDTree
 
@@ -34,9 +35,9 @@ cities = npz_data['cities']
 # Define colors for different purposes
 group_colors = {
     0: (0.85, 0.75, 0.60, 1.0),  # Warm earth tone
-    1: (0.65, 0.85, 0.65, 1.0),  # Fresh green
-    2: (0.75, 0.70, 0.50, 1.0),  # Sandy brown
-    3: (0.65, 0.65, 0.60, 1.0),  # Rocky gray
+    1: (0.45, 0.85, 0.45, 1.0),  # Brighter green
+    2: (0.80, 0.75, 0.45, 1.0),  # Softer gold with a touch of green
+    3: (0.55, 0.60, 0.85, 1.0),  # Soft purple
 }
 sea_color = (0.3, 0.5, 0.7, 1.0)  # Ocean blue
 city_color = (0.5, 0.5, 0.5, 1.0)  # City marker color
@@ -153,6 +154,15 @@ class MainWindow(QMainWindow):
         self.update_overlay_position()
         super().resizeEvent(event)
 
+    def adjust_hue(self, rgb_color, adjustment_factor):
+        # 将 RGB 转换为 HSV
+        hsv_color = colorsys.rgb_to_hsv(*rgb_color[:3])
+        # 调整色相，确保结果在 [0, 1] 范围内
+        new_hue = (hsv_color[0] + adjustment_factor) % 1.0
+        # 将调整后的 HSV 转换回 RGB
+        adjusted_rgb = colorsys.hsv_to_rgb(new_hue, hsv_color[1], hsv_color[2])
+        return adjusted_rgb + (rgb_color[3],)
+
     def init_color(self):
 
         # Initialize the color array for all faces
@@ -173,6 +183,9 @@ class MainWindow(QMainWindow):
                 # Default to sea color for mixed groups
                 face_colors[i] = sea_color
 
+            hue_adjustment = np.mean(np.fmod(face, 15)) / 15 * 0.1
+            face_colors[i] = self.adjust_hue(face_colors[i], hue_adjustment)
+
         # Set the color data to the mesh object
         mesh.cell_data['colors'] = face_colors
         self.face_colors = face_colors
@@ -181,7 +194,7 @@ class MainWindow(QMainWindow):
         self.vtk_widget.set_background("darkgray")
         self.vtk_widget.add_mesh(mesh, color="lightblue", pickable=False, scalars=self.face_colors, rgba=True)
         self.vtk_widget.add_point_labels(cities[:60], range(60), point_color=city_color, point_size=10,
-                                 render_points_as_spheres=True, text_color=font_color, font_size=100, shape_opacity=0.0)
+                                 render_points_as_spheres=True, text_color=font_color, font_size=80, shape_opacity=0.0)
 
         cities = npz_data['cities'][:60]
         for city in cities:

@@ -3,13 +3,13 @@ import pyvista as pv
 
 # Load the snub dodecahedron model from a VTK file
 # 从 VTK 文件加载扭棱十二面体模型
-model_path = 'model3d/snub_dodecahedron.vtk'
+model_path = 'model3d/snub_dodecahedron_new.vtk'
 mesh = pv.read(model_path)
 vertices = mesh.points
 
 # Load additional data from an NPZ file
 # 从 NPZ 文件加载额外数据
-data_path = 'model3d/snub_dodecahedron.npz'
+data_path = 'model3d/snub_dodecahedron_new.npz'
 npz_data = np.load(data_path)
 edges = npz_data['edges']
 pentagons = npz_data['pentagons']
@@ -25,7 +25,7 @@ for vertex in vertices:
 
 # Edge cities
 for edge in edges:
-    cities.append(np.mean(vertices[list(edge)], axis=0).tolist())
+    cities.append(np.mean(vertices[edge], axis=0).tolist())
 
 # Triangle cities
 for triangle in triangles:

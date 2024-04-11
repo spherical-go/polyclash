@@ -162,16 +162,17 @@ assert len(triangles) == 80, "The number of vertices should be 80."
 
 # Remove edges that appear twice in a triangle
 # 移除在三角形中出现两次的边
+H = nx.Graph(G)
 edge_counts = Counter()
 for triangle in triangles:
     edge_counts.update([(triangle[i], triangle[(i + 1) % 3]) for i in range(3)] + [(triangle[(i + 1) % 3], triangle[i])
                                                                                    for i in range(3)])
 edges_to_remove = [edge for edge, count in edge_counts.items() if count == 2]
-G.remove_edges_from(edges_to_remove)
+H.remove_edges_from(edges_to_remove)
 
 # Identify pentagons
 # 识别五边形
-pentagons = [cycle for cycle in nx.simple_cycles(nx.Graph(G)) if len(cycle) == 5]
+pentagons = [cycle for cycle in nx.simple_cycles(nx.Graph(H)) if len(cycle) == 5]
 
 print(f"Number of pentagon faces: {len(pentagons)}")
 assert len(pentagons) == 12, "The number of vertices should be 12."

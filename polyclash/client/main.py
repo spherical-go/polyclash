@@ -67,6 +67,8 @@ class CustomInteractor(QtInteractor):
         self.interactor.AddObserver(vtkCommand.LeftButtonPressEvent, self.left_button_press_event)
 
     def left_button_press_event(self, obj, event):
+        from polyclash.client.board import BLACK
+
         click_pos = self.interactor.GetEventPosition()
         self.picker.Pick(click_pos[0], click_pos[1], 0, self.renderer)
 
@@ -74,8 +76,9 @@ class CustomInteractor(QtInteractor):
         if picked_actor:
             center = picked_actor.GetCenter()
             position = np.array([center[0], center[1], center[2]])
+
             nearest_city = city_manager.find_nearest_city(position)
-            if board.current_player == "black":
+            if board.current_player == BLACK:
                 picked_actor.GetProperty().SetColor(0, 0, 0)
                 if overlay:
                     overlay.change_color(Qt.white)
@@ -83,7 +86,8 @@ class CustomInteractor(QtInteractor):
                 picked_actor.GetProperty().SetColor(1, 1, 1)
                 if overlay:
                     overlay.change_color(Qt.black)
-            board.play(nearest_city)
+            board.play(nearest_city, board.current_player)
+            board.current_player = -board.current_player
 
         self.interactor.GetRenderWindow().Render()
         return
@@ -192,8 +196,8 @@ class MainWindow(QMainWindow):
     def init_pyvista(self, cities=None):
         self.vtk_widget.set_background("darkgray")
         self.vtk_widget.add_mesh(mesh, show_edges=True, color="lightblue", pickable=False, scalars=self.face_colors, rgba=True)
-        self.vtk_widget.add_point_labels(cities[:60], range(60), point_color=city_color, point_size=10,
-                                 render_points_as_spheres=True, text_color=font_color, font_size=80, shape_opacity=0.0)
+        # self.vtk_widget.add_point_labels(cities[:60], range(60), point_color=city_color, point_size=10,
+        #                         render_points_as_spheres=True, text_color=font_color, font_size=80, shape_opacity=0.0)
 
         cities = npz_data['cities']
         for city in cities:

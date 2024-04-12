@@ -1,5 +1,6 @@
 import numpy as np
 import pyvista as pv
+import pickle as pkl
 
 # Load the snub dodecahedron model from a VTK file
 # 从 VTK 文件加载扭棱十二面体模型
@@ -36,6 +37,23 @@ for i in range(12):  # 12 pentagons of the snub dodecahedron
     index[tuple(pentagons[i])] = i + 290
 
 
+# Define the neighbors table
+# 定义邻居表
+neighbors = {}
+for v1, v2 in edges:
+    edg = index[tuple([v1, v2])]
+    if v1 not in neighbors:
+        neighbors[v1] = set()
+    neighbors[v1].add(edg)
+    if v2 not in neighbors:
+        neighbors[v2] = set()
+    neighbors[v2].add(edg)
+    if edg not in neighbors:
+        neighbors[edg] = set()
+    neighbors[edg].add(v1)
+    neighbors[edg].add(v2)
+
+
 # Define the small polygons
 # 定义小四边形
 polysmalls = []
@@ -52,6 +70,17 @@ for i, triangle in enumerate(triangles):
     polysmalls.append([center, edge1, vertex2, edge2])
     polysmalls.append([center, edge2, vertex0, edge0])
     triangle2faces.append([3 * i, 3 * i + 1, 3 * i + 2])
+    neighbors[center] = {edge0, edge1, edge2}
+    if edge0 not in neighbors:
+        neighbors[edge0] = set()
+    neighbors[edge0].add(center)
+    if edge1 not in neighbors:
+        neighbors[edge1] = set()
+    neighbors[edge1].add(center)
+    if edge2 not in neighbors:
+        neighbors[edge2] = set()
+    neighbors[edge2].add(center)
+
 
 
 # Define the large polygons
@@ -81,7 +110,37 @@ for i, pentagon in enumerate(pentagons):
         start + 5 * i + 2, start + 5 * i + 3,
         start + 5 * i + 4
     ])
+    neighbors[center] = {edge0, edge1, edge2, edge3, edge4}
+    if edge0 not in neighbors:
+        neighbors[edge0] = set()
+    neighbors[edge0].add(center)
+    if edge1 not in neighbors:
+        neighbors[edge1] = set()
+    neighbors[edge1].add(center)
+    if edge2 not in neighbors:
+        neighbors[edge2] = set()
+    neighbors[edge2].add(center)
+    if edge3 not in neighbors:
+        neighbors[edge3] = set()
+    neighbors[edge3].add(center)
+    if edge4 not in neighbors:
+        neighbors[edge4] = set()
+    neighbors[edge4].add(center)
 
+
+assert len(vertices) == 60
+assert len(edges) == 150
+assert len(triangles) == 80
+assert len(pentagons) == 12
+assert len(cities) == 302
+assert len(polysmalls) == 240
+assert len(polylarges) == 60
+assert len(triangle2faces) == 80
+assert len(pentagon2faces) == 12
+assert len(neighbors) == 302
+
+for i in range(302):
+    assert neighbors[i] is not None and len(neighbors[i]) > 0
 
 # Create the mesh
 # 创建网格
@@ -102,6 +161,8 @@ np.savez('model3d/board.npz',
          triangle2faces=np.array(triangle2faces, dtype=np.int_),
          pentagon2faces=np.array(pentagon2faces, dtype=np.int_)
          )
+pkl.dump(neighbors, open('model3d/board.pkl', 'wb'))
+
 
 print("Data saved!")
 

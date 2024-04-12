@@ -7,7 +7,7 @@ model_path = 'model3d/snub_dodecahedron_new.vtk'
 mesh = pv.read(model_path)
 vertices = mesh.points
 
-# Load additional data from an NPZ file
+# Load additional data from a NPZ file
 # 从 NPZ 文件加载额外数据
 data_path = 'model3d/snub_dodecahedron_new.npz'
 npz_data = np.load(data_path)
@@ -15,45 +15,102 @@ edges = npz_data['edges']
 pentagons = npz_data['pentagons']
 triangles = npz_data['triangles']
 
-# Calculate the geometric centers ("cities") of vertices, edges, triangles, and pentagons
-# 计算顶点、边、三角形和五边形的几何中心（“城市”）
-cities = []
+# Load cities data from a NPZ file
+# 从 NPZ 文件加载城市数据
+cities_path = 'model3d/cities.npz'
+cities_data = np.load(cities_path)
+cities = cities_data['cities']
 
-# Vertex cities
-for vertex in vertices:
-    cities.append(vertex.tolist())
 
-# Edge cities
-for edge in edges:
-    cities.append(np.mean(vertices[edge], axis=0).tolist())
+# build index to cities
+# 建立城市索引
+index = {}
+for i in range(60):  # 60 vertices of the snub dodecahedron
+    index[(i,)] = i
+for i in range(150):  # 150 edges of the snub dodecahedron
+    index[tuple(edges[i])] = i + 60
+    index[tuple(reversed(edges[i]))] = i + 60
+for i in range(80):  # 80 triangles of the snub dodecahedron
+    index[tuple(triangles[i])] = i + 210
+for i in range(12):  # 12 pentagons of the snub dodecahedron
+    index[tuple(pentagons[i])] = i + 290
 
-# Triangle cities
-for triangle in triangles:
-    cities.append(np.mean(vertices[triangle], axis=0).tolist())
 
-# Pentagon cities
-for pentagon in pentagons:
-    cities.append(np.mean(vertices[pentagon], axis=0).tolist())
+# Define the small polygons
+# 定义小四边形
+polysmalls = []
+triangle2faces = []
+for i, triangle in enumerate(triangles):
+    center = index[tuple(triangle)]
+    vertex0 = index[tuple([triangle[0]])]
+    vertex1 = index[tuple([triangle[1]])]
+    vertex2 = index[tuple([triangle[2]])]
+    edge0 = index[tuple([vertex0, vertex1])]
+    edge1 = index[tuple([vertex1, vertex2])]
+    edge2 = index[tuple([vertex2, vertex0])]
+    polysmalls.append([center, edge0, vertex1, edge1])
+    polysmalls.append([center, edge1, vertex2, edge2])
+    polysmalls.append([center, edge2, vertex0, edge0])
+    triangle2faces.append([3 * i, 3 * i + 1, 3 * i + 2])
 
-cities_array = np.array(cities, dtype=np.float_)
-np.savez('model3d/cities.npz', cities=cities_array)
 
-# Set up the PyVista plotter
-# 设置 PyVista 绘图器
-plotter = pv.Plotter(window_size=(3200, 2400))
-plotter.set_background('white')
+# Define the large polygons
+# 定义大四边形
+polylarges = []
+pentagon2faces = []
+for i, pentagon in enumerate(pentagons):
+    center = index[tuple(pentagon)]
+    vertex0 = index[tuple([pentagon[0]])]
+    vertex1 = index[tuple([pentagon[1]])]
+    vertex2 = index[tuple([pentagon[2]])]
+    vertex3 = index[tuple([pentagon[3]])]
+    vertex4 = index[tuple([pentagon[4]])]
+    edge0 = index[tuple([vertex0, vertex1])]
+    edge1 = index[tuple([vertex1, vertex2])]
+    edge2 = index[tuple([vertex2, vertex3])]
+    edge3 = index[tuple([vertex3, vertex4])]
+    edge4 = index[tuple([vertex4, vertex0])]
+    polylarges.append([center, edge0, vertex1, edge1])
+    polylarges.append([center, edge1, vertex2, edge2])
+    polylarges.append([center, edge2, vertex3, edge3])
+    polylarges.append([center, edge3, vertex4, edge4])
+    polylarges.append([center, edge4, vertex0, edge0])
+    start = 3 * len(triangle2faces)
+    pentagon2faces.append([
+        start + 5 * i, start + 5 * i + 1,
+        start + 5 * i + 2, start + 5 * i + 3,
+        start + 5 * i + 4
+    ])
 
-# Add the snub dodecahedron mesh and the cities to the plot
-# 将扭棱十二面体网格和城市添加到绘图中
-plotter.add_mesh(mesh, show_edges=True, color='lightblue')
-plotter.add_point_labels(cities_array[:60], range(60), font_size=100, shape_opacity=0.0, render_points_as_spheres=True)
-plotter.add_points(cities_array[60:], point_size=10, render_points_as_spheres=True)
 
-# Enhance the visualization with interactive axes
-# 使用交互式坐标轴增强可视化
-plotter.show_axes = True
-plotter.add_axes(interactive=True)
+# Create the mesh
+# 创建网格
+faces_list = [[4] + small for small in polysmalls] + [[4] + large for large in polylarges]
+poly_data = pv.PolyData(cities, np.hstack(faces_list))
 
-# Display the visualization
-# 显示可视化
+# Save the model as a VTK file
+# 保存模型为 VTK 文件
+poly_data.save("model3d/board.vtk")
+np.savez('model3d/board.npz',
+         vertices=vertices,
+         edges=edges,
+         triangles=triangles,
+         pentagons=pentagons,
+         cities=cities,
+         polysmalls=np.array(polysmalls, dtype=np.int_),
+         polylarges=np.array(polylarges, dtype=np.int_),
+         triangle2faces=np.array(triangle2faces, dtype=np.int_),
+         pentagon2faces=np.array(pentagon2faces, dtype=np.int_)
+         )
+
+print("Data saved!")
+
+print("Visualizing...")
+
+# Visualize the mesh
+# 可视化
+plotter = pv.Plotter()
+plotter.add_mesh(poly_data, show_edges=True, color='lightblue')
 plotter.show()
+
+print("Bye!")

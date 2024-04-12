@@ -17,19 +17,17 @@ from board import Board
 
 
 # Load the VTK format 3D model
-model_path = 'model3d/snub_dodecahedron_new.vtk'
+model_path = 'model3d/board.vtk'
 mesh = pv.read(model_path)
 
 # Load additional data from a NPZ file
-data_path = 'model3d/snub_dodecahedron_new.npz'
+data_path = 'model3d/board.npz'
 npz_data = np.load(data_path)
 pentagons = npz_data['pentagons']
 triangles = npz_data['triangles']
-
-# Load the cities data
-data_path = 'model3d/cities.npz'
-npz_data = np.load(data_path)
 cities = npz_data['cities']
+triangle2faces = npz_data['triangle2faces']
+pentagon2faces = npz_data['pentagon2faces']
 
 
 # Define colors for different purposes
@@ -127,7 +125,6 @@ class MainWindow(QMainWindow):
         self.overlay = Overlay(self)
         self.overlay.setGeometry(700, 20, 210, 240)
 
-        # 设置状态栏
         self.status_bar = self.statusBar()
         self.status_bar.showMessage("Ready")
 
@@ -155,36 +152,38 @@ class MainWindow(QMainWindow):
         super().resizeEvent(event)
 
     def adjust_hue(self, rgb_color, adjustment_factor):
-        # 将 RGB 转换为 HSV
+        # convert RGB to HSV
         hsv_color = colorsys.rgb_to_hsv(*rgb_color[:3])
-        # 调整色相，确保结果在 [0, 1] 范围内
+        # adjust hue, make sure the result is in [0, 1]
         new_hue = (hsv_color[0] + adjustment_factor) % 1.0
-        # 将调整后的 HSV 转换回 RGB
+        # convert HSV as RGB
         adjusted_rgb = colorsys.hsv_to_rgb(new_hue, hsv_color[1], hsv_color[2])
         return adjusted_rgb + (rgb_color[3],)
 
     def init_color(self):
 
         # Initialize the color array for all faces
-        face_colors = np.zeros((mesh.n_cells, 4))
+        face_colors = np.ones((mesh.n_cells, 4))
 
-        # Apply colors to each face based on its vertices
-        for i in range(mesh.n_cells):
-            if i < len(triangles):
-                face = triangles[i]
-            else:
-                face = pentagons[i - len(triangles)]
-
+        for i, triangle in enumerate(triangles):
+            face = triangle
             groups = [vertex // 15 for vertex in face]
             # If all vertices are from the same group, color the face accordingly
             if len(set(groups)) == 1:
-                face_colors[i] = group_colors[groups[0]]
+                for j in range(3):
+                    face_colors[triangle2faces[i][j]] = group_colors[groups[0]]
             else:
                 # Default to sea color for mixed groups
-                face_colors[i] = sea_color
+                for j in range(3):
+                    face_colors[triangle2faces[i][j]] = sea_color
 
-            hue_adjustment = np.mean(np.fmod(face, 15)) / 15 * 0.1
-            face_colors[i] = self.adjust_hue(face_colors[i], hue_adjustment)
+        for i, pentagon in enumerate(pentagons):
+            face = pentagon
+            groups = [vertex // 15 for vertex in face]
+            # If all vertices are from the same group, color the face accordingly
+            if len(set(groups)) == 1:
+                for j in range(5):
+                    face_colors[pentagon2faces[i][j]] = group_colors[groups[0]]
 
         # Set the color data to the mesh object
         mesh.cell_data['colors'] = face_colors
@@ -192,11 +191,11 @@ class MainWindow(QMainWindow):
 
     def init_pyvista(self, cities=None):
         self.vtk_widget.set_background("darkgray")
-        self.vtk_widget.add_mesh(mesh, color="lightblue", pickable=False, scalars=self.face_colors, rgba=True)
+        self.vtk_widget.add_mesh(mesh, show_edges=True, color="lightblue", pickable=False, scalars=self.face_colors, rgba=True)
         self.vtk_widget.add_point_labels(cities[:60], range(60), point_color=city_color, point_size=10,
                                  render_points_as_spheres=True, text_color=font_color, font_size=80, shape_opacity=0.0)
 
-        cities = npz_data['cities'][:60]
+        cities = npz_data['cities']
         for city in cities:
             self.vtk_widget.show_axes = True
             self.vtk_widget.add_axes(interactive=True)

@@ -3,7 +3,7 @@ import numpy as np
 
 class Board:
     def __init__(self):
-        self.grid = np.zeros([60])
+        self.grid = np.zeros([302])
         self.current_player = "black"
 
     def place_stone(self, position):

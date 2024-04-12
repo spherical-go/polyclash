@@ -15,6 +15,19 @@ class Board:
         self.current_player = BLACK
         self.neighbors = neighbors
 
+        self._observers = []
+
+    def register_observer(self, observer):
+        if observer not in self._observers:
+            self._observers.append(observer)
+
+    def unregister_observer(self, observer):
+        self._observers.remove(observer)
+
+    def notify_observers(self, message, **kwargs):
+        for observer in self._observers:
+            observer.update(message, **kwargs)
+
     def has_liberty(self, point, color=None, visited=None):
         if color is None:
             color = self.board[point]
@@ -39,6 +52,7 @@ class Board:
     def remove_stones(self, point):
         color = self.board[point]
         self.board[point] = 0
+        self.notify_observers("remove_stones", point=point)  # 通知观察者，有棋子被移除
 
         for neighbor in self.neighbors[point]:
             if self.board[neighbor] == color:

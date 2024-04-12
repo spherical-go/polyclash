@@ -13,7 +13,7 @@ from PyQt5.QtGui import QPainter, QColor, QBrush, QScreen
 from pyvistaqt import QtInteractor
 from vtkmodules.vtkCommonCore import vtkCommand
 
-from board import Board
+from polyclash.client.board import Board
 
 
 # Load the VTK format 3D model
@@ -124,6 +124,7 @@ class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super(MainWindow, self).__init__(parent)
         self.face_colors = None
+        self.spheres = {}
         self.setWindowTitle("Polyclash")
 
         self.overlay = Overlay(self)
@@ -200,11 +201,21 @@ class MainWindow(QMainWindow):
         #                         render_points_as_spheres=True, text_color=font_color, font_size=80, shape_opacity=0.0)
 
         cities = npz_data['cities']
-        for city in cities:
+        for idx, city in enumerate(cities):
             self.vtk_widget.show_axes = True
             self.vtk_widget.add_axes(interactive=True)
             sphere = pv.Sphere(radius=0.02, center=city)
-            self.vtk_widget.add_mesh(sphere, color=city_color, pickable=True)
+            actor = self.vtk_widget.add_mesh(sphere, color=city_color, pickable=True)
+            self.spheres[idx] = actor
+
+    def remove_stone(self, point):
+        actor = self.spheres[point]
+        actor.GetProperty().SetColor(city_color[0], city_color[1], city_color[2])
+
+    def update(self, message, **kwargs):
+        if message == "remove_stones":
+            self.remove_stone(kwargs["point"])
+        self.vtk_widget.render()
 
 
 if __name__ == "__main__":
@@ -212,6 +223,7 @@ if __name__ == "__main__":
     window = MainWindow()
     window.resize(1600, 1200)
     overlay = window.overlay
+    board.register_observer(window)
 
     screen = app.primaryScreen().geometry()
     x = (screen.width() - window.width()) / 2

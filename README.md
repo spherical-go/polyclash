@@ -12,4 +12,12 @@ We combine these two to create a new game: PolyClash.
 Can we create a set of rules that are as simple as possible while making this game very interesting? So that this game is also an eternal game. This is our goal.
 
 
+## Install
 
+```bash
+git clone git@github.com:mountain/polyclash.git
+
+pip install -r requiremnts.txt
+
+bin/polyclash-client
+```

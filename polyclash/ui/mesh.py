@@ -4,7 +4,7 @@ import colorsys
 
 from os import path as osp
 from polyclash.data import triangles, pentagons, triangle2faces, pentagon2faces
-from polyclash.ui.constants import group_colors, sea_color, city_color
+from polyclash.ui.constants import face_continent_colors, face_oceanic_color
 
 model_path = osp.abspath(osp.join(osp.dirname(__file__), "board.vtk"))
 mesh = pv.read(model_path)
@@ -26,11 +26,11 @@ def init_color():
         # If all vertices are from the same group, color the face accordingly
         if len(set(groups)) == 1:
             for j in range(3):
-                face_colors[triangle2faces[i][j]] = group_colors[groups[0]]
+                face_colors[triangle2faces[i][j]] = face_continent_colors[groups[0]]
         else:
             # Default to sea color for mixed groups
             for j in range(3):
-                face_colors[triangle2faces[i][j]] = sea_color
+                face_colors[triangle2faces[i][j]] = face_oceanic_color
 
     for i, pentagon in enumerate(pentagons):
         face = pentagon
@@ -38,7 +38,7 @@ def init_color():
         # If all vertices are from the same group, color the face accordingly
         if len(set(groups)) == 1:
             for j in range(5):
-                face_colors[pentagon2faces[i][j]] = group_colors[groups[0]]
+                face_colors[pentagon2faces[i][j]] = face_continent_colors[groups[0]]
 
     mesh.cell_data['colors'] = face_colors
     return face_colors

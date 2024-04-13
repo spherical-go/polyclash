@@ -22,7 +22,7 @@ class MainWindow(QMainWindow):
         self.frame = QtWidgets.QFrame()
         self.layout = QtWidgets.QGridLayout()
 
-        self.sphere_view = SphereView(self.frame)
+        self.sphere_view = SphereView(self.frame, self.status_bar)
         self.layout.addWidget(self.sphere_view, 0, 0, 1, 2)
 
         self.frame.setLayout(self.layout)

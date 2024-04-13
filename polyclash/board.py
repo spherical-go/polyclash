@@ -2,7 +2,6 @@ import numpy as np
 
 from polyclash.data import neighbors
 
-
 BLACK = 1
 WHITE = -1
 
@@ -25,7 +24,7 @@ class Board:
 
     def notify_observers(self, message, **kwargs):
         for observer in self._observers:
-            observer.handle(message, **kwargs)
+            observer.handle_notification(message, **kwargs)
 
     def has_liberty(self, point, color=None, visited=None):
         if color is None:
@@ -51,11 +50,15 @@ class Board:
     def remove_stones(self, point):
         color = self.board[point]
         self.board[point] = 0
-        self.notify_observers("remove_stones", point=point)  # 通知观察者，有棋子被移除
+        self.notify_observers("remove_stones", point=point)
 
         for neighbor in self.neighbors[point]:
             if self.board[neighbor] == color:
                 self.remove_stones(neighbor)
+
+    def switch_player(self):
+        self.current_player = -self.current_player
+        self.notify_observers("switch_player", side=self.current_player)
 
     def play(self, point, color):
         if self.board[point] != 0:
@@ -64,7 +67,7 @@ class Board:
         self.board[point] = color
 
         for neighbor in self.neighbors[point]:
-            if self.board[neighbor] == -color:       # Opponent's stone
+            if self.board[neighbor] == -color:  # Opponent's stone
                 if not self.has_liberty(neighbor):
                     self.remove_stones(neighbor)
 
@@ -72,6 +75,8 @@ class Board:
             # 如果自己的棋也没有气，则为自杀棋，撤回落子
             self.board[point] = 0
             raise ValueError("Invalid move: suicide is not allowed.")
+
+        self.switch_player()
 
     def genmove(self, color):
         from random import randint
@@ -82,3 +87,5 @@ class Board:
                 candidate.append(i)
         return candidate[randint(len(candidate))]
 
+
+board = Board()

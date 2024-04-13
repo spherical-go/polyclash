@@ -2,6 +2,7 @@ import numpy as np
 
 from polyclash.data import neighbors
 
+
 BLACK = 1
 WHITE = -1
 

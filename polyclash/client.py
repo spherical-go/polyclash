@@ -2,6 +2,7 @@ import sys
 import numpy as np
 import pyvista as pv
 import colorsys
+import os.path as osp
 
 from PyQt5 import QtWidgets
 from PyQt5.QtCore import Qt
@@ -16,7 +17,7 @@ from polyclash.data import cities, triangles, pentagons, triangle2faces, pentago
 
 
 # Load the VTK format 3D model
-model_path = 'model3d/board.vtk'
+model_path = osp.abspath(osp.join(osp.dirname(__file__), "board.vtk"))
 mesh = pv.read(model_path)
 
 

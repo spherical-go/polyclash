@@ -54,4 +54,53 @@ class TestBoard(unittest.TestCase):
 
         self.assertEqual(board.has_liberty(0), False, "The point 0 should have liberty.")
 
+    def test_play_case_0(self):
+        board = Board()
+        cycle = [0, decoder[(0, 1)], 1, decoder[(1, 2)], 2, decoder[2, 3], 3, decoder[(3, 4)], 4, decoder[(4, 0)]]
+        face = decoder[(0, 1, 2, 3, 4)]
+        for pos in cycle:
+            board.board[pos] = BLACK
+        for pos in cycle:
+            for n in neighbors[pos]:
+                if n not in cycle and n != face:
+                    board.board[n] = WHITE
 
+        board.play(face, WHITE)
+
+        self.assertEqual(WHITE, board.board[face], f"The point {face} should be white.")
+        for pos in cycle:
+            self.assertEqual(board.board[pos], 0, f"The point {pos} should be empty.")
+
+    def test_play_case_1(self):
+        board = Board()
+        cycle = [0, decoder[(0, 1)], 1, decoder[(1, 2)], 2, decoder[2, 3], 3, decoder[(3, 4)], 4, decoder[(4, 0)]]
+        face = decoder[(0, 1, 2, 3, 4)]
+        for pos in cycle:
+            board.board[pos] = BLACK
+        for pos in cycle:
+            for n in neighbors[pos]:
+                if n not in cycle and n != face:
+                    board.board[n] = WHITE
+
+        with self.assertRaises(ValueError) as context:
+            board.play(face, BLACK)
+            self.assertTrue("Invalid move: suicide is not allowed." in str(context.exception))
+
+    def test_play_case_2(self):
+        board = Board()
+        cycle = [0, decoder[(0, 1)], 1, decoder[(1, 2)], 2, decoder[2, 3], 3, decoder[(3, 4)], 4, decoder[(4, 0)]]
+        face = decoder[(0, 1, 2, 3, 4)]
+        for pos in cycle:
+            board.board[pos] = BLACK
+        for pos in cycle:
+            for n in neighbors[pos]:
+                if n not in cycle and n != face:
+                    board.board[n] = WHITE
+
+        with self.assertRaises(ValueError) as context:
+            board.play(0, BLACK)
+            self.assertTrue("Invalid move: position already occupied." in str(context.exception))
+
+
+if __name__ == '__main__':
+    unittest.main()

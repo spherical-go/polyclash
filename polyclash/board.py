@@ -1,11 +1,9 @@
 import numpy as np
-import pickle as pkl
 
+from polyclash.data import neighbors
 
 BLACK = 1
 WHITE = -1
-
-neighbors = pkl.load(open("model3d/board.pkl", "rb"))
 
 
 class Board:
@@ -26,7 +24,7 @@ class Board:
 
     def notify_observers(self, message, **kwargs):
         for observer in self._observers:
-            observer.update(message, **kwargs)
+            observer.handle(message, **kwargs)
 
     def has_liberty(self, point, color=None, visited=None):
         if color is None:

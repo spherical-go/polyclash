@@ -5,15 +5,16 @@ from PyQt5.QtCore import Qt
 from pyvistaqt import QtInteractor
 from vtkmodules.vtkCommonCore import vtkCommand
 
-from polyclash.ui.constants import city_color
+from polyclash.ui.constants import stone_empty_color, stone_black_color, stone_white_color
 from polyclash.ui.mesh import mesh, face_colors
 from polyclash.board import BLACK, board
 from polyclash.data import cities, city_manager
 
 
 class SphereView(QtInteractor):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, status_bar=None):
         super().__init__(parent)
+        self.status_bar = status_bar
         self.picker = self.interactor.GetRenderWindow().GetInteractor().CreateDefaultPicker()
         self.interactor.AddObserver(vtkCommand.LeftButtonPressEvent, self.left_button_press_event)
         self.spheres = {}
@@ -29,7 +30,7 @@ class SphereView(QtInteractor):
             self.show_axes = True
             self.add_axes(interactive=True)
             sphere = pv.Sphere(radius=0.02, center=city)
-            actor = self.add_mesh(sphere, color=city_color, pickable=True)
+            actor = self.add_mesh(sphere, color=stone_empty_color, pickable=True)
             self.spheres[idx] = actor
 
     def handle_notification(self, message, **kwargs):
@@ -39,7 +40,7 @@ class SphereView(QtInteractor):
 
     def remove_stone(self, point):
         actor = self.spheres[point]
-        actor.GetProperty().SetColor(city_color[0], city_color[1], city_color[2])
+        actor.GetProperty().SetColor(stone_empty_color[0], stone_empty_color[1], stone_empty_color[2])
 
     def left_button_press_event(self, obj, event):
         click_pos = self.interactor.GetEventPosition()
@@ -51,11 +52,13 @@ class SphereView(QtInteractor):
             position = np.array([center[0], center[1], center[2]])
 
             nearest_city = city_manager.find_nearest_city(position)
-            if board.current_player == BLACK:
-                picked_actor.GetProperty().SetColor(0, 0, 0)
-            else:
-                picked_actor.GetProperty().SetColor(1, 1, 1)
-            board.play(nearest_city, board.current_player)
-
+            try:
+                board.play(nearest_city, board.current_player)
+                if board.current_player == BLACK:
+                    picked_actor.GetProperty().SetColor(stone_black_color[0], stone_black_color[1], stone_black_color[2])
+                else:
+                    picked_actor.GetProperty().SetColor(stone_white_color[0], stone_white_color[1], stone_white_color[2])
+            except ValueError as e:
+                self.status_bar.showMessage(str(e))
         self.interactor.GetRenderWindow().Render()
         return

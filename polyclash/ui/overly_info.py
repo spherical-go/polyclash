@@ -3,6 +3,11 @@ from PyQt5.QtGui import QPainter, QBrush, QColor
 from PyQt5.QtWidgets import QWidget
 
 from polyclash.board import BLACK
+from polyclash.ui.constants import stone_black_color, stone_white_color
+
+
+black = QColor(*[int(255 * elm) for elm in stone_black_color])
+white = QColor(*[int(255 * elm) for elm in stone_white_color])
 
 
 class OverlayInfo(QWidget):
@@ -32,5 +37,5 @@ class OverlayInfo(QWidget):
 
     def handle_notification(self, message, **kwargs):
         if message == "switch_player":
-            color = Qt.black if kwargs["side"] == BLACK else Qt.white
+            color = black if kwargs["side"] == BLACK else white
             self.change_color(color)

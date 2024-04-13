@@ -2,32 +2,23 @@ import sys
 import numpy as np
 import pyvista as pv
 import colorsys
-
-from scipy.spatial import cKDTree
+import os.path as osp
 
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
-from PyQt5.QtCore import Qt, QRectF
-from PyQt5.QtGui import QPainter, QColor, QBrush, QScreen
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QPainter, QColor, QBrush
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
 
 from pyvistaqt import QtInteractor
 from vtkmodules.vtkCommonCore import vtkCommand
 
-from polyclash.client.board import Board
+from polyclash.board import Board, BLACK
+from polyclash.data import cities, triangles, pentagons, triangle2faces, pentagon2faces, city_manager
 
 
 # Load the VTK format 3D model
-model_path = 'model3d/board.vtk'
+model_path = osp.abspath(osp.join(osp.dirname(__file__), "board.vtk"))
 mesh = pv.read(model_path)
-
-# Load additional data from a NPZ file
-data_path = 'model3d/board.npz'
-npz_data = np.load(data_path)
-pentagons = npz_data['pentagons']
-triangles = npz_data['triangles']
-cities = npz_data['cities']
-triangle2faces = npz_data['triangle2faces']
-pentagon2faces = npz_data['pentagon2faces']
 
 
 # Define colors for different purposes
@@ -42,19 +33,8 @@ city_color = (0.5, 0.5, 0.5, 1.0)  # City marker color
 font_color = (0.2, 0.2, 0.2, 1.0)  # Text color
 
 
-# Use a kdTree manage all the cities, when a stone is placed, find the nearest city
-class CityManager:
-    def __init__(self, cities):
-        self.cities = cities
-        self.kd_tree = cKDTree(self.cities)
-
-    def find_nearest_city(self, position):
-        return self.kd_tree.query(position)[1]
-
-
 # Create a board and a city manager
 board = Board()
-city_manager = CityManager(cities)
 
 overlay = None
 
@@ -67,7 +47,6 @@ class CustomInteractor(QtInteractor):
         self.interactor.AddObserver(vtkCommand.LeftButtonPressEvent, self.left_button_press_event)
 
     def left_button_press_event(self, obj, event):
-        from polyclash.client.board import BLACK
 
         click_pos = self.interactor.GetEventPosition()
         self.picker.Pick(click_pos[0], click_pos[1], 0, self.renderer)
@@ -166,7 +145,6 @@ class MainWindow(QMainWindow):
         return adjusted_rgb + (rgb_color[3],)
 
     def init_color(self):
-
         # Initialize the color array for all faces
         face_colors = np.ones((mesh.n_cells, 4))
 
@@ -200,7 +178,6 @@ class MainWindow(QMainWindow):
         # self.vtk_widget.add_point_labels(cities[:60], range(60), point_color=city_color, point_size=10,
         #                         render_points_as_spheres=True, text_color=font_color, font_size=80, shape_opacity=0.0)
 
-        cities = npz_data['cities']
         for idx, city in enumerate(cities):
             self.vtk_widget.show_axes = True
             self.vtk_widget.add_axes(interactive=True)
@@ -212,7 +189,7 @@ class MainWindow(QMainWindow):
         actor = self.spheres[point]
         actor.GetProperty().SetColor(city_color[0], city_color[1], city_color[2])
 
-    def update(self, message, **kwargs):
+    def handle(self, message, **kwargs):
         if message == "remove_stones":
             self.remove_stone(kwargs["point"])
         self.vtk_widget.render()

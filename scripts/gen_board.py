@@ -82,7 +82,6 @@ for i, triangle in enumerate(triangles):
     neighbors[edge2].add(center)
 
 
-
 # Define the large polygons
 # 定义大四边形
 polylarges = []
@@ -159,9 +158,10 @@ np.savez('model3d/board.npz',
          polysmalls=np.array(polysmalls, dtype=np.int_),
          polylarges=np.array(polylarges, dtype=np.int_),
          triangle2faces=np.array(triangle2faces, dtype=np.int_),
-         pentagon2faces=np.array(pentagon2faces, dtype=np.int_)
+         pentagon2faces=np.array(pentagon2faces, dtype=np.int_),
          )
 pkl.dump(neighbors, open('model3d/board.pkl', 'wb'))
+pkl.dump(index, open('model3d/index.pkl', 'wb'))
 
 
 print("Data saved!")

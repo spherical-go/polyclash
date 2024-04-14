@@ -17,8 +17,8 @@ def adjust_hue(rgb_color, adjustment_factor):
     return adjusted_rgb + (rgb_color[3],)
 
 
-def init_color():
-    face_colors = np.ones((mesh.n_cells, 4))
+def init_colors():
+    colors = np.ones((mesh.n_cells, 4))
 
     for i, triangle in enumerate(triangles):
         face = triangle
@@ -26,11 +26,11 @@ def init_color():
         # If all vertices are from the same group, color the face accordingly
         if len(set(groups)) == 1:
             for j in range(3):
-                face_colors[triangle2faces[i][j]] = face_continent_colors[groups[0]]
+                colors[triangle2faces[i][j]] = face_continent_colors[groups[0]]
         else:
             # Default to sea color for mixed groups
             for j in range(3):
-                face_colors[triangle2faces[i][j]] = face_oceanic_color
+                colors[triangle2faces[i][j]] = face_oceanic_color
 
     for i, pentagon in enumerate(pentagons):
         face = pentagon
@@ -38,10 +38,10 @@ def init_color():
         # If all vertices are from the same group, color the face accordingly
         if len(set(groups)) == 1:
             for j in range(5):
-                face_colors[pentagon2faces[i][j]] = face_continent_colors[groups[0]]
+                colors[pentagon2faces[i][j]] = face_continent_colors[groups[0]]
 
-    mesh.cell_data['colors'] = face_colors
-    return face_colors
+    mesh.cell_data['colors'] = colors
+    return colors
 
 
-face_colors = init_color()
+face_colors = init_colors()

@@ -76,7 +76,7 @@ class Board:
             self.board[point] = 0
             raise ValueError("Invalid move: suicide is not allowed.")
 
-        self.switch_player()
+        self.notify_observers("add_stone", point=point, color=color)
 
     def genmove(self, color):
         from random import randint

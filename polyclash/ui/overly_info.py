@@ -22,14 +22,14 @@ class OverlayInfo(QWidget):
         # set opacity
         painter.setOpacity(0.5)  # 50% transparent
 
-        # 绘制半透明背景
-        painter.setBrush(QBrush(QColor(192, 192, 192, 127)))  # 浅灰色，半透明
-        painter.drawRect(self.rect())  # 覆盖整个Widget区域
+        # draw a translucent background
+        painter.setBrush(QBrush(QColor(192, 192, 192, 127)))  # light gray, semi-transparent
+        painter.drawRect(self.rect())  # cover the entire widget area
 
-        # 绘制小圆盘，不透明
-        painter.setOpacity(1.0)  # 重置为不透明
+        # draw a circle disk with color
+        painter.setOpacity(1.0)  # 100% opaque
         painter.setBrush(QBrush(self.color))
-        painter.drawEllipse(10, 10, 50, 50)  # 绘制小圆盘
+        painter.drawEllipse(10, 10, 50, 50)  # draw a circle with (x, y, width, height)
 
     def change_color(self, color):
         self.color = color

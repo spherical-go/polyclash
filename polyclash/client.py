@@ -11,7 +11,7 @@ if __name__ == "__main__":
 
     # Create a board and a city manager
     window = MainWindow()
-    window.resize(1600, 1200)
+    window.resize(2000, 1200)
     board.register_observer(window.sphere_view)
     board.register_observer(window.overlay_info)
 

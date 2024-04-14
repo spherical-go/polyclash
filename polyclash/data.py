@@ -56,3 +56,15 @@ class CityManager:
 
 
 city_manager = CityManager(cities)
+
+
+axis = np.zeros((8, 3), dtype=np.float_)
+axis[0] = np.mean(cities[0:15], axis=0)
+axis[1] = np.mean(cities[15:30], axis=0)
+axis[2] = np.mean(cities[30:45], axis=0)
+axis[3] = np.mean(cities[45:60], axis=0)
+axis[4] = - axis[0]
+axis[5] = - axis[1]
+axis[6] = - axis[2]
+axis[7] = - axis[3]
+axis = axis / np.linalg.norm(axis, axis=1)[:, np.newaxis]

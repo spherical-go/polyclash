@@ -59,15 +59,15 @@ class TestBoard(unittest.TestCase):
         cycle = [0, decoder[(0, 1)], 1, decoder[(1, 2)], 2, decoder[2, 3], 3, decoder[(3, 4)], 4, decoder[(4, 0)]]
         face = decoder[(0, 1, 2, 3, 4)]
         for pos in cycle:
-            board.board[pos] = BLACK
+            board.board[pos] = WHITE
         for pos in cycle:
             for n in neighbors[pos]:
                 if n not in cycle and n != face:
-                    board.board[n] = WHITE
+                    board.board[n] = BLACK
 
-        board.play(face, WHITE)
+        board.play(face, BLACK)
 
-        self.assertEqual(WHITE, board.board[face], f"The point {face} should be white.")
+        self.assertEqual(BLACK, board.board[face], f"The point {face} should be black.")
         for pos in cycle:
             self.assertEqual(board.board[pos], 0, f"The point {pos} should be empty.")
 

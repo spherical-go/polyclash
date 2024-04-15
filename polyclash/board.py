@@ -1,9 +1,31 @@
 import numpy as np
 
-from polyclash.data import neighbors
+from polyclash.data import neighbors, polysmalls, polylarges, polylarge_area, polysmall_area, total_area
 
 BLACK = 1
 WHITE = -1
+
+
+def calculate_area(boarddata, piece, area):
+    black_area, white_area, unclaimed_area = 0, 0, 0
+    parties = boarddata[piece]
+    parties_set = set(parties)
+    if BLACK not in parties_set and WHITE not in parties_set:
+        unclaimed_area += area
+    if BLACK in parties_set and WHITE not in parties_set:
+        black_area += area
+    if WHITE in parties_set and BLACK not in parties_set:
+        white_area += area
+    if BLACK in parties_set and WHITE in parties_set:
+        black_side, white_side = 0, 0
+        for part in parties:
+            if part == BLACK:
+                black_side += 1
+            if part == WHITE:
+                white_side += 1
+        black_area += area / (black_side + white_side) * black_side
+        white_area += area / (black_side + white_side) * white_side
+    return black_area, white_area, unclaimed_area
 
 
 class Board:
@@ -50,7 +72,7 @@ class Board:
     def remove_stones(self, point):
         color = self.board[point]
         self.board[point] = 0
-        self.notify_observers("remove_stones", point=point)
+        self.notify_observers("remove_stones", point=point, score=self.score())
 
         for neighbor in self.neighbors[point]:
             if self.board[neighbor] == color:
@@ -76,7 +98,7 @@ class Board:
             self.board[point] = 0
             raise ValueError("Invalid move: suicide is not allowed.")
 
-        self.notify_observers("add_stone", point=point, color=color)
+        self.notify_observers("add_stone", point=point, color=color, score=self.score())
 
     def genmove(self, color):
         from random import randint
@@ -86,6 +108,21 @@ class Board:
             if self.board[i] == 0:
                 candidate.append(i)
         return candidate[randint(len(candidate))]
+
+    def score(self):
+        total_black_area, total_white_area, total_unclaimed_area = 0, 0, 0
+        for piece in polysmalls:
+            black_area, white_area, unclaimed_area = calculate_area(self.board, piece, polysmall_area)
+            total_black_area += black_area
+            total_white_area += white_area
+            total_unclaimed_area += unclaimed_area
+        for piece in polylarges:
+            black_area, white_area, unclaimed_area = calculate_area(self.board, piece, polylarge_area)
+            total_black_area += black_area
+            total_white_area += white_area
+            total_unclaimed_area += unclaimed_area
+
+        return total_black_area / total_area, total_white_area / total_area, total_unclaimed_area / total_area
 
 
 board = Board()

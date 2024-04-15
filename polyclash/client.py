@@ -21,4 +21,5 @@ if __name__ == "__main__":
     window.move(int(x), int(y))
 
     window.show()
+    window.resize(2000, 1200)
     sys.exit(app.exec_())

@@ -11,6 +11,8 @@ idx_path = osp.abspath(osp.join(osp.dirname(__file__), "index.pkl"))
 npz_data = np.load(data_path)
 pentagons = npz_data['pentagons']
 triangles = npz_data['triangles']
+polysmalls = npz_data['polysmalls']
+polylarges = npz_data['polylarges']
 
 cities = npz_data['cities']
 triangle2faces = npz_data['triangle2faces']
@@ -68,3 +70,18 @@ axis[5] = - axis[1]
 axis[6] = - axis[2]
 axis[7] = - axis[3]
 axis = axis / np.linalg.norm(axis, axis=1)[:, np.newaxis]
+
+
+def get_areas():
+    phi = (1 + np.sqrt(5)) / 2
+    coefficients = np.array([1, 2, 0, -phi**2], dtype=np.float64)
+    roots = np.roots(coefficients)
+    xi = roots[np.isreal(roots)].real[0]
+    length = 2 * xi * np.sqrt(1 - xi)
+    triangle_area = np.sqrt(3) / 4 * length**2
+    pentagon_area = np.sqrt(25 + 10 * np.sqrt(5)) * length**2 / 4
+    total_area = 80 * triangle_area + 12 * pentagon_area
+    return triangle_area / 3, pentagon_area / 5, total_area
+
+
+polysmall_area, polylarge_area, total_area = get_areas()

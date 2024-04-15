@@ -1,9 +1,13 @@
 import numpy as np
 
-from polyclash.data import neighbors, polysmalls, polylarges, polylarge_area, polysmall_area, total_area
+from collections import OrderedDict
+from polyclash.data import neighbors, polysmalls, polylarges, polylarge_area, polysmall_area, total_area, encoder
 
 BLACK = 1
 WHITE = -1
+
+counter = 0
+turns = OrderedDict()
 
 
 def calculate_area(boarddata, piece, area):
@@ -83,8 +87,21 @@ class Board:
         self.notify_observers("switch_player", side=self.current_player)
 
     def play(self, point, color):
+        global counter
         if self.board[point] != 0:
             raise ValueError("Invalid move: position already occupied.")
+
+        if color != self.current_player:
+            raise ValueError("Invalid move: not the player's turn.")
+
+        if point >= 302:
+            raise ValueError("Invalid move: position not on the board.")
+
+        if color == BLACK and counter % 2 == 1:
+            raise ValueError("Invalid move: not the player's turn.")
+
+        if color == WHITE and counter % 2 == 0:
+            raise ValueError("Invalid move: not the player's turn.")
 
         self.board[point] = color
 
@@ -97,6 +114,9 @@ class Board:
             # 如果自己的棋也没有气，则为自杀棋，撤回落子
             self.board[point] = 0
             raise ValueError("Invalid move: suicide is not allowed.")
+
+        turns[counter] = encoder[point]
+        counter += 1
 
         self.notify_observers("add_stone", point=point, color=color, score=self.score())
 

@@ -26,7 +26,7 @@ indexer = pkl.load(open(idx_path, "rb"))
 decoder = {}
 for k, v in indexer.items():
     if len(k) == 1:
-        decoder[(k, )] = v
+        decoder[tuple([k[0]])] = v
     if len(k) == 2:
         decoder[tuple([k[0], k[1]])] = v
         decoder[tuple([k[1], k[0]])] = v

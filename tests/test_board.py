@@ -101,6 +101,21 @@ class TestBoard(unittest.TestCase):
             board.play(0, BLACK)
             self.assertTrue("Invalid move: position already occupied." in str(context.exception))
 
+    def test_play_case_3(self):
+        board = Board()
+        self.assertEqual(board.current_player, BLACK, f"Current_player should be {1}.")
+        for ix, step in enumerate([(5, 6, 7, 8, 9), (25, 26, 27, 28, 29),  (25, 29), (35, 36, 37, 38, 39),  (25, 26),
+            (45, 46, 47, 48, 49), (26, 27), (30, 31, 32, 33, 34), (27, 28), (21,)
+            ]):
+            pos = decoder[step]
+            board.play(pos, board.current_player)
+            board.switch_player()
+
+        pos = decoder[(25, 26, 27, 28, 29)]
+        self.assertEqual(board.board[pos], WHITE, f"The point {pos} should be white.")
+        board.play(decoder[(28, 29)], BLACK)
+        self.assertEqual(board.board[pos], 0, f"The point {pos} should be empty.")
+
 
 if __name__ == '__main__':
     unittest.main()

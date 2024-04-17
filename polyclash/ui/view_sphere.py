@@ -1,5 +1,6 @@
 import numpy as np
 import pyvista as pv
+import threading
 
 from pyvistaqt import QtInteractor
 from vtkmodules.vtkCommonCore import vtkCommand
@@ -29,47 +30,68 @@ def qimage(array):
     return qim
 
 
-class ActiveSphereView(QtInteractor):
-    def __init__(self, parent=None, status_bar=None, overlay_info=None, overlay_map=None):
-        super().__init__(parent)
-        self.picker = None
+class SphereView(QtInteractor):
+    def __init__(self, parent=None, off_screen=False):
+        super().__init__(parent, off_screen=off_screen)
         self.spheres = {}
-        self.cyclic_pad = 1
         self.initialize_interactor()
-        self.status_bar = status_bar
-        self.overlay_info = overlay_info
-        self.overlay_map = overlay_map
-        self.setup_scene()
-        self.overlay_map.set_sphere_view(self)
 
     def initialize_interactor(self):
-        self.show_axes = True
-        self.add_axes(interactive=True)
         self.set_background("darkgray")
         self.add_mesh(mesh, show_edges=True, color="lightblue", pickable=False, scalars=face_colors, rgba=True)
-
         for idx, city in enumerate(cities):
             sphere = pv.Sphere(radius=0.03, center=city)
             actor = self.add_mesh(sphere, color=stone_empty_color, pickable=True)
             self.spheres[idx] = actor
 
+    def handle_notification(self, message, **kwargs):
+        if message == "add_stone":
+            self.on_stone_added(kwargs["point"], kwargs["player"])
+        if message == "remove_stone":
+            self.on_stone_removed(kwargs["point"])
+        self.render()
+
+    def on_stone_added(self, point, color):
+        actor = self.spheres[point]
+        if color == BLACK:
+            actor.GetProperty().SetColor(stone_black_color[0], stone_black_color[1], stone_black_color[2])
+        else:
+            actor.GetProperty().SetColor(stone_white_color[0], stone_white_color[1], stone_white_color[2])
+        self.update()
+
+    def on_stone_removed(self, point):
+        actor = self.spheres[point]
+        actor.GetProperty().SetColor(stone_empty_color[0], stone_empty_color[1], stone_empty_color[2])
+        self.update()
+
+
+class ActiveSphereView(SphereView):
+    def __init__(self, parent=None, status_bar=None, overlay_info=None, overlay_map=None):
+        super().__init__(parent)
+        self.picker = None
+        self.cyclic_pad = 1
+        self.status_bar = status_bar
+        self.overlay_info = overlay_info
+        self.overlay_map = overlay_map
+        self.overlay_map.set_sphere_view(self)
+
+        self.show_axes = True
+        self.add_axes(interactive=True)
         self.camera.position = 6 * axis[0]
         self.camera.focal_point = np.zeros((3,))
         self.camera.view_up = axis[self.cyclic_pad]
-        self.update()
+
+        self.setup_scene()
 
     def setup_scene(self):
         self.picker = self.interactor.GetRenderWindow().GetInteractor().CreateDefaultPicker()
         self.interactor.AddObserver(vtkCommand.LeftButtonPressEvent, self.left_button_press_event)
 
-    def handle_notification(self, message, **kwargs):
-        if message == "remove_stones":
-            self.remove_stone(kwargs["point"])
-        self.render()
-
-    def remove_stone(self, point):
-        actor = self.spheres[point]
-        actor.GetProperty().SetColor(stone_empty_color[0], stone_empty_color[1], stone_empty_color[2])
+    def update(self):
+        super().update()
+        if self.isActiveWindow():
+            self.update_maps_view()
+            self.overlay_info.update()
 
     def left_button_press_event(self, obj, event):
         click_pos = self.interactor.GetEventPosition()
@@ -79,22 +101,16 @@ class ActiveSphereView(QtInteractor):
         if picked_actor:
             center = picked_actor.GetCenter()
             position = np.array([center[0], center[1], center[2]])
+            target_city = city_manager.find_nearest_city(position)
+            if target_city is not None:
+                try:
+                    board.play(target_city, board.current_player)
+                    board.switch_player()
 
-            nearest_city = city_manager.find_nearest_city(position)
-            try:
-                board.play(nearest_city, board.current_player)
-
-                if board.current_player == BLACK:
-                    picked_actor.GetProperty().SetColor(stone_black_color[0], stone_black_color[1], stone_black_color[2])
-                else:
-                    picked_actor.GetProperty().SetColor(stone_white_color[0], stone_white_color[1], stone_white_color[2])
-
-                board.switch_player()
-
-                self.update_maps_view()
-            except ValueError as e:
-                self.status_bar.showMessage(str(e))
-        self.interactor.GetRenderWindow().Render()
+                    board.autoplay(board.current_player)
+                    board.switch_player()
+                except ValueError as e:
+                    self.status_bar.showMessage(str(e))
         return
 
     def update_maps_view(self):
@@ -111,40 +127,9 @@ class ActiveSphereView(QtInteractor):
         self.update()
 
 
-class PassiveSphereView(QtInteractor):
+class PassiveSphereView(SphereView):
     def __init__(self):
         super().__init__(None, off_screen=True)
-        self.spheres = {}
-        self.initialize_interactor()
-
-    def initialize_interactor(self):
-        self.set_background("darkgray")
-        self.add_mesh(mesh, show_edges=True, color="lightblue", pickable=False, scalars=face_colors, rgba=True)
-        for idx, city in enumerate(cities):
-            sphere = pv.Sphere(radius=0.03, center=city)
-            actor = self.add_mesh(sphere, color=stone_empty_color, pickable=True)
-            self.spheres[idx] = actor
-        self.update()
-
-    def handle_notification(self, message, **kwargs):
-        if message == "add_stone":
-            self.on_stone_added(kwargs["point"], kwargs["color"])
-        if message == "remove_stones":
-            self.on_stone_removed(kwargs["point"])
-        self.render()
-
-    def on_stone_added(self, point, color):
-        actor = self.spheres[point]
-        if color == BLACK:
-            actor.GetProperty().SetColor(stone_black_color[0], stone_black_color[1], stone_black_color[2])
-        else:
-            actor.GetProperty().SetColor(stone_white_color[0], stone_white_color[1], stone_white_color[2])
-        self.update()
-
-    def on_stone_removed(self, point):
-        actor = self.spheres[point]
-        actor.GetProperty().SetColor(stone_empty_color[0], stone_empty_color[1], stone_empty_color[2])
-        self.update()
 
     def capture_view(self, camera_position, camera_focus, camera_up):
         self.camera.position = camera_position

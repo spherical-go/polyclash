@@ -56,5 +56,5 @@ class OverlayInfo(QWidget):
             self.change_color(color)
         if message == "add_stone":
             self.change_score(*kwargs['score'])
-        if message == "remove_stones":
+        if message == "remove_stone":
             self.change_score(*kwargs['score'])

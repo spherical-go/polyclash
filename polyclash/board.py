@@ -1,13 +1,12 @@
 import numpy as np
+import math
 
+from random import sample
 from collections import OrderedDict
-from polyclash.data import neighbors, polysmalls, polylarges, polylarge_area, polysmall_area, total_area, encoder
+from polyclash.data import cities, neighbors, polysmalls, polylarges, polylarge_area, polysmall_area, total_area, encoder
 
 BLACK = 1
 WHITE = -1
-
-counter = 0
-turns = OrderedDict()
 
 
 def calculate_area(boarddata, piece, area):
@@ -32,14 +31,27 @@ def calculate_area(boarddata, piece, area):
     return black_area, white_area, unclaimed_area
 
 
+def calculate_distance(point1, point2):
+    city1 = cities[point1]
+    city2 = cities[point2]
+    return np.linalg.norm(city1 - city2)
+
+
 class Board:
     def __init__(self):
         self.board_size = 302
         self.board = np.zeros([self.board_size])
         self.current_player = BLACK
         self.neighbors = neighbors
+        self.latest_removes = [[]]
+        self.black_suicides = set()
+        self.white_suicides = set()
+
+        self.counter = 0
+        self.turns = OrderedDict()
 
         self._observers = []
+        self.notification_enabled = True
 
     def register_observer(self, observer):
         if observer not in self._observers:
@@ -48,9 +60,16 @@ class Board:
     def unregister_observer(self, observer):
         self._observers.remove(observer)
 
+    def enable_notification(self):
+        self.notification_enabled = True
+
+    def disable_notification(self):
+        self.notification_enabled = False
+
     def notify_observers(self, message, **kwargs):
         for observer in self._observers:
-            observer.handle_notification(message, **kwargs)
+            if self.notification_enabled:
+                observer.handle_notification(message, **kwargs)
 
     def has_liberty(self, point, color=None, visited=None):
         if color is None:
@@ -73,61 +92,111 @@ class Board:
         # 如果所有路径都检查完毕，仍然没有发现有气，返回False
         return False
 
-    def remove_stones(self, point):
+    def remove_stone(self, point):
         color = self.board[point]
         self.board[point] = 0
-        self.notify_observers("remove_stones", point=point, score=self.score())
+        self.latest_removes[-1].append(point)
+        self.notify_observers("remove_stone", point=point, score=self.score())
 
         for neighbor in self.neighbors[point]:
             if self.board[neighbor] == color:
-                self.remove_stones(neighbor)
+                self.remove_stone(neighbor)
 
     def switch_player(self):
         self.current_player = -self.current_player
         self.notify_observers("switch_player", side=self.current_player)
 
-    def play(self, point, color):
+    def play(self, point, player, turn_check=True):
         global counter
         if self.board[point] != 0:
             raise ValueError("Invalid move: position already occupied.")
 
-        if color != self.current_player:
-            raise ValueError("Invalid move: not the player's turn.")
-
         if point >= 302:
             raise ValueError("Invalid move: position not on the board.")
 
-        if color == BLACK and counter % 2 == 1:
+        if player == BLACK and self.counter % 2 == 1:
             raise ValueError("Invalid move: not the player's turn.")
 
-        if color == WHITE and counter % 2 == 0:
+        if player == WHITE and self.counter % 2 == 0:
             raise ValueError("Invalid move: not the player's turn.")
 
-        self.board[point] = color
+        if turn_check and player != self.current_player:
+            raise ValueError("Invalid move: not the player's turn.")
+
+        if self.latest_removes and len(self.latest_removes[-1]) == 1 and point == self.latest_removes[-1][0]:
+            raise ValueError("Invalid move: ko rule violation.")
+
+        if player == BLACK and point in self.white_suicides:
+            self.white_suicides.remove(point)
+
+        if player == WHITE and point in self.black_suicides:
+            self.black_suicides.remove(point)
+
+        self.board[point] = player
+        # print(point, encoder[point], self.neighbors[point])
 
         for neighbor in self.neighbors[point]:
-            if self.board[neighbor] == -color:  # Opponent's stone
-                if not self.has_liberty(neighbor):
-                    self.remove_stones(neighbor)
+            if self.board[neighbor] == -player:  # Opponent's stone
+                if not self.has_liberty(neighbor, -player):
+                    self.remove_stone(neighbor)
 
         if not self.has_liberty(point):
             # 如果自己的棋也没有气，则为自杀棋，撤回落子
             self.board[point] = 0
+            if player == BLACK:
+                self.black_suicides.add(point)
+            else:
+                self.white_suicides.add(point)
             raise ValueError("Invalid move: suicide is not allowed.")
 
-        turns[counter] = encoder[point]
-        counter += 1
+        self.turns[self.counter] = encoder[point]
+        self.counter += 1
 
-        self.notify_observers("add_stone", point=point, color=color, score=self.score())
+        self.notify_observers("add_stone", point=point, player=player, score=self.score())
 
-    def genmove(self, color):
-        from random import randint
-        # 从盘面空闲处（值为 0 处）随机的选择一个位置
-        candidate = []
-        for i in range(self.board_size):
-            if self.board[i] == 0:
-                candidate.append(i)
-        return candidate[randint(len(candidate))]
+    def autoplay(self, player):
+        try:
+            self.disable_notification()
+            point = self.genmove(player)
+            self.enable_notification()
+            self.play(point, player)
+        except ValueError as e:
+            print(e)
+            self.autoplay(player)
+
+    def get_empties(self, player):
+        empty_points = set([ix for ix, point in enumerate(self.board) if point == 0])
+        if self.latest_removes and len(self.latest_removes[-1]) == 1 and self.latest_removes[-1][0] in empty_points:
+            empty_points.remove(self.latest_removes[-1][0])
+        if player == BLACK:
+            for point in self.black_suicides:
+                empty_points.remove(point)
+        if player == WHITE:
+            for point in self.white_suicides:
+                empty_points.remove(point)
+        return empty_points
+
+    def genmove(self, player):
+        best_score = -math.inf
+        best_potential = math.inf
+        best_move = None
+
+        for point in self.get_empties(player):
+            simulated_score, gain = self.simulate_score(0, point, player)
+            simulated_score = simulated_score + 2 * gain
+            if simulated_score > best_score:
+                best_score = simulated_score
+                best_potential = self.calculate_potential(point)
+                best_move = point
+            elif simulated_score == best_score:
+                potential = self.calculate_potential(point)
+                if potential < best_potential:
+                    best_potential = potential
+                    best_move = point
+
+        # print(best_score, best_potential)
+
+        return best_move
 
     def score(self):
         total_black_area, total_white_area, total_unclaimed_area = 0, 0, 0
@@ -143,6 +212,60 @@ class Board:
             total_unclaimed_area += unclaimed_area
 
         return total_black_area / total_area, total_white_area / total_area, total_unclaimed_area / total_area
+
+    def simulate_score(self, depth, point, player):
+        global counter
+
+        if depth == 1:
+            return 0, 0
+
+        trail = 2
+        self.latest_removes.append([])
+        black_area_ratio, white_area_ratio, unclaimed_area_ratio = 0, 0, 0
+        mean_rival_area_ratio, gain, mean_rival_gain = 0, 0, 0
+        try:
+            # 假设在point落子，计算得分，需要考虑复原棋盘的状态
+            self.play(point, player, turn_check=False)  # 模拟落子
+            black_area_ratio, white_area_ratio, unclaimed_area_ratio = self.score()  # 计算得分
+
+            empty_points = sample(self.get_empties(-player), trail)
+            total_rival_area_ratio, total_rival_gain = 0, 0
+            for rival_point in empty_points:
+                rival_area_ratio, rival_gain = self.simulate_score(depth + 1, rival_point, -player)  # 递归计算对手的得分
+                total_rival_area_ratio += rival_area_ratio
+                total_rival_gain += rival_gain
+            mean_rival_area_ratio = total_rival_area_ratio / trail
+            mean_rival_gain = total_rival_gain / trail
+        except ValueError as e:
+            print(e)
+            if 'suicide' in str(e):
+                raise e
+
+        self.board[point] = 0  # 恢复棋盘状态
+        gain = 0
+        if self.latest_removes and len(self.latest_removes) > 0:
+            for removed in self.latest_removes[-1]:
+                self.board[removed] = -self.current_player
+            gain = len(self.latest_removes[-1]) / len(self.board)
+            self.latest_removes.pop()
+        self.turns.pop(self.counter - 1)
+        self.counter -= 1
+
+        if player == BLACK:
+            # print(black_area_ratio, mean_rival_area_ratio, gain, mean_rival_gain)
+            return black_area_ratio - mean_rival_area_ratio, gain - mean_rival_gain
+        else:
+            # print(white_area_ratio, mean_rival_area_ratio, gain, mean_rival_gain)
+            return white_area_ratio - mean_rival_area_ratio, gain - mean_rival_gain
+
+    def calculate_potential(self, point):
+        potential = 0
+        for i, stone in enumerate(self.board):
+            if stone != 0:
+                distance = calculate_distance(point, i)
+                if distance > 0:
+                    potential += (1 / distance) * np.tanh(0.5  - self.counter / 302)
+        return potential
 
 
 board = Board()

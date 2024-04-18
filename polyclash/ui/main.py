@@ -1,4 +1,3 @@
-import pyvista as pv
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QAction, QMessageBox, qApp
 
@@ -54,6 +53,10 @@ class MainWindow(QMainWindow):
         newGameAction.triggered.connect(self.newGame)
         gameMenu.addAction(newGameAction)
 
+        joinGameAction = QAction('Join', self)
+        joinGameAction.triggered.connect(self.joinGame)
+        gameMenu.addAction(joinGameAction)
+
         endGameAction = QAction('End', self)
         endGameAction.triggered.connect(self.endGame)
         gameMenu.addAction(endGameAction)
@@ -65,6 +68,9 @@ class MainWindow(QMainWindow):
 
     def newGame(self):
         print("Start New Game...")
+
+    def joinGame(self):
+        print("Join Game...")
 
     def endGame(self):
         print("End Game...")

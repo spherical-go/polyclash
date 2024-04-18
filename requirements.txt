@@ -5,3 +5,9 @@ PyQt5
 pyvista
 pyvistaqt
 
+requests
+python-socketio[client]
+
+flask
+flask-socketio
+

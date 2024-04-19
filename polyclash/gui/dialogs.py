@@ -3,7 +3,7 @@ import os.path as osp
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QLineEdit, QComboBox, QPushButton, QMessageBox, QAction, QVBoxLayout
 from PyQt5.QtGui import QIcon
 
-from polyclash.api.api import get_server, connect
+from polyclash.api import get_server, connect
 
 
 png_copy_path = osp.abspath(osp.join(osp.dirname(__file__), "copy.png"))
@@ -130,7 +130,7 @@ class JoinGameDialog(QDialog):
         role = self.role_select.currentText().lower()
         key = self.key_input.text()
 
-        from polyclash.gui.workers.network import NetworkWorker
+        from polyclash.ui.workers.network import NetworkWorker
         self.window.network_worker = NetworkWorker(self.window, server=server, role=role, key=key)
         self.window.network_worker.start()
 

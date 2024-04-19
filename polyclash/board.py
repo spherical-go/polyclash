@@ -174,7 +174,7 @@ class Board:
         if player == WHITE:
             for point in self.white_suicides:
                 empty_points.remove(point)
-        return empty_points
+        return list(empty_points)
 
     def genmove(self, player):
         best_score = -math.inf

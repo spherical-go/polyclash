@@ -1,16 +1,15 @@
 import numpy as np
 import pyvista as pv
-import threading
+import polyclash.api as api
 
 from pyvistaqt import QtInteractor
 from vtkmodules.vtkCommonCore import vtkCommand
+from PyQt5.QtGui import QImage
 
 from polyclash.ui.constants import stone_empty_color, stone_black_color, stone_white_color
 from polyclash.ui.mesh import mesh, face_colors
 from polyclash.board import BLACK, board
-from polyclash.data import cities, city_manager, axis
-from PyQt5.QtGui import QImage
-
+from polyclash.data import cities, city_manager, axis, encoder
 
 hidden = None
 
@@ -105,10 +104,10 @@ class ActiveSphereView(SphereView):
             if target_city is not None:
                 try:
                     board.play(target_city, board.current_player)
+                    api.play(board.counter, encoder[target_city])
                     board.switch_player()
-
-                    board.autoplay(board.current_player)
-                    board.switch_player()
+                    # board.autoplay(board.current_player)
+                    # board.switch_player()
                 except ValueError as e:
                     self.status_bar.showMessage(str(e))
         return

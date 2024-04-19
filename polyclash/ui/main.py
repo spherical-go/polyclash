@@ -1,6 +1,11 @@
+import json
+import polyclash.api as api
+import polyclash.board as board
+
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QAction, QMessageBox, qApp
 
+from polyclash.ui.dialogs import StartGameDialog, JoinGameDialog
 from polyclash.ui.overly_map import OverlayMap
 from polyclash.ui.overly_info import OverlayInfo
 from polyclash.ui.view_sphere import ActiveSphereView, get_hidden
@@ -13,7 +18,10 @@ class MainWindow(QMainWindow):
         self.spheres = {}
         self.setWindowTitle("Polyclash")
 
-        self.init_menu()
+        self.network_worker = None
+        self.ai_worker = None
+
+        self.initMenu()
 
         self.margin = 20
         self.overlay_info = OverlayInfo(self)
@@ -34,13 +42,13 @@ class MainWindow(QMainWindow):
         self.frame.setLayout(self.layout)
         self.setCentralWidget(self.frame)
 
-        self.update_overlay_position()
+        self.updateOverlayPosition()
         self.overlay_info.raise_()
         self.overlay_map.raise_()
 
         get_hidden()
 
-    def init_menu(self):
+    def initMenu(self):
         menubar = self.menuBar()
 
         fileMenu = menubar.addMenu('File')
@@ -66,11 +74,33 @@ class MainWindow(QMainWindow):
         aboutAction.triggered.connect(self.about)
         helpMenu.addAction(aboutAction)
 
+    def handleNotification(self, message):
+        data = json.loads(message)
+        event = data['event']
+
+        if event == 'error':
+            self.status_bar.showMessage(f"Error: {data['message']}")
+            return
+        if event == 'joined':
+            api.player_token = data['player']
+            self.status_bar.showMessage(f"{data['role'].capitalize()} player joined...")
+            return
+        if event == 'played':
+            self.status_bar.showMessage(f"{data['role'].capitalize()} player played...")
+            current_role = 'black' if board.board.current_player == board.BLACK else 'white'
+            if data['role'] != current_role:
+                board.play(data['play'], board.board.current_player)
+            return
+
+        self.status_bar.showMessage(f"Unknown event...")
+
     def newGame(self):
-        print("Start New Game...")
+        dialog = StartGameDialog(self)
+        dialog.exec_()
 
     def joinGame(self):
-        print("Join Game...")
+        dialog = JoinGameDialog(self)
+        dialog.exec_()
 
     def endGame(self):
         print("End Game...")
@@ -78,7 +108,7 @@ class MainWindow(QMainWindow):
     def about(self):
         QMessageBox.about(self, "About", "PolyClash\nv0.1\nA spherical Go")
 
-    def update_overlay_position(self):
+    def updateOverlayPosition(self):
         overlay_width = self.width() // 6
         overlay_height = self.width() // 6
         self.overlay_info.setGeometry(self.margin, self.margin, overlay_width, overlay_height)
@@ -87,5 +117,16 @@ class MainWindow(QMainWindow):
         self.overlay_map.setGeometry(self.width() - overlay_width - self.margin, self.margin, overlay_width, overlay_height)
 
     def resizeEvent(self, event):
-        self.update_overlay_position()
+        self.updateOverlayPosition()
         super().resizeEvent(event)
+
+    def closeEvent(self, event):
+        try:
+            api.close_game()
+        except Exception as e:
+            print(f"Error: {str(e)}")
+        if self.network_worker:
+            self.network_worker.stop()
+        if self.ai_worker:
+            self.ai_worker.stop()
+        event.accept()

@@ -3,10 +3,10 @@ import pyvista as pv
 import colorsys
 
 from os import path as osp
-from polyclash.data import triangles, pentagons, triangle2faces, pentagon2faces
-from polyclash.ui.constants import face_continent_colors, face_oceanic_color
+from polyclash.data.data import triangles, pentagons, triangle2faces, pentagon2faces
+from polyclash.gui.constants import face_continent_colors, face_oceanic_color
 
-model_path = osp.abspath(osp.join(osp.dirname(__file__), "board.vtk"))
+model_path = osp.abspath(osp.join(osp.dirname(__file__), "mesh.vtk"))
 mesh = pv.read(model_path)
 
 

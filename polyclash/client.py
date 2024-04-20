@@ -2,19 +2,22 @@ import sys
 
 from PyQt5.QtWidgets import QApplication
 
-from polyclash.board import board
-from polyclash.ui.main import MainWindow
+from polyclash.game.board import BLACK, WHITE
+from polyclash.game.controller import SphericalGoController
+from polyclash.game.player import HUMAN, AI
+from polyclash.gui.main import MainWindow
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
+    controller = SphericalGoController()
+    controller.add_player(BLACK, kind=HUMAN)
+    controller.add_player(WHITE, kind=AI)
 
-    window = MainWindow()
+    window = MainWindow(controller=controller)
     screen = app.primaryScreen().geometry()
     width = screen.width() // 5 * 4
     height = screen.height() // 5 * 4
     window.resize(width, height)
-    board.register_observer(window.sphere_view)
-    board.register_observer(window.overlay_info)
 
     x = (screen.width() - width) // 2
     y = (screen.height() - height) // 2

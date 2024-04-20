@@ -2,6 +2,7 @@ numpy
 scipy
 
 PyQt5
+vtk
 pyvista
 pyvistaqt
 

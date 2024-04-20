@@ -1,19 +1,20 @@
 import json
-import polyclash.api as api
-import polyclash.board as board
+import polyclash.api.api as api
+import polyclash.game.board as board
 
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QAction, QMessageBox, qApp
 
-from polyclash.ui.dialogs import StartGameDialog, JoinGameDialog
-from polyclash.ui.overly_map import OverlayMap
-from polyclash.ui.overly_info import OverlayInfo
-from polyclash.ui.view_sphere import ActiveSphereView, get_hidden
+from polyclash.gui.dialogs import StartGameDialog, JoinGameDialog
+from polyclash.gui.overly_map import OverlayMap
+from polyclash.gui.overly_info import OverlayInfo
+from polyclash.gui.view_sphere import ActiveSphereView
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, controller=None):
         super(MainWindow, self).__init__(parent)
+        self.controller = controller
         self.face_colors = None
         self.spheres = {}
         self.setWindowTitle("Polyclash")
@@ -36,17 +37,19 @@ class MainWindow(QMainWindow):
         self.frame = QtWidgets.QFrame()
         self.layout = QtWidgets.QGridLayout()
 
-        self.sphere_view = ActiveSphereView(self.frame, self.status_bar, self.overlay_info, self.overlay_map)
+        self.sphere_view = ActiveSphereView(self, controller, self.status_bar, self.overlay_info, self.overlay_map)
         self.layout.addWidget(self.sphere_view, 0, 0, 1, 2)
 
         self.frame.setLayout(self.layout)
         self.setCentralWidget(self.frame)
 
+        self.controller.board.register_observer(self.sphere_view)
+        self.controller.board.register_observer(self.sphere_view.hidden)
+        self.controller.board.register_observer(self.overlay_info)
+
         self.updateOverlayPosition()
         self.overlay_info.raise_()
         self.overlay_map.raise_()
-
-        get_hidden()
 
     def initMenu(self):
         menubar = self.menuBar()

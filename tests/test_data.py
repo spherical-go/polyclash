@@ -1,5 +1,5 @@
 import unittest
-import polyclash.data as data
+import polyclash.data.data as data
 
 
 class TestData(unittest.TestCase):

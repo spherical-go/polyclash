@@ -3,7 +3,8 @@ import math
 
 from random import sample
 from collections import OrderedDict
-from polyclash.data import cities, neighbors, polysmalls, polylarges, polylarge_area, polysmall_area, total_area, encoder
+from polyclash.data.data import cities, neighbors, polysmalls, polylarges, polylarge_area, polysmall_area, total_area, encoder
+
 
 BLACK = 1
 WHITE = -1
@@ -102,6 +103,16 @@ class Board:
             if self.board[neighbor] == color:
                 self.remove_stone(neighbor)
 
+    def reset(self):
+        self.board = np.zeros([self.board_size])
+        self.current_player = BLACK
+        self.latest_removes = [[]]
+        self.black_suicides = set()
+        self.white_suicides = set()
+        self.counter = 0
+        self.turns = OrderedDict()
+        self.notify_observers("reset")
+
     def switch_player(self):
         self.current_player = -self.current_player
         self.notify_observers("switch_player", side=self.current_player)
@@ -153,16 +164,6 @@ class Board:
         self.counter += 1
 
         self.notify_observers("add_stone", point=point, player=player, score=self.score())
-
-    def autoplay(self, player):
-        try:
-            self.disable_notification()
-            point = self.genmove(player)
-            self.enable_notification()
-            self.play(point, player)
-        except ValueError as e:
-            print(e)
-            self.autoplay(player)
 
     def get_empties(self, player):
         empty_points = set([ix for ix, point in enumerate(self.board) if point == 0])
@@ -267,5 +268,8 @@ class Board:
                     potential += (1 / distance) * np.tanh(0.5  - self.counter / 302)
         return potential
 
+    def is_game_over(self):
+        return len(self.get_empties(self.current_player)) == 0
 
-board = Board()
+    def result(self):
+        return {}

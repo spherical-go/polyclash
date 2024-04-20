@@ -1,7 +1,7 @@
 import unittest
 
-from polyclash.board import Board, BLACK, WHITE
-from polyclash.data import neighbors, decoder
+from polyclash.game.board import Board, BLACK, WHITE
+from polyclash.data.data import neighbors, decoder
 
 
 class TestBoard(unittest.TestCase):

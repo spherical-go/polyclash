@@ -2,8 +2,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainter, QBrush, QColor
 from PyQt5.QtWidgets import QWidget
 
-from polyclash.board import BLACK
-from polyclash.ui.constants import stone_black_color, stone_white_color
+from polyclash.game.board import BLACK
+from polyclash.gui.constants import stone_black_color, stone_white_color
 
 
 black = QColor(*[int(255 * elm) for elm in stone_black_color])

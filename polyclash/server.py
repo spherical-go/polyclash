@@ -3,7 +3,7 @@ import secrets
 from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, join_room, emit
 
-from polyclash.data import decoder
+from polyclash.data.data import decoder
 
 secret_key = secrets.token_hex(48)
 app = Flask(__name__)

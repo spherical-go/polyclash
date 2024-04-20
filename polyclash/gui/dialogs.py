@@ -130,7 +130,7 @@ class JoinGameDialog(QDialog):
         role = self.role_select.currentText().lower()
         key = self.key_input.text()
 
-        from polyclash.gui.workers.network import NetworkWorker
+        from polyclash.workers.network import NetworkWorker
         self.window.network_worker = NetworkWorker(self.window, server=server, role=role, key=key)
         self.window.network_worker.start()
 

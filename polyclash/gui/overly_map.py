@@ -49,7 +49,6 @@ class OverlayMap(QWidget):
                     # only when the scaled image is not cached, scale the image
                     self.scaled_images[row][col] = self.images[row][col].scaled(img_width, img_height,
                                                                                 Qt.KeepAspectRatio)
-
                 img = self.scaled_images[row][col]
                 if img:
                     x = col * img_width

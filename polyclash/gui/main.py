@@ -37,14 +37,13 @@ class MainWindow(QMainWindow):
         self.frame = QtWidgets.QFrame()
         self.layout = QtWidgets.QGridLayout()
 
-        self.sphere_view = ActiveSphereView(self, controller, self.status_bar, self.overlay_info, self.overlay_map)
+        self.sphere_view = ActiveSphereView(self.frame, controller, self.status_bar, self.overlay_info, self.overlay_map)
         self.layout.addWidget(self.sphere_view, 0, 0, 1, 2)
 
         self.frame.setLayout(self.layout)
         self.setCentralWidget(self.frame)
 
         self.controller.board.register_observer(self.sphere_view)
-        self.controller.board.register_observer(self.sphere_view.hidden)
         self.controller.board.register_observer(self.overlay_info)
 
         self.updateOverlayPosition()

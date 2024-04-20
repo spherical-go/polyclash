@@ -1,6 +1,5 @@
 import numpy as np
 import pyvista as pv
-import polyclash.api.api as api
 
 from pyvistaqt import QtInteractor
 from vtkmodules.vtkCommonCore import vtkCommand
@@ -9,7 +8,7 @@ from PyQt5.QtGui import QImage
 from polyclash.gui.constants import stone_empty_color, stone_black_color, stone_white_color
 from polyclash.gui.mesh import mesh, face_colors
 from polyclash.game.board import BLACK
-from polyclash.data.data import cities, city_manager, axis, encoder
+from polyclash.data.data import cities, city_manager, axis
 
 hidden = None
 
@@ -30,11 +29,11 @@ def qimage(array):
 
 
 class SphereView(QtInteractor):
-    def __init__(self, parent=None, controller=None, off_screen=False):
+    def __init__(self, parent=None, off_screen=False):
         super().__init__(parent, off_screen=off_screen)
         self.spheres = {}
+        self.cyclic_pad = 1
         self.initialize_interactor()
-        self.controller = controller
 
     def initialize_interactor(self):
         self.set_background("darkgray")
@@ -71,12 +70,21 @@ class SphereView(QtInteractor):
         actor.GetProperty().SetColor(stone_empty_color[0], stone_empty_color[1], stone_empty_color[2])
         self.update()
 
+    def change_view(self, row, col):
+        print(row, col)
+        self.camera.position = 6 * axis[row + 4 * col]
+        self.camera.focal_point = np.zeros((3,))
+        self.camera.view_up = axis[(row + self.cyclic_pad) % 4 + 4 * col]
+        print(self.camera.position, self.camera.focal_point, self.camera.view_up)
+        self.reset_camera()
+        self.render()
+
 
 class ActiveSphereView(SphereView):
     def __init__(self, parent=None, controller=None, status_bar=None, overlay_info=None, overlay_map=None):
-        super().__init__(parent, controller)
+        super().__init__(parent)
+        self.controller = controller
         self.picker = None
-        self.cyclic_pad = 1
         self.status_bar = status_bar
         self.overlay_info = overlay_info
         self.overlay_map = overlay_map
@@ -90,8 +98,6 @@ class ActiveSphereView(SphereView):
 
         self.setup_scene()
 
-        self.hidden = PassiveSphereView(controller)
-
     def setup_scene(self):
         self.picker = self.interactor.GetRenderWindow().GetInteractor().CreateDefaultPicker()
         self.interactor.AddObserver(vtkCommand.LeftButtonPressEvent, self.left_button_press_event)
@@ -103,7 +109,6 @@ class ActiveSphereView(SphereView):
             self.overlay_info.update()
 
     def left_button_press_event(self, obj, event):
-        board = self.controller.board
         click_pos = self.interactor.GetEventPosition()
         self.picker.Pick(click_pos[0], click_pos[1], 0, self.renderer)
 
@@ -114,33 +119,34 @@ class ActiveSphereView(SphereView):
             target_city = city_manager.find_nearest_city(position)
             if target_city is not None:
                 try:
-                    self.controller.playerPlaced.emit(board.current_player, target_city)
+                    self.controller.play(self.controller.board.current_player, target_city)
                 except ValueError as e:
                     self.status_bar.showMessage(str(e))
         return
 
     def update_maps_view(self):
-        for row in range(self.overlay_map.rows):
-            for col in range(self.overlay_map.columns):
-                img = self.hidden.capture_view(6 * axis[row + self.overlay_map.rows * col], np.zeros((3,)),
-                                                axis[(row + self.cyclic_pad) % self.overlay_map.rows + self.overlay_map.rows * col])
-                self.overlay_map.set_image(row, col, img)
-
-    def change_view(self, row, col):
-        self.camera.position = 6 * axis[row + self.overlay_map.rows * col]
-        self.camera.focal_point = np.zeros((3,))
-        self.camera.view_up = axis[(row + self.cyclic_pad) % self.overlay_map.rows + self.overlay_map.rows * col]
-        self.update()
+        hidden = get_hidden(self.controller)
+        for col in range(self.overlay_map.columns):
+            for row in range(self.overlay_map.rows):
+                hidden.change_view(row, col)
+                image = hidden.capture_view()
+                print(hidden.camera.position, hidden.camera.focal_point, hidden.camera.view_up)
+                self.overlay_map.set_image(row, col, image)
 
 
 class PassiveSphereView(SphereView):
-    def __init__(self, controller=None):
-        super().__init__(None, controller=controller, off_screen=True)
+    def __init__(self):
+        super().__init__(None, off_screen=True)
 
-    def capture_view(self, camera_position, camera_focus, camera_up):
-        self.camera.position = camera_position
-        self.camera.focal_point = camera_focus * 0
-        self.camera.view_up = camera_up
-        self.update()
-        img = self.screenshot(transparent_background=True, return_img=True)
+    def capture_view(self):
+        img = self.screenshot(transparent_background=True, return_img=True, window_size=(256, 256))
         return qimage(img)
+
+
+def get_hidden(controller=None):
+    global hidden
+    if hidden is None:
+        hidden = PassiveSphereView()
+        if controller:
+            controller.board.register_observer(hidden)
+    return hidden

@@ -3,7 +3,7 @@ import os.path as osp
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QLineEdit, QComboBox, QPushButton, QMessageBox, QAction, QVBoxLayout
 from PyQt5.QtGui import QIcon
 
-from polyclash.api import get_server, connect
+from polyclash.api.api import get_server, connect
 
 
 png_copy_path = osp.abspath(osp.join(osp.dirname(__file__), "copy.png"))

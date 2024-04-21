@@ -6,7 +6,6 @@ from polyclash.game.board import BLACK, WHITE
 from polyclash.game.controller import SphericalGoController
 from polyclash.game.player import HUMAN, AI
 from polyclash.gui.main import MainWindow
-from polyclash.gui.view_sphere import get_hidden
 
 
 if __name__ == "__main__":
@@ -15,9 +14,6 @@ if __name__ == "__main__":
     controller = SphericalGoController()
     controller.add_player(BLACK, kind=HUMAN)
     controller.add_player(WHITE, kind=AI)
-
-    hidden = get_hidden(controller)
-    hidden.change_view(0, 0)
 
     window = MainWindow(controller=controller)
     screen = app.primaryScreen().geometry()

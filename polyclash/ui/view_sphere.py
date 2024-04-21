@@ -136,7 +136,7 @@ class PassiveSphereView(SphereView):
         self.camera.focal_point = camera_focus * 0
         self.camera.view_up = camera_up
         self.update()
-        img = self.screenshot(transparent_background=True, return_img=True)
+        img = self.screenshot(transparent_background=True, return_img=True, scale=2)
         return qimage(img)
 
 

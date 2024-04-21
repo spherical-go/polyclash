@@ -11,6 +11,7 @@ from polyclash.gui.main import MainWindow
 if __name__ == "__main__":
     app = QApplication(sys.argv)
 
+    window = MainWindow(controller=controller)
     controller = SphericalGoController()
     controller.add_player(BLACK, kind=HUMAN)
     controller.add_player(WHITE, kind=AI)

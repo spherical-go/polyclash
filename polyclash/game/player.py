@@ -1,6 +1,7 @@
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from polyclash.game.timer import Timer
+from polyclash.workers.ai_play import AIPlayerWorker
 
 # kind
 HUMAN = 0
@@ -16,7 +17,7 @@ class Player(QObject):
         self.kind = kind
         self.side = kwargs.get("side")
         self.board = kwargs.get("board")
-        self.timer = Timer()
+        self.timer = Timer(3600)
         self.stonePlaced.connect(self.play)  # Connect signal to slot
 
     def play(self, position):
@@ -34,15 +35,23 @@ class HumanPlayer(Player):
 class AIPlayer(Player):
     def __init__(self, **kwargs):
         super().__init__(kind=AI, **kwargs)
+        self.worker = AIPlayerWorker(self)
 
     def auto_place(self):
-        try:
-            self.board.disable_notification()
-            position = self.board.genmove(self.side)
-            self.board.enable_notification()
-            self.stonePlaced.emit(position)
-        except ValueError as e:
-            self.auto_place()
+        while self.board.current_player == self.side:
+            try:
+                self.board.disable_notification()
+                position = self.board.genmove(self.side)
+                self.board.enable_notification()
+                self.play(position)
+                break  # Exit the loop if move was successful
+            except ValueError:
+                continue  # Try again if an error occurred
+
+    def stop_worker(self):
+        if self.worker.isRunning():
+            self.worker.stop()
+            self.worker.wait()
 
 
 class RemotePlayer(Player):

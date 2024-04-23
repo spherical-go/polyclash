@@ -51,12 +51,11 @@ class SphereView(QtInteractor):
             self.on_stone_added(kwargs["point"], kwargs["player"])
         if message == "remove_stone":
             self.on_stone_removed(kwargs["point"])
-        self.render()
+        self.update()
 
     def on_reset(self):
-        for actor in self.spheres:
+        for ix, actor in self.spheres.items():
             actor.GetProperty().SetColor(stone_empty_color[0], stone_empty_color[1], stone_empty_color[2])
-        self.update()
 
     def on_stone_added(self, point, color):
         actor = self.spheres[point]
@@ -64,21 +63,16 @@ class SphereView(QtInteractor):
             actor.GetProperty().SetColor(stone_black_color[0], stone_black_color[1], stone_black_color[2])
         else:
             actor.GetProperty().SetColor(stone_white_color[0], stone_white_color[1], stone_white_color[2])
-        self.update()
 
     def on_stone_removed(self, point):
         actor = self.spheres[point]
         actor.GetProperty().SetColor(stone_empty_color[0], stone_empty_color[1], stone_empty_color[2])
-        self.update()
 
     def change_view(self, row, col):
-        print(row, col)
         self.camera.position = 6 * axis[row + 4 * col]
         self.camera.focal_point = np.zeros((3,))
         self.camera.view_up = axis[(row + self.cyclic_pad) % 4 + 4 * col]
-        print(self.camera.position, self.camera.focal_point, self.camera.view_up)
-        self.reset_camera()
-        self.render()
+        self.update()
 
 
 class ActiveSphereView(SphereView):
@@ -98,6 +92,9 @@ class ActiveSphereView(SphereView):
         self.camera.view_up = axis[self.cyclic_pad]
 
         self.setup_scene()
+
+        self.hidden = PassiveSphereView()
+        self.controller.board.register_observer(self.hidden)
 
     def setup_scene(self):
         self.picker = self.interactor.GetRenderWindow().GetInteractor().CreateDefaultPicker()
@@ -120,18 +117,16 @@ class ActiveSphereView(SphereView):
             target_city = city_manager.find_nearest_city(position)
             if target_city is not None:
                 try:
-                    self.controller.play(self.controller.board.current_player, target_city)
+                    self.controller.player_played(target_city)
                 except ValueError as e:
                     self.status_bar.showMessage(str(e))
         return
 
     def update_maps_view(self):
-        hidden = get_hidden(self.controller)
         for col in range(self.overlay_map.columns):
             for row in range(self.overlay_map.rows):
-                hidden.change_view(row, col)
-                image = hidden.capture_view()
-                print(hidden.camera.position, hidden.camera.focal_point, hidden.camera.view_up)
+                self.hidden.change_view(row, col)
+                image = self.hidden.capture_view()
                 self.overlay_map.set_image(row, col, image)
 
 
@@ -140,14 +135,5 @@ class PassiveSphereView(SphereView):
         super().__init__(None, off_screen=True)
 
     def capture_view(self):
-        img = self.screenshot(transparent_background=True, return_img=True, window_size=(256, 256))
+        img = self.screenshot(transparent_background=True, return_img=True, scale=2)
         return qimage(img)
-
-
-def get_hidden(controller=None):
-    global hidden
-    if hidden is None:
-        hidden = PassiveSphereView()
-        if controller:
-            controller.board.register_observer(hidden)
-    return hidden

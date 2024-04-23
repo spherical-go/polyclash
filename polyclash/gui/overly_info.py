@@ -54,6 +54,9 @@ class OverlayInfo(QWidget):
         if message == "switch_player":
             color = black if kwargs["side"] == BLACK else white
             self.change_color(color)
+        if message == "reset":
+            self.change_color(BLACK)
+            self.change_score(0, 0, 1)
         if message == "add_stone":
             self.change_score(*kwargs['score'])
         if message == "remove_stone":

@@ -46,7 +46,6 @@ class MainWindow(QMainWindow):
         self.frame.setLayout(self.layout)
         self.setCentralWidget(self.frame)
 
-        self.controller.board.register_observer(self)
         self.controller.board.register_observer(self.sphere_view)
         self.controller.board.register_observer(self.overlay_info)
 
@@ -93,19 +92,19 @@ class MainWindow(QMainWindow):
         self.sphere_view.update_maps_view()
         self.overlay_info.update()
 
-    def handle_notification(self, event, **kwargs):
+    def handle_network_notification(self, event, data):
         if event == 'error':
-            self.status_bar.showMessage(f"Error: {kwargs['message']}")
+            self.status_bar.showMessage(f"Error: {data['message']}")
             return
         if event == 'joined':
-            api.player_token = kwargs['player']
-            self.status_bar.showMessage(f"{kwargs['role'].capitalize()} player joined...")
+            api.player_token = data['player']
+            self.status_bar.showMessage(f"{data['role'].capitalize()} player joined...")
             return
         if event == 'played':
-            self.status_bar.showMessage(f"{kwargs['role'].capitalize()} player played...")
+            self.status_bar.showMessage(f"{data['role'].capitalize()} player played...")
             current_role = 'black' if board.board.current_player == board.BLACK else 'white'
-            if kwargs['role'] != current_role:
-                board.play(kwargs['play'], board.board.current_player)
+            if data['role'] != current_role:
+                board.play(data['play'], board.board.current_player)
             return
 
     def localMode(self):

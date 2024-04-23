@@ -1,6 +1,9 @@
 import os.path as osp
 
-from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QLineEdit, QComboBox, QPushButton, QMessageBox, QAction, QVBoxLayout
+from urllib.parse import urlparse
+
+from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QLineEdit, QComboBox, QPushButton, QMessageBox, QAction, \
+    QVBoxLayout
 from PyQt5.QtGui import QIcon
 
 from polyclash.api.api import get_server, connect
@@ -8,6 +11,14 @@ from polyclash.game.board import BLACK, WHITE
 from polyclash.game.controller import LOCAL
 
 png_copy_path = osp.abspath(osp.join(osp.dirname(__file__), "copy.png"))
+
+
+def is_valid_url(url):
+    try:
+        result = urlparse(url)
+        return all([result.scheme, result.netloc])
+    except ValueError:
+        return False
 
 
 class LocalGameDialog(QDialog):
@@ -98,13 +109,24 @@ class NetworkGameDialog(QDialog):
 
     def on_connect_clicked(self):
         server = self.server_input.text()
-        black_key, white_key, viewer_key = connect(server, None)
-        if black_key:
-            self.black_key.setText(black_key)
-            self.white_key.setText(white_key)
-            self.viewer_key.setText(viewer_key)
-        else:
-            QMessageBox.critical(self, 'Error', 'Failed to connect to the server')
+        if not server:
+            QMessageBox.critical(self, 'Error', 'Server address is required')
+            return
+        if not is_valid_url(server):
+            QMessageBox.critical(self, 'Error', 'Invalid server address')
+            return
+
+        try:
+            black_key, white_key, viewer_key = connect(server, None)
+            if black_key:
+                self.black_key.setText(black_key)
+                self.white_key.setText(white_key)
+                self.viewer_key.setText(viewer_key)
+            else:
+                QMessageBox.critical(self, 'Error', 'Failed to connect to the server')
+        except ValueError as e:
+            QMessageBox.critical(self, 'Error', str(e))
+            self.close()
 
     def on_close_clicked(self):
         self.close()
@@ -130,7 +152,7 @@ class JoinGameDialog(QDialog):
         self.role_select = QComboBox(self)
         self.role_select.addItem('Black')
         self.role_select.addItem('White')
-        self.role_select.addItem('Audience')
+        self.role_select.addItem('Viewer')
         layout.addWidget(self.role_select)
 
         layout.addWidget(QLabel('Key'))
@@ -154,4 +176,3 @@ class JoinGameDialog(QDialog):
         self.window.network_worker.start()
 
         self.close()
-

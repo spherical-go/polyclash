@@ -4,7 +4,7 @@ from PyQt5.QtCore import QThread, pyqtSignal
 
 
 class NetworkWorker(QThread):
-    messageReceived = pyqtSignal(str, str)
+    messageReceived = pyqtSignal(str, object)
 
     def __init__(self, parent=None, server=None, role=None, key=None):
         super(NetworkWorker, self).__init__(parent)
@@ -23,20 +23,17 @@ class NetworkWorker(QThread):
         @sio.event
         def joined(data):
             print('joined... ', data)
-            data = dict(data)
-            self.messageReceived.emit('joined', json.dumps(data))
+            self.messageReceived.emit('joined', data)
 
         @sio.event
         def played(data):
             print('played... ', data)
-            data = dict(data)
-            self.messageReceived.emit('played', json.dumps(data))
+            self.messageReceived.emit('played', data)
 
         @sio.event
         def error(data):
             print('error... ', data)
-            data = dict(data)
-            self.messageReceived.emit('error', json.dumps(data))
+            self.messageReceived.emit('error', data)
 
         @sio.event
         def disconnect():
@@ -45,7 +42,7 @@ class NetworkWorker(QThread):
                 sio.connect(self.server)
 
         self.sio = sio
-        self.messageReceived.connect(parent.handle_notification)
+        self.messageReceived.connect(parent.handle_network_notification)
 
     def run(self):
         self.sio.connect(self.server)

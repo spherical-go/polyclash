@@ -20,8 +20,8 @@ def connect(server, token):
         data = resp.json()
         black_key = data.get('black_key')
         white_key = data.get('white_key')
-        audience_key = data.get('audience_key')
-        return black_key, white_key, audience_key
+        viewer_key = data.get('viewer_key')
+        return black_key, white_key, viewer_key
     else:
         raise ValueError(resp.json().get('message'))
 

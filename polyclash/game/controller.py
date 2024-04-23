@@ -28,6 +28,7 @@ class SphericalGoController(QObject):
     def __init__(self, mode=LOCAL, board=None):
         super().__init__()
         self.mode = mode
+        self.suspended_player = None
         self.players = {}
         self.winner = None
         self.result = None
@@ -46,6 +47,9 @@ class SphericalGoController(QObject):
         self.players = {}
         self.board.reset()
 
+    def suspend_player(self, side):
+        self.suspended_player = side
+
     def add_player(self, side, kind=HUMAN, **kwargs):
         if self.mode == LOCAL and kind == REMOTE:
             raise InvalidPlayerError("Invalid player kind for local game")
@@ -57,7 +61,7 @@ class SphericalGoController(QObject):
         player.stonePlaced.connect(self.player_played)
 
     def check_ready(self):
-        if len(self.players) == 2:
+        if len(self.players) > 0:
             return True
         return False
 
@@ -89,8 +93,9 @@ class SphericalGoController(QObject):
         if self.board.is_game_over():
             self.end_game()
         else:
-            player = self.players[side]
-            player.play(placement)
+            # player = self.players[side]
+            # player.play(placement)
+            self.board.play(placement, side)
             if self.mode == NETWORK:
                 api.play(self.board.counter, encoder[placement])
             self.switch_player()

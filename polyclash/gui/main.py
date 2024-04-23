@@ -8,6 +8,9 @@ import polyclash.game.board as board
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QAction, QMessageBox, qApp, QMenu
 
+from polyclash.data.data import decoder
+from polyclash.game.controller import NETWORK
+from polyclash.game.player import HUMAN, REMOTE
 from polyclash.gui.dialogs import NetworkGameDialog, JoinGameDialog, LocalGameDialog
 from polyclash.gui.overly_map import OverlayMap
 from polyclash.gui.overly_info import OverlayInfo
@@ -67,7 +70,7 @@ class MainWindow(QMainWindow):
         localModeAction.triggered.connect(self.localMode)
         gameMenu.addAction(localModeAction)
 
-        networkMenu = QMenu('Network', self)
+        networkMenu = QMenu('Network mode', self)
         gameMenu.addMenu(networkMenu)
 
         newGameAction = QAction('New', self)
@@ -78,7 +81,7 @@ class MainWindow(QMainWindow):
         joinGameAction.triggered.connect(self.joinGame)
         networkMenu.addAction(joinGameAction)
 
-        endGameAction = QAction('End', self)
+        endGameAction = QAction('End game', self)
         endGameAction.triggered.connect(self.endGame)
         gameMenu.addAction(endGameAction)
 
@@ -97,14 +100,30 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f"Error: {data['message']}")
             return
         if event == 'joined':
-            api.player_token = data['player']
             self.status_bar.showMessage(f"{data['role'].capitalize()} player joined...")
+
+            role = board.BLACK if data['role'] == 'black' else board.WHITE
+            if role == self.controller.suspended_player:
+                self.controller.add_player(role, kind=HUMAN, token=data['token'])
+                api.player_token = data['token']
+            else:
+                self.controller.add_player(role, kind=REMOTE)
+
+            if self.controller.check_ready():
+                self.controller.start_game()
+
             return
         if event == 'played':
             self.status_bar.showMessage(f"{data['role'].capitalize()} player played...")
-            current_role = 'black' if board.board.current_player == board.BLACK else 'white'
+            current_role = 'black' if self.controller.board.current_player == board.BLACK else 'white'
             if data['role'] != current_role:
-                board.play(data['play'], board.board.current_player)
+                self.status_bar.showMessage(f"{data['role'].capitalize()} player mismatched with current turn...")
+                return
+            if data['steps'] != self.controller.board.counter:
+                self.status_bar.showMessage(f"{data['role'].capitalize()} player mismatched with current steps...")
+                return
+
+            self.controller.play(self.controller.board.current_player, decoder[data['play']])
             return
 
     def localMode(self):

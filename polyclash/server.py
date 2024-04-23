@@ -28,17 +28,17 @@ def new_game():
         game_id = secrets.token_hex(8)
         black_key = secrets.token_hex(8)
         white_key = secrets.token_hex(8)
-        audience_key = secrets.token_hex(8)
+        viewer_key = secrets.token_hex(8)
 
         games[game_id] = {
-            'keys': {'black': black_key, 'white': white_key, 'audience': audience_key},
-            'players': {}, 'audiences': [], 'plays': []
+            'keys': {'black': black_key, 'white': white_key, 'viewer': viewer_key},
+            'players': {}, 'viewers': [], 'plays': []
         }
         rooms[black_key] = game_id
         rooms[white_key] = game_id
-        rooms[audience_key] = game_id
+        rooms[viewer_key] = game_id
 
-        return jsonify(game_id=game_id, black_key=black_key, white_key=white_key, audience_key=audience_key), 200
+        return jsonify(game_id=game_id, black_key=black_key, white_key=white_key, viewer_key=viewer_key), 200
     except Exception as e:
         return jsonify({'message': str(e)}), 500
 
@@ -54,11 +54,11 @@ def close_game():
         if game_id in games:
             del rooms[games[game_id]['keys']['black']]
             del rooms[games[game_id]['keys']['white']]
-            del rooms[games[game_id]['keys']['audience']]
+            del rooms[games[game_id]['keys']['viewer']]
             del rooms[games[game_id]['players']['black']]
             del rooms[games[game_id]['players']['white']]
-            for audience_id in games[game_id]['audiences']:
-                del rooms[audience_id]
+            for viewer_id in games[game_id]['viewers']:
+                del rooms[viewer_id]
             del games[game_id]
             return jsonify({'message': 'Game closed'}), 200
         else:
@@ -126,35 +126,39 @@ def on_join(data):
             role = 'black'
         elif key == games[game_id]['keys']['white']:
             role = 'white'
+        elif key == games[game_id]['keys']['viewer']:
+            role = 'viewer'
+        else:
+            emit('error', {'message': 'Invalid key'})
 
         if role == 'black':
             if 'black' in games[game_id]['players']:
                 emit('error', {'message': 'Role had been taken'})
                 return
-            player_id = secrets.token_urlsafe(24)
-            rooms[player_id] = game_id
-            games[game_id]['players']['black'] = player_id
+            token = secrets.token_urlsafe(24)
+            rooms[token] = game_id
+            games[game_id]['players']['black'] = token
             join_room(game_id)
-            emit('joined', {'role': 'black', 'player': player_id, 'plays': games[game_id]['plays']}, room=game_id)
+            emit('joined', {'role': 'black', 'token': token, 'plays': games[game_id]['plays']}, room=game_id)
             return
 
         if role == 'white':
             if 'white' in games[game_id]['players']:
                 emit('error', {'message': 'Role had been taken'})
                 return
-            player_id = secrets.token_urlsafe(24)
-            rooms[player_id] = game_id
-            games[game_id]['players']['white'] = player_id
+            token = secrets.token_urlsafe(24)
+            rooms[token] = game_id
+            games[game_id]['players']['white'] = token
             join_room(game_id)
-            emit('joined', {'role': 'white', 'player': player_id, 'plays': games[game_id]['plays']}, room=game_id)
+            emit('joined', {'role': 'white', 'token': token, 'plays': games[game_id]['plays']}, room=game_id)
             return
 
-        if role == 'audience':
-            audience_id = secrets.token_urlsafe(24)
-            rooms[audience_id] = game_id
-            games[game_id]['audiences'].append(audience_id)
+        if role == 'viewer':
+            token = secrets.token_urlsafe(24)
+            rooms[token] = game_id
+            games[game_id]['viewers'].append(token)
             join_room(game_id)
-            emit('joined', {'role': 'audience', 'audience_id': audience_id, 'plays': games[game_id]['plays']}, room=game_id)
+            emit('joined', {'role': 'viewer', 'token': token, 'plays': games[game_id]['plays']}, room=game_id)
             return
 
         emit('error', {'message': 'Invalid role'})

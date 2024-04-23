@@ -57,8 +57,7 @@ class AIPlayer(Player):
 class RemotePlayer(Player):
     def __init__(self, **kwargs):
         super().__init__(kind=REMOTE, **kwargs)
-        self.key = kwargs.get("key")
-        self.network = kwargs.get("network")
+        self.token = kwargs.get("token")
 
 
 class PlayerFactory:

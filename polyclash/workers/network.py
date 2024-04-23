@@ -45,9 +45,12 @@ class NetworkWorker(QThread):
         self.messageReceived.connect(parent.handle_network_notification)
 
     def run(self):
-        self.sio.connect(self.server)
-        while self.is_running:
-            self.sio.wait()
+        try:
+            self.sio.connect(self.server)
+            while self.is_running:
+                self.sio.wait()
+        except Exception as e:
+            print(f"Error: {str(e)}")
 
     def stop(self):
         self.is_running = False

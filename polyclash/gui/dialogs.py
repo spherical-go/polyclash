@@ -8,7 +8,7 @@ from PyQt5.QtGui import QIcon
 
 from polyclash.api.api import get_server, connect
 from polyclash.game.board import BLACK, WHITE
-from polyclash.game.controller import LOCAL
+from polyclash.game.controller import LOCAL, NETWORK
 
 png_copy_path = osp.abspath(osp.join(osp.dirname(__file__), "copy.png"))
 
@@ -174,5 +174,8 @@ class JoinGameDialog(QDialog):
         from polyclash.workers.network import NetworkWorker
         self.window.network_worker = NetworkWorker(self.window, server=server, role=role, key=key)
         self.window.network_worker.start()
+
+        self.window.controller.set_mode(NETWORK)
+        self.window.controller.suspend_player(BLACK if role == 'black' else WHITE)
 
         self.close()

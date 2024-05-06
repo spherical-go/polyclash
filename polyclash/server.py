@@ -89,6 +89,7 @@ def delayed_start(game_id):
     time.sleep(3)
     games[game_id]['started'] = True
     socketio.emit('start', {'message': 'Game has started'}, room=game_id)
+    app.logger.info('game started... %s', game_id)
 
 
 def api_call(func):
@@ -134,6 +135,7 @@ def new():
     white_key = secrets.token_hex(USER_KEY_LENGTH // 2)
     viewer_key = secrets.token_hex(USER_KEY_LENGTH // 2)
 
+    app.logger.info('creating game... %s', game_id)
     games[game_id] = {
         'id': game_id,
         'keys': {'black': black_key, 'white': white_key, 'viewer': viewer_key},
@@ -144,6 +146,7 @@ def new():
     rooms[black_key] = game_id
     rooms[white_key] = game_id
     rooms[viewer_key] = game_id
+    app.logger.info('game created... %s', game_id)
 
     return dict(game_id=game_id, black_key=black_key, white_key=white_key, viewer_key=viewer_key), 200
 
@@ -151,6 +154,7 @@ def new():
 @app.route('/sphgo/joined_status', methods=['POST'])
 @api_call
 def joined_status(game=None, role=None, token=None):
+    app.logger.info('get joined status of game(%s)...', game['id'])
     if role not in ['black', 'white']:
         return {'message': 'Invalid role'}, 400
     else:
@@ -160,16 +164,19 @@ def joined_status(game=None, role=None, token=None):
 @app.route('/sphgo/join', methods=['POST'])
 @api_call
 def join(game=None, role=None, token=None):
+    app.logger.info('joining game... %s', game['id'])
     if role not in ['black', 'white']:
         return {'message': 'Invalid role'}, 400
     else:
         player_join_room(game, role)
+        app.logger.info('joined game... %s', game['id'])
         return {'status': game['joined']}, 200
 
 
 @app.route('/sphgo/ready_status', methods=['POST'])
 @api_call
 def ready_status(game=None, role=None, token=None):
+    app.logger.info('get ready status of game(%s)...', game['id'])
     if role not in ['black', 'white']:
         return {'message': 'Invalid role'}, 400
     else:
@@ -179,35 +186,41 @@ def ready_status(game=None, role=None, token=None):
 @app.route('/sphgo/ready', methods=['POST'])
 @api_call
 def ready(game=None, role=None, token=None):
+    app.logger.info('game readying... %s', game['id'])
     if role not in ['black', 'white']:
         return {'message': 'Invalid role'}, 400
     else:
         player_ready(game, role)
         return {'status': game['ready']}, 200
+    app.logger.info('game ready... %s', game['id'])
 
 
 @app.route('/sphgo/cancel', methods=['POST'])
 @api_call
 def cancel(game=None, role=None, token=None):
+    app.logger.info('game canceling... %s', game['id'])
     if role not in ['black', 'white']:
         return {'message': 'Invalid role'}, 400
     else:
         player_canceled(game, role)
         return {'status': game['ready']}, 200
+    app.logger.info('game canceled... %s', game['id'])
 
 
 @app.route('/sphgo/close', methods=['POST'])
 @api_call
 def close(game=None, role=None, token=None):
-        del rooms[game['keys']['black']]
-        del rooms[game['keys']['white']]
-        del rooms[game['keys']['viewer']]
-        del rooms[game['players']['black']]
-        del rooms[game['players']['white']]
-        for viewer_id in game['viewers']:
-            del rooms[viewer_id]
-        del games[game['id']]
-        return {'message': 'Game closed'}, 200
+    app.logger.info('game closing... %s', game['id'])
+    del rooms[game['keys']['black']]
+    del rooms[game['keys']['white']]
+    del rooms[game['keys']['viewer']]
+    del rooms[game['players']['black']]
+    del rooms[game['players']['white']]
+    for viewer_id in game['viewers']:
+        del rooms[viewer_id]
+    del games[game['id']]
+    app.logger.info('game closed... %s', game['id'])
+    return {'message': 'Game closed'}, 200
 
 
 @app.route('/sphgo/play', methods=['POST'])
@@ -236,10 +249,11 @@ def play(game=None, role=None, steps=None, play=None, token=None):
 
 @socketio.on('join')
 def on_join(data):
-    print('Join... ', data)
+    app.logger.info('event join... %s', data)
     try:
         key = data['key']
         if key not in rooms:
+            app.logger.error('error in event join... game(%s) not found', key)
             emit('error', {'message': 'Game not found'})
             return
         game_id = rooms[key]
@@ -251,6 +265,8 @@ def on_join(data):
         if role == 'viewer':
             viewer_join_room(game)
     except Exception as e:
+        app.logger.error('error in event join... unknown error %s', e)
+        app.logger.exception('error in event join...', exc_info=e)
         emit('error', {'message': str(e)})
 
 
@@ -294,6 +310,6 @@ def on_play(data):
 
 
 if __name__ == '__main__':
-    print(f"Secret: {secret_key}")
-    print(f"Token: {server_token}")
+    app.logger.info("Secret: %s", secret_key)
+    app.logger.info("Token: %s", server_token)
     socketio.run(app, host='localhost', port=5000, allow_unsafe_werkzeug=True, debug=True)

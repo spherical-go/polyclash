@@ -123,6 +123,12 @@ class SphericalGoController(QObject):
     def player_played(self, position):
         self.playerPlaced.emit(self.board.current_player, position)
 
+    def disable_notification(self):
+        self.board.disable_notification()
+
+    def enable_notification(self):
+        self.board.enable_notification()
+
     # def handle_notification(self, message, **kwargs):
     #     if message == "reset":
     #         self.boardResetSignal.emit()

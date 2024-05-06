@@ -123,13 +123,9 @@ class MainWindow(QMainWindow):
         if event == 'played':
             self.status_bar.showMessage(f"{data['role'].capitalize()} player played...")
             role = board.BLACK if data['role'] == 'black' else board.WHITE
-            if role != self.controller.side:
-                if data['steps'] != self.controller.board.counter:
-                    self.status_bar.showMessage(f"{data['role'].capitalize()} player mismatched with current steps...")
-                    return
-
-                self.controller.play(role, decoder[tuple(data['play'])])
-            return
+            if data['steps'] == self.controller.board.counter:
+                if role != self.controller.side:
+                    self.controller.play(role, decoder[tuple(data['play'])])
 
     def localMode(self):
         dialog = LocalGameDialog(self)

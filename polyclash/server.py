@@ -6,6 +6,7 @@ from flask import Flask, jsonify, request
 from flask_socketio import SocketIO, join_room, emit, rooms
 
 from polyclash.data.data import decoder
+from polyclash.util.logging import logger
 
 SECRET_KEY_LENGTH = 96
 SERVER_TOKEN_LENGTH = 32
@@ -19,6 +20,7 @@ server_token = secrets.token_hex(SERVER_TOKEN_LENGTH // 2)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secret_key
 socketio = SocketIO(app)
+
 
 games = {}
 rooms = {}
@@ -89,7 +91,7 @@ def delayed_start(game_id):
     time.sleep(3)
     games[game_id]['started'] = True
     socketio.emit('start', {'message': 'Game has started'}, room=game_id)
-    app.logger.info('game started... %s', game_id)
+    logger.info(f'game started... {game_id}')
 
 
 def api_call(func):
@@ -120,7 +122,7 @@ def api_call(func):
 
             return jsonify(result), code
         except Exception as e:
-            app.logger.exception('error', exc_info=e)
+            logger.exception('error', exc_info=e)
             return jsonify({'message': str(e)}), 500
 
     wrapper.__name__ = func.__name__
@@ -135,7 +137,7 @@ def new():
     white_key = secrets.token_hex(USER_KEY_LENGTH // 2)
     viewer_key = secrets.token_hex(USER_KEY_LENGTH // 2)
 
-    app.logger.info('creating game... %s', game_id)
+    logger.info(f'creating game... {game_id}')
     games[game_id] = {
         'id': game_id,
         'keys': {'black': black_key, 'white': white_key, 'viewer': viewer_key},
@@ -146,7 +148,7 @@ def new():
     rooms[black_key] = game_id
     rooms[white_key] = game_id
     rooms[viewer_key] = game_id
-    app.logger.info('game created... %s', game_id)
+    logger.info(f'game created... {game_id}')
 
     return dict(game_id=game_id, black_key=black_key, white_key=white_key, viewer_key=viewer_key), 200
 
@@ -154,7 +156,7 @@ def new():
 @app.route('/sphgo/joined_status', methods=['POST'])
 @api_call
 def joined_status(game=None, role=None, token=None):
-    app.logger.info('get joined status of game(%s)...', game['id'])
+    logger.info(f'get joined status of game({game["id"]})...')
     if role not in ['black', 'white']:
         return {'message': 'Invalid role'}, 400
     else:
@@ -164,19 +166,19 @@ def joined_status(game=None, role=None, token=None):
 @app.route('/sphgo/join', methods=['POST'])
 @api_call
 def join(game=None, role=None, token=None):
-    app.logger.info('joining game... %s', game['id'])
+    logger.info(f'joining game... {game["id"]}')
     if role not in ['black', 'white']:
         return {'message': 'Invalid role'}, 400
     else:
         player_join_room(game, role)
-        app.logger.info('joined game... %s', game['id'])
+        logger.info(f'joined game... {game["id"]}')
         return {'status': game['joined']}, 200
 
 
 @app.route('/sphgo/ready_status', methods=['POST'])
 @api_call
 def ready_status(game=None, role=None, token=None):
-    app.logger.info('get ready status of game(%s)...', game['id'])
+    logger.info(f'get ready status of game({game["id"]})...')
     if role not in ['black', 'white']:
         return {'message': 'Invalid role'}, 400
     else:
@@ -186,32 +188,32 @@ def ready_status(game=None, role=None, token=None):
 @app.route('/sphgo/ready', methods=['POST'])
 @api_call
 def ready(game=None, role=None, token=None):
-    app.logger.info('game readying... %s', game['id'])
+    logger.info(f'game readying... {game["id"]}')
     if role not in ['black', 'white']:
         return {'message': 'Invalid role'}, 400
     else:
         player_ready(game, role)
         return {'status': game['ready']}, 200
-    app.logger.info('game ready... %s', game['id'])
+    logger.info(f'game ready... {game["id"]}')
 
 
 @app.route('/sphgo/cancel', methods=['POST'])
 @api_call
 def cancel(game=None, role=None, token=None):
-    app.logger.info('game canceling... %s', game['id'])
+    logger.info(f'game canceling... {game["id"]}')
     if role not in ['black', 'white']:
         return {'message': 'Invalid role'}, 400
     else:
         player_canceled(game, role)
         return {'status': game['ready']}, 200
-    app.logger.info('game canceled... %s', game['id'])
+    logger.info(f'game canceled... {game["id"]}')
 
 
 @app.route('/sphgo/close', methods=['POST'])
 @api_call
 def close(game=None, role=None, token=None):
     if game:
-        app.logger.info('game closing... %s', game['id'])
+        logger.info(f'game closing... {game["id"]}')
         del rooms[game['keys']['black']]
         del rooms[game['keys']['white']]
         del rooms[game['keys']['viewer']]
@@ -220,7 +222,7 @@ def close(game=None, role=None, token=None):
         for viewer_id in game['viewers']:
             del rooms[viewer_id]
         del games[game['id']]
-    app.logger.info('game closed... %s')
+    logger.info('game closed...')
     return {'message': 'Game closed'}, 200
 
 
@@ -250,11 +252,11 @@ def play(game=None, role=None, steps=None, play=None, token=None):
 
 @socketio.on('join')
 def on_join(data):
-    app.logger.info('event join... %s', data)
+    logger.info(f'event join... {str(data)}')
     try:
         key = data['key']
         if key not in rooms:
-            app.logger.error('error in event join... game(%s) not found', key)
+            logger.error(f'error in event join... game({key}) not found')
             emit('error', {'message': 'Game not found'})
             return
         game_id = rooms[key]
@@ -266,8 +268,8 @@ def on_join(data):
         if role == 'viewer':
             viewer_join_room(game)
     except Exception as e:
-        app.logger.error('error in event join... unknown error %s', e)
-        app.logger.exception('error in event join...', exc_info=e)
+        logger.error(f'error in event join... unknown error {str(e)}')
+        logger.exception('error in event join...', exc_info=e)
         emit('error', {'message': str(e)})
 
 
@@ -311,8 +313,6 @@ def on_play(data):
 
 
 if __name__ == '__main__':
-    print(f"Secret: {secret_key}")
-    print(f"Token: {server_token}")
-    app.logger.info("Secret: %s", secret_key)
-    app.logger.info("Token: %s", server_token)
+    logger.info(f"Secret: {secret_key}")
+    logger.info(f"Token: {server_token}")
     socketio.run(app, host='localhost', port=5000, allow_unsafe_werkzeug=True, debug=True)

@@ -11,4 +11,6 @@ python-socketio[client]
 
 flask
 flask-socketio
+flask-loguru
 
+loguru

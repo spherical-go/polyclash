@@ -1,6 +1,6 @@
 from PyQt5.QtCore import QTimer
 
-import polyclash.api.api as api
+import polyclash.util.api as api
 import polyclash.game.board as board
 
 from PyQt5 import QtWidgets

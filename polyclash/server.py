@@ -210,16 +210,17 @@ def cancel(game=None, role=None, token=None):
 @app.route('/sphgo/close', methods=['POST'])
 @api_call
 def close(game=None, role=None, token=None):
-    app.logger.info('game closing... %s', game['id'])
-    del rooms[game['keys']['black']]
-    del rooms[game['keys']['white']]
-    del rooms[game['keys']['viewer']]
-    del rooms[game['players']['black']]
-    del rooms[game['players']['white']]
-    for viewer_id in game['viewers']:
-        del rooms[viewer_id]
-    del games[game['id']]
-    app.logger.info('game closed... %s', game['id'])
+    if game:
+        app.logger.info('game closing... %s', game['id'])
+        del rooms[game['keys']['black']]
+        del rooms[game['keys']['white']]
+        del rooms[game['keys']['viewer']]
+        del rooms[game['players']['black']]
+        del rooms[game['players']['white']]
+        for viewer_id in game['viewers']:
+            del rooms[viewer_id]
+        del games[game['id']]
+    app.logger.info('game closed... %s')
     return {'message': 'Game closed'}, 200
 
 
@@ -310,6 +311,8 @@ def on_play(data):
 
 
 if __name__ == '__main__':
+    print(f"Secret: {secret_key}")
+    print(f"Token: {server_token}")
     app.logger.info("Secret: %s", secret_key)
     app.logger.info("Token: %s", server_token)
     socketio.run(app, host='localhost', port=5000, allow_unsafe_werkzeug=True, debug=True)

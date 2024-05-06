@@ -1,6 +1,6 @@
 from PyQt5.QtCore import pyqtSignal, QObject
 
-from polyclash.api import api
+from polyclash.util import api
 from polyclash.data.data import encoder
 from polyclash.game.board import BLACK, WHITE, Board
 from polyclash.game.player import PlayerFactory, HUMAN, REMOTE, AI

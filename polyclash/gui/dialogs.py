@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QLineEdit, QComboBox,
     QVBoxLayout
 from PyQt5.QtGui import QIcon
 
-from polyclash.api.api import get_server, set_server, connect
+from polyclash.util.api import get_server, set_server, connect
 from polyclash.game.board import BLACK, WHITE
 from polyclash.game.controller import LOCAL, NETWORK
 from polyclash.game.player import HUMAN, REMOTE

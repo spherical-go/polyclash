@@ -5,3 +5,5 @@ networkx
 
 pytest
 pytest-cov
+pytest-flask
+

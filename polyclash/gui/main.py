@@ -1,5 +1,3 @@
-import json
-
 from PyQt5.QtCore import QTimer
 
 import polyclash.api.api as api
@@ -9,7 +7,6 @@ from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QMainWindow, QAction, QMessageBox, qApp, QMenu
 
 from polyclash.data.data import decoder
-from polyclash.game.controller import NETWORK
 from polyclash.game.player import HUMAN, REMOTE
 from polyclash.gui.dialogs import NetworkGameDialog, JoinGameDialog, LocalGameDialog
 from polyclash.gui.overly_map import OverlayMap
@@ -56,6 +53,8 @@ class MainWindow(QMainWindow):
         self.overlay_info.raise_()
         self.overlay_map.raise_()
 
+        self.api = api
+
     def initMenu(self):
         menubar = self.menuBar()
 
@@ -96,34 +95,40 @@ class MainWindow(QMainWindow):
         self.overlay_info.update()
 
     def handle_network_notification(self, event, data):
+        print(f'{event}...', data)
         if event == 'error':
             self.status_bar.showMessage(f"Error: {data['message']}")
             return
+
         if event == 'joined':
             self.status_bar.showMessage(f"{data['role'].capitalize()} player joined...")
 
             role = board.BLACK if data['role'] == 'black' else board.WHITE
-            if role == self.controller.suspended_player:
+            if role == self.controller.side:
                 self.controller.add_player(role, kind=HUMAN, token=data['token'])
                 api.player_token = data['token']
             else:
                 self.controller.add_player(role, kind=REMOTE)
-
-            if self.controller.check_ready():
-                self.controller.start_game()
-
             return
+
+        if event == 'ready':
+            self.status_bar.showMessage(f"{data['role'].capitalize()} player is ready...")
+            return
+
+        if event == 'start':
+            self.status_bar.showMessage("Game has started.")
+            self.controller.start()
+            return
+
         if event == 'played':
             self.status_bar.showMessage(f"{data['role'].capitalize()} player played...")
-            current_role = 'black' if self.controller.board.current_player == board.BLACK else 'white'
-            if data['role'] != current_role:
-                self.status_bar.showMessage(f"{data['role'].capitalize()} player mismatched with current turn...")
-                return
-            if data['steps'] != self.controller.board.counter:
-                self.status_bar.showMessage(f"{data['role'].capitalize()} player mismatched with current steps...")
-                return
+            role = board.BLACK if data['role'] == 'black' else board.WHITE
+            if role != self.controller.side:
+                if data['steps'] != self.controller.board.counter:
+                    self.status_bar.showMessage(f"{data['role'].capitalize()} player mismatched with current steps...")
+                    return
 
-            self.controller.play(self.controller.board.current_player, decoder[data['play']])
+                self.controller.play(role, decoder[tuple(data['play'])])
             return
 
     def localMode(self):
@@ -158,7 +163,7 @@ class MainWindow(QMainWindow):
 
     def closeEvent(self, event):
         try:
-            api.close_game()
+            api.close(api.get_server())
         except Exception as e:
             print(f"Error: {str(e)}")
         if self.network_worker:

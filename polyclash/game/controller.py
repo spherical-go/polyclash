@@ -28,7 +28,7 @@ class SphericalGoController(QObject):
     def __init__(self, mode=LOCAL, board=None):
         super().__init__()
         self.mode = mode
-        self.suspended_player = None
+        self.side = None
         self.players = {}
         self.winner = None
         self.result = None
@@ -36,19 +36,19 @@ class SphericalGoController(QObject):
         self.board = board if board else Board()
         # self.board.register_observer(self)
 
-        self.gameStarted.connect(self.start_game)
+        self.gameStarted.connect(self.start)
         self.playerPlaced.connect(self.play)
         self.gameResigned.connect(self.resign)
-        self.gameEnded.connect(self.end_game)
-        self.gameClosed.connect(self.close_game)
+        self.gameEnded.connect(self.end)
+        self.gameClosed.connect(self.close)
 
     def set_mode(self, mode):
         self.mode = mode
         self.players = {}
         self.board.reset()
 
-    def suspend_player(self, side):
-        self.suspended_player = side
+    def set_side(self, side):
+        self.side = side
 
     def add_player(self, side, kind=HUMAN, **kwargs):
         if self.mode == LOCAL and kind == REMOTE:
@@ -68,11 +68,9 @@ class SphericalGoController(QObject):
     def get_current_player(self):
         return self.players[self.board.current_player]
 
-    def start_game(self):
+    def start(self):
         if self.check_ready():
             self.board.reset()
-            self.players[BLACK].timer.reset()
-            self.players[WHITE].timer.reset()
 
             while not self.board.is_game_over():
                 if self.get_current_player().kind == AI:
@@ -97,7 +95,10 @@ class SphericalGoController(QObject):
             # player.play(placement)
             self.board.play(placement, side)
             if self.mode == NETWORK:
-                api.play(self.board.counter, encoder[placement])
+                if self.side == BLACK:
+                    api.play(api.get_server(), self.board.counter - 1, encoder[placement])
+                else:
+                    api.play(api.get_server(), self.board.counter, encoder[placement])
             self.switch_player()
 
             if self.get_current_player().kind == AI:
@@ -110,10 +111,10 @@ class SphericalGoController(QObject):
     def resign(self, player):
         self.winner = -player
 
-    def end_game(self):
+    def end(self):
         self.result = self.board.result()
 
-    def close_game(self):
+    def close(self):
         self.board.reset()
         for side, players in self.players.items():
             players.worker.stop()

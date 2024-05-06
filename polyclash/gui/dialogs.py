@@ -1,14 +1,18 @@
 import os.path as osp
+import time
 
 from urllib.parse import urlparse
 
+from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QLineEdit, QComboBox, QPushButton, QMessageBox, QAction, \
     QVBoxLayout
 from PyQt5.QtGui import QIcon
 
-from polyclash.api.api import get_server, connect
+from polyclash.api.api import get_server, set_server, connect
 from polyclash.game.board import BLACK, WHITE
 from polyclash.game.controller import LOCAL, NETWORK
+from polyclash.game.player import HUMAN, REMOTE
+from polyclash.workers.network import NetworkWorker
 
 png_copy_path = osp.abspath(osp.join(osp.dirname(__file__), "copy.png"))
 
@@ -77,6 +81,10 @@ class NetworkGameDialog(QDialog):
         layout.addWidget(QLabel('Server'))
         layout.addWidget(self.server_input)
 
+        self.token = QLineEdit(self)
+        layout.addWidget(QLabel('Token'))
+        layout.addWidget(self.token)
+
         # Connection management
         self.connect_button = QPushButton('Connect', self)
         self.connect_button.clicked.connect(self.on_connect_clicked)
@@ -91,6 +99,7 @@ class NetworkGameDialog(QDialog):
         layout.addWidget(self.close_button)
 
         self.setLayout(layout)
+        self.window = parent
 
     def manage_keys(self):
         # Adds widgets for Black, White, and Viewer keys
@@ -109,6 +118,7 @@ class NetworkGameDialog(QDialog):
 
     def on_connect_clicked(self):
         server = self.server_input.text()
+        token = self.token.text()
         if not server:
             QMessageBox.critical(self, 'Error', 'Server address is required')
             return
@@ -117,7 +127,7 @@ class NetworkGameDialog(QDialog):
             return
 
         try:
-            black_key, white_key, viewer_key = connect(server, None)
+            black_key, white_key, viewer_key = connect(server, token)
             if black_key:
                 self.black_key.setText(black_key)
                 self.white_key.setText(white_key)
@@ -130,6 +140,24 @@ class NetworkGameDialog(QDialog):
 
     def on_close_clicked(self):
         self.close()
+
+
+def restart_network_worker(window, server, role, key, fn):
+    worker = window.network_worker
+    if worker:
+        worker.stop()
+        worker.messageReceived.disconnect(window.handle_network_notification)
+        worker.server = server
+        worker.role = role
+        worker.key = key
+        worker.start()
+        worker.messageReceived.connect(window.handle_network_notification)
+        worker.messageReceived.connect(fn)
+    else:
+        window.network_worker = NetworkWorker(window, server=server, role=role, key=key)
+        window.network_worker.start()
+        window.network_worker.messageReceived.connect(window.handle_network_notification)
+        window.network_worker.messageReceived.connect(fn)
 
 
 class JoinGameDialog(QDialog):
@@ -163,19 +191,102 @@ class JoinGameDialog(QDialog):
         self.join_button.clicked.connect(self.on_join_clicked)
         layout.addWidget(self.join_button)
 
+        layout.addWidget(QLabel('Room status'))
+        self.room_status = QLabel('Neither')  # room status can be 'Neither', 'Black', 'White', 'Both', or 'Canceled'
+        layout.addWidget(self.room_status)
+
+        self.ready_button = QPushButton('Ready', self)
+        self.ready_button.setEnabled(False)
+        self.ready_button.clicked.connect(self.on_ready_clicked)
+        layout.addWidget(self.ready_button)
+
+        self.cancel_button = QPushButton('Cancel', self)
+        self.cancel_button.setEnabled(False)
+        self.cancel_button.clicked.connect(self.on_cancel_clicked)
+        layout.addWidget(self.cancel_button)
+
         self.setLayout(layout)
         self.window = parent
+        self.api = self.window.api
 
     def on_join_clicked(self):
         server = self.server_input.text()
+        if server:
+            set_server(server)
         role = self.role_select.currentText().lower()
         key = self.key_input.text()
 
-        from polyclash.workers.network import NetworkWorker
-        self.window.network_worker = NetworkWorker(self.window, server=server, role=role, key=key)
-        self.window.network_worker.start()
+        def check_joined_status(event, data):
+            if event == 'joined':
+                joined_role = data.get('role')
+                if joined_role == role:
+                    self.window.controller.add_player(role, kind=HUMAN)
+                else:
+                    self.window.controller.add_player(role, kind=REMOTE)
 
-        self.window.controller.set_mode(NETWORK)
-        self.window.controller.suspend_player(BLACK if role == 'black' else WHITE)
+                try:
+                    time.sleep(5)
+                    status = self.api.joined_status(server, key)
+                    self.room_status.setText(status)
+                    if status == 'Both':
+                        self.ready_button.setEnabled(True)
+                        self.window.status_bar.showMessage('Ready')
+                        self.window.network_worker.messageReceived.disconnect(check_joined_status)
+                    elif status == 'Canceled':
+                        self.window.controller.reset()
+                        self.window.status_bar.showMessage('Canceled')
+                    self.update()
+                except Exception as e:
+                    self.room_status.setText('None')
 
+        try:
+            restart_network_worker(self.window, server, role, key, check_joined_status)
+            self.window.controller.set_mode(NETWORK)
+            self.window.controller.set_side(BLACK if role == 'black' else WHITE)
+            time.sleep(2)
+            self.api.join(server, role, key)
+
+            self.cancel_button.setEnabled(True)
+        except Exception as e:
+            self.window.status_bar.showMessage(str(e))
+
+    def on_ready_clicked(self):
+        server = self.server_input.text()
+        if server:
+            set_server(server)
+        role = self.role_select.currentText().lower()
+        key = self.key_input.text()
+        try:
+            self.api.ready(server, role, key)
+            self.cancel_button.setEnabled(False)
+        except Exception as e:
+            self.window.status_bar.showMessage(str(e))
+
+        def check_ready_status(event, data):
+            server = self.server_input.text()
+            key = self.key_input.text()
+
+            if event == 'ready':
+                try:
+                    both_ready = self.api.ready_status(server, key)
+                    if both_ready:
+                        self.window.network_worker.messageReceived.disconnect(check_ready_status)
+                        self.window.controller.start()
+                        self.window.status_bar.showMessage('Game started')
+                        self.close()
+                except Exception as e:
+                    self.window.status_bar.showMessage(str(e))
+
+        self.window.network_worker.messageReceived.connect(check_ready_status)
+
+    def on_cancel_clicked(self):
+        server = self.server_input.text()
+        if server:
+            set_server(server)
+        role = self.role_select.currentText().lower()
+        key = self.key_input.text()
+        try:
+            self.api.cancel(server, role, key)
+        except Exception as e:
+            self.window.status_bar.showMessage(str(e))
         self.close()

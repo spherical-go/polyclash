@@ -1,4 +1,4 @@
-import threading
+
 
 import numpy as np
 import math
@@ -61,13 +61,16 @@ class Board:
         self.black_suicides = set()
         self.white_suicides = set()
 
-        self.counter = 0
         self.turns = OrderedDict()
 
         self._observers = []
         self.notification_enabled = True
 
         self.simulator = None
+
+    @property
+    def counter(self):
+        return len(self.turns)
 
     def register_observer(self, observer):
         if observer not in self._observers:
@@ -124,7 +127,6 @@ class Board:
         self.latest_removes = [[]]
         self.black_suicides = set()
         self.white_suicides = set()
-        self.counter = 0
         self.turns = OrderedDict()
         self.notify_observers("reset", **{})
 
@@ -178,7 +180,6 @@ class Board:
             raise ValueError("Invalid move: suicide is not allowed.")
 
         self.turns[self.counter] = encoder[point]
-        self.counter += 1
         self.notify_observers("add_stone", point=point, player=player, score=self.score())
         self.latest_player = player
 
@@ -233,7 +234,6 @@ class SimulatedBoard(Board):
         self.black_suicides = board.black_suicides.copy()
         self.white_suicides = board.white_suicides.copy()
         self.orginal_counter = board.counter
-        self.counter = board.counter
         self.turns = board.turns.copy()
 
     def genmove(self, player):
@@ -292,7 +292,6 @@ class SimulatedBoard(Board):
 
         if self.counter > self.orginal_counter:
             self.turns.pop(self.counter - 1)
-            self.counter -= 1
 
         if player == BLACK:
             # print(black_area_ratio, mean_rival_area_ratio, gain, mean_rival_gain)

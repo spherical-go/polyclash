@@ -1,6 +1,5 @@
 import sys
 
-from PyQt5.QtCore import QThread
 from PyQt5.QtWidgets import QApplication
 
 from polyclash.game.board import BLACK, WHITE

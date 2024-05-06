@@ -12,6 +12,7 @@ from polyclash.gui.dialogs import NetworkGameDialog, JoinGameDialog, LocalGameDi
 from polyclash.gui.overly_map import OverlayMap
 from polyclash.gui.overly_info import OverlayInfo
 from polyclash.gui.view_sphere import ActiveSphereView
+from polyclash.util.logging import logger
 
 
 class MainWindow(QMainWindow):
@@ -95,7 +96,7 @@ class MainWindow(QMainWindow):
         self.overlay_info.update()
 
     def handle_network_notification(self, event, data):
-        print(f'{event}...', data)
+        logger.info(f'Event {event}: {str(data)}')
         if event == 'error':
             self.status_bar.showMessage(f"Error: {data['message']}")
             return

@@ -4,6 +4,7 @@ from polyclash.util import api
 from polyclash.data.data import encoder
 from polyclash.game.board import BLACK, WHITE, Board
 from polyclash.game.player import PlayerFactory, HUMAN, REMOTE, AI
+from polyclash.util.logging import logger
 
 
 # mode
@@ -85,6 +86,7 @@ class SphericalGoController(QObject):
         return self.board.current_player == side
 
     def play(self, side, placement):
+        logger.info(f"Player {side} played at {placement}")
         if not self.is_player_turn(side):
             raise InvalidTurnError("Not the player's turn")
 
@@ -106,6 +108,7 @@ class SphericalGoController(QObject):
                 self.switch_player()
 
     def switch_player(self):
+        logger.info(f"Switching player...{self.board.current_player} -> {-self.board.current_player}")
         self.board.switch_player()
 
     def resign(self, player):
@@ -121,6 +124,7 @@ class SphericalGoController(QObject):
         self.players = {}
 
     def player_played(self, position):
+        logger.info(f"Player {self.board.current_player} played at {position}")
         self.playerPlaced.emit(self.board.current_player, position)
 
     def disable_notification(self):

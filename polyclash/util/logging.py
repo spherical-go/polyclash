@@ -1,5 +1,5 @@
 from pathlib import Path
-from loguru import logger
+from loguru import logger as logging
 
 
 def setup_logging():
@@ -16,9 +16,9 @@ def setup_logging():
 
     # add handler to logger
     formatter = "{time} - {level} - [{process.id}] - [{thread.id}] - {file} - {line} - {message}"
-    logger.add(log_file_path, format=formatter, enqueue=True, rotation='1 day', retention='1 month', backtrace=True, diagnose=True)
+    logging.add(log_file_path, format=formatter, enqueue=True, rotation='1 day', retention='1 month', backtrace=True, diagnose=True)
 
-    return logging_dir, logging_file, logger
+    return logging_dir, logging_file, logging
 
 
 logging_dir, logging_file, logger = setup_logging()

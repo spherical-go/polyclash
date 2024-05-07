@@ -51,6 +51,8 @@ class SphereView(QtInteractor):
             self.on_stone_added(kwargs["point"], kwargs["player"])
         if message == "remove_stone":
             self.on_stone_removed(kwargs["point"])
+        if message == "swtich_player":
+            self.on_player_switched(kwargs["side"])
         self.update()
 
     def on_reset(self):
@@ -68,6 +70,10 @@ class SphereView(QtInteractor):
         actor = self.spheres[point]
         actor.GetProperty().SetColor(stone_empty_color[0], stone_empty_color[1], stone_empty_color[2])
 
+    def on_player_switched(self, side):
+        # not implemented
+        pass
+
     def change_view(self, row, col):
         self.camera.position = 6 * axis[row + 4 * col]
         self.camera.focal_point = np.zeros((3,))
@@ -84,6 +90,7 @@ class ActiveSphereView(SphereView):
         self.overlay_info = overlay_info
         self.overlay_map = overlay_map
         self.overlay_map.set_sphere_view(self)
+        self.picker_enabled = True
 
         self.show_axes = True
         self.add_axes(interactive=True)
@@ -100,6 +107,15 @@ class ActiveSphereView(SphereView):
         self.picker = self.interactor.GetRenderWindow().GetInteractor().CreateDefaultPicker()
         self.interactor.AddObserver(vtkCommand.LeftButtonPressEvent, self.left_button_press_event)
 
+    def on_player_switched(self, side):
+        if self.controller.side is None:
+            return
+
+        if side == self.controller.side:
+            self.picker_enabled = True
+        else:
+            self.picker_enabled = False
+
     def update(self, **kwargs):
         super().update()
         if self.isActiveWindow():
@@ -107,6 +123,9 @@ class ActiveSphereView(SphereView):
             self.overlay_info.update()
 
     def left_button_press_event(self, obj, event):
+        if not self.picker_enabled:
+            return
+
         click_pos = self.interactor.GetEventPosition()
         self.picker.Pick(click_pos[0], click_pos[1], 0, self.renderer)
 

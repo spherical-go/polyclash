@@ -93,14 +93,10 @@ class SphericalGoController(QObject):
         if self.board.is_game_over():
             self.end_game()
         else:
-            # player = self.players[side]
-            # player.play(placement)
             self.board.play(placement, side)
-            if self.mode == NETWORK:
-                if self.side == BLACK:
-                    api.play(api.get_server(), self.board.counter - 1, encoder[placement])
-                else:
-                    api.play(api.get_server(), self.board.counter, encoder[placement])
+            # Ensure the play is from the local player
+            if self.mode == NETWORK and side == self.side:
+                api.play(api.get_server(), self.board.counter - 1, encoder[placement])
             self.switch_player()
 
             if self.get_current_player().kind == AI:

@@ -16,8 +16,8 @@ def setup_logging():
     log_file_path = logging_dir / logging_file
 
     # add handler to logger
-    logger.add(log_file_path, enqueue=True, rotation='1 day', retention='1 month', backtrace=True, level='DEBUG')
-    logger.add(sys.stdout, colorize=True, format="<green>{time}</green> <level>{message}</level>")
+    formatter = "{time} - {level} - [{process.id}] - [{thread.id}] - {file} - {line} - {message}"
+    logger.add(log_file_path, format=formatter, enqueue=True, rotation='1 day', retention='1 month', backtrace=True, diagnose=True)
 
     return logging_dir, logging_file, logger
 

@@ -229,6 +229,7 @@ def close(game=None, role=None, token=None):
 @app.route('/sphgo/play', methods=['POST'])
 @api_call
 def play(game=None, role=None, steps=None, play=None, token=None):
+    logger.info(f'{role} play at {play} with steps {steps} ... {game["id"]}:{len(game["plays"])}')
     if steps != len(game['plays']):
         return {'message': f'Length of {len(game["plays"])} mismatched with steps {steps} passed in'}, 400
 

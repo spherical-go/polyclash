@@ -2,8 +2,8 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPainter, QBrush, QColor
 from PyQt5.QtWidgets import QWidget
 
-from polyclash.board import BLACK
-from polyclash.ui.constants import stone_black_color, stone_white_color
+from polyclash.game.board import BLACK
+from polyclash.gui.constants import stone_black_color, stone_white_color
 
 
 black = QColor(*[int(255 * elm) for elm in stone_black_color])
@@ -54,6 +54,9 @@ class OverlayInfo(QWidget):
         if message == "switch_player":
             color = black if kwargs["side"] == BLACK else white
             self.change_color(color)
+        if message == "reset":
+            self.change_color(BLACK)
+            self.change_score(0, 0, 1)
         if message == "add_stone":
             self.change_score(*kwargs['score'])
         if message == "remove_stone":

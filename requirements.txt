@@ -2,6 +2,15 @@ numpy
 scipy
 
 PyQt5
+vtk
 pyvista
 pyvistaqt
 
+requests
+python-socketio[client]
+
+flask
+flask-socketio
+flask-loguru
+
+loguru

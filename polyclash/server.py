@@ -1,5 +1,6 @@
 import secrets
 import time
+import logging
 from threading import Thread
 
 from flask import Flask, jsonify, request
@@ -20,6 +21,16 @@ server_token = secrets.token_hex(SERVER_TOKEN_LENGTH // 2)
 app = Flask(__name__)
 app.config['SECRET_KEY'] = secret_key
 socketio = SocketIO(app)
+
+
+class InterceptHandler(logging.Handler):
+    def emit(self, record):
+        logger_opt = logger.opt(depth=6, exception=record.exc_info)
+        logger_opt.log(record.levelno, record.getMessage())
+
+
+# register loguru as handler
+app.logger.addHandler(InterceptHandler())
 
 
 games = {}
@@ -314,6 +325,10 @@ def on_play(data):
 
 
 if __name__ == '__main__':
+    import logging
+    gunicorn_logger = logging.getLogger('gunicorn.error')
+    app.logger.handlers = gunicorn_logger.handlers
+
     logger.info(f"Secret: {secret_key}")
     logger.info(f"Token: {server_token}")
     socketio.run(app, host='localhost', port=5000, allow_unsafe_werkzeug=True, debug=True)

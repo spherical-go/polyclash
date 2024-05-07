@@ -1,9 +1,8 @@
+from pathlib import Path
+from loguru import logger
+
 
 def setup_logging():
-    import sys
-    from pathlib import Path
-    from loguru import logger
-
     # get the hidden directory path of the current user
     logging_dir = Path.home() / '.polyclash'
 

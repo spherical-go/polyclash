@@ -140,6 +140,23 @@ def api_call(func):
     return wrapper
 
 
+@app.route('/sphgo/', methods=['GET'])
+def index():
+    table_of_games = ''
+    for game_id, game in games.items():
+        table_of_games += f"<li>black: {game['keys']['black']}; white: {game['keys']['white']}; viewer: {game['keys']['viewer']}</li>"
+    html = f"""
+    <h1>Welcome to PolyClash</h1>
+    <p>Token: {server_token}</p>
+    <h2>List of games</h2>
+    <ul>
+    {table_of_games}
+    </ul>
+    """
+
+    return html, 200
+
+
 @app.route('/sphgo/new', methods=['POST'])
 @api_call
 def new():
@@ -325,10 +342,6 @@ def on_play(data):
 
 
 if __name__ == '__main__':
-    import logging
-    gunicorn_logger = logging.getLogger('gunicorn.error')
-    app.logger.handlers = gunicorn_logger.handlers
-
     logger.info(f"Secret: {secret_key}")
     logger.info(f"Token: {server_token}")
     socketio.run(app, host='localhost', port=5000, allow_unsafe_werkzeug=True, debug=True)

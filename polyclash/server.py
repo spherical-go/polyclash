@@ -144,7 +144,7 @@ def api_call(func):
 def index():
     table_of_games = ''
     for game_id, game in games.items():
-        table_of_games += f"<li>black: {game['keys']['black']}; white: {game['keys']['white']}; viewer: {game['keys']['viewer']}</li>"
+        table_of_games += f"<li>viewer: {game['keys']['viewer']}</li>"
     html = f"""
     <h1>Welcome to PolyClash</h1>
     <p>Token: {server_token}</p>

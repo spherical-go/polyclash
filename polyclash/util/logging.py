@@ -1,9 +1,9 @@
+from logging import Handler
+from pathlib import Path
+from loguru import logger as logging
+
 
 def setup_logging():
-    import sys
-    from pathlib import Path
-    from loguru import logger
-
     # get the hidden directory path of the current user
     logging_dir = Path.home() / '.polyclash'
 
@@ -17,9 +17,15 @@ def setup_logging():
 
     # add handler to logger
     formatter = "{time} - {level} - [{process.id}] - [{thread.id}] - {file} - {line} - {message}"
-    logger.add(log_file_path, format=formatter, enqueue=True, rotation='1 day', retention='1 month', backtrace=True, diagnose=True)
+    logging.add(log_file_path, format=formatter, enqueue=True, rotation='1 day', retention='1 month', backtrace=True)
 
-    return logging_dir, logging_file, logger
+    return logging_dir, logging_file, logging
 
 
 logging_dir, logging_file, logger = setup_logging()
+
+
+class InterceptHandler(Handler):
+    def emit(self, record):
+        logger_opt = logger.opt(depth=6, exception=record.exc_info)
+        logger_opt.log(record.levelno, record.getMessage())

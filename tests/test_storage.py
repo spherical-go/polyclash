@@ -7,6 +7,9 @@ from polyclash.util.storage import create_storage
 from polyclash.server import app, server_token
 
 
+server.storage = create_storage()
+
+
 @pytest.fixture
 def test_client():
     client = app.test_client()
@@ -22,10 +25,8 @@ def socketio_client(test_client):
 
 @pytest.fixture
 def storage():
-    server.storage = create_storage(flag_redis=False)
+    server.storage = create_storage(flag_redis=True)
     return server.storage
-
-
 
 
 def test_new_game(storage, test_client, socketio_client):
@@ -43,14 +44,24 @@ def test_join_game(storage, test_client, socketio_client):
     assert result0.json['black_key']
     assert result0.json['white_key']
 
-    result1 = test_client.post('/sphgo/join', json={'token': result0.json['black_key']})
+    result1 = test_client.post('/sphgo/joined_status', json={'token': result0.json['black_key']})
     assert result1.status_code == 200
-    assert result1.json['status']['black']
+    assert not result1.json['status']['black']
+    assert not result1.json['status']['white']
 
-    result2 = test_client.post('/sphgo/joined_status', json={'token': result0.json['black_key']})
+    result2 = test_client.post('/sphgo/joined_status', json={'token': result0.json['white_key']})
     assert result2.status_code == 200
-    assert result2.json['status']['black']
+    assert not result2.json['status']['black']
     assert not result2.json['status']['white']
+
+    result3 = test_client.post('/sphgo/join', json={'token': result0.json['black_key']})
+    assert result3.status_code == 200
+    assert result3.json['status']['black']
+
+    result4 = test_client.post('/sphgo/joined_status', json={'token': result0.json['black_key']})
+    assert result4.status_code == 200
+    assert result4.json['status']['black']
+    assert not result4.json['status']['white']
 
 
 def test_game_not_ready(storage, test_client, socketio_client):

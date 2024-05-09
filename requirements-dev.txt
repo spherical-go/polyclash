@@ -1,9 +1,0 @@
--r requirements.txt
-
-numba
-networkx
-
-pytest
-pytest-cov
-pytest-flask
-

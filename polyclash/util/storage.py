@@ -276,7 +276,11 @@ class RedisStorage(DataStorage):
             return []
 
     def list_rooms(self):
-        return self.redis.lrange('games', 0, -1)
+        if not self.redis.exists('games'):
+            return []
+        return list([
+            item.decode('utf-8') for item in self.redis.lrange('games', 0, -1)
+        ])
 
     def close_room(self, game_id):
         pass

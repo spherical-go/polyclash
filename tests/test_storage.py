@@ -29,6 +29,12 @@ def storage():
     return server.storage
 
 
+def test_index_page(storage, test_client):
+    result = test_client.get('/sphgo/')
+    assert result.status_code == 200
+    assert b'PolyClash' in result.data
+
+
 def test_new_game(storage, test_client, socketio_client):
     result = test_client.post('/sphgo/new', json={'key': server_token})
     assert result.status_code == 200

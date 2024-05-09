@@ -1,3 +1,4 @@
+import json
 import secrets
 import redis
 
@@ -270,7 +271,7 @@ class RedisStorage(DataStorage):
     def get_plays(self, game_id):
         if self.redis.exists(f'games:{game_id}:plays'):
             return list([
-               item.decode('utf-8') for item in self.redis.lrange(f'games:{game_id}:plays', 0, -1)
+               json.loads(item.decode('utf-8')) for item in self.redis.lrange(f'games:{game_id}:plays', 0, -1)
             ])
         else:
             return []
@@ -343,7 +344,7 @@ class RedisStorage(DataStorage):
         return bool(self.redis.hget(f'games:{game_id}', 'started').decode('utf-8') == 'True')
 
     def add_play(self, game_id, play):
-        self.redis.rpush(f'games:{game_id}:plays', play)
+        self.redis.rpush(f'games:{game_id}:plays', json.dumps(play))
 
 
 def test_redis_connection(host='localhost', port=6379, db=0):

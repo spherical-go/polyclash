@@ -5,6 +5,8 @@ description = "A spherical go game on a snub dodecahedron framework"
 authors = ["Mingli Yuan <mingli.yuan@gmail.com>"]
 license = "MIT"
 homepage = "https://github.com/spherical-go/polyclash"
+repository = "https://github.com/spherical-go/polyclash"
+readme = "README.md"
 
 [tool.poetry.scripts]
 polyclash-client = "polyclash.client:main"
@@ -18,9 +20,6 @@ loguru = "^0.7.2"
 flask = "^3.0.3"
 flask-socketio = "^5.3.6"
 redis = "^5.0.4"
-
-[tool.poetry.dependencies."polyclash[client]"]
-# Dependencies for the client profile
 PyQt5 = "^5.15.10"
 pyvista = "^0.43.7"
 pyvistaqt = "^0.11.0"

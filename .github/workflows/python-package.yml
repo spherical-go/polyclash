@@ -23,6 +23,11 @@ jobs:
       uses: shogo82148/actions-setup-redis@v1
       with:
         version: 'latest'
+    - name: Set up Xvfb
+      run: |
+            sudo apt-get install xvfb
+            Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+            export DISPLAY=:99
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v3
       with:

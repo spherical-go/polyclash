@@ -227,7 +227,7 @@ def on_join(data):
     logger.info(f'event join... {str(data)}')
     try:
         key = data['key']
-        if key not in rooms:
+        if storage.contains(key):
             logger.error(f'error in event join... game({key}) not found')
             emit('error', {'message': 'Game not found'})
             return

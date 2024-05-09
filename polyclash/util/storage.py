@@ -135,7 +135,7 @@ class MemoryStorage(DataStorage):
         return self.games[game_id]['plays']
 
     def list_rooms(self):
-        return self.games.keys()
+        return list([key for key in self.games.keys()])
 
     def close_room(self, game_id):
         game = self.games[game_id]
@@ -254,8 +254,12 @@ class RedisStorage(DataStorage):
         self.redis.hset(f'games:{game_id}', 'ready:white', str(False))
         self.redis.hset(f'games:{game_id}', 'started', str(False))
 
+        self.redis.expire(f'games:{game_id}', 3600 * 24 * 3)
+
         # self.redis.rpush(f'games:{game_id}:viewers', '')
         # self.redis.rpush(f'games:{game_id}:plays', '')
+
+        self.reaper()
 
         return dict(game_id=game_id, black_key=black_key, white_key=white_key, viewer_key=viewer_key)
 
@@ -284,7 +288,23 @@ class RedisStorage(DataStorage):
         ])
 
     def close_room(self, game_id):
-        pass
+        if self.redis.exists(f'games:{game_id}'):
+            self.redis.hdel('rooms', self.redis.hget(f'games:{game_id}', 'keys:black'))
+            self.redis.hdel('rooms', self.redis.hget(f'games:{game_id}', 'keys:white'))
+            self.redis.hdel('rooms', self.redis.hget(f'games:{game_id}', 'keys:viewer'))
+            self.redis.hdel('rooms', self.redis.hget(f'games:{game_id}', 'players:black'))
+            self.redis.hdel('rooms', self.redis.hget(f'games:{game_id}', 'players:white'))
+        if self.redis.exists(f'games:{game_id}:viewer'):
+            for viewer_id in self.redis.lrange(f'games:{game_id}:viewers', 0, -1):
+                self.redis.hdel('rooms', viewer_id.decode('utf-8'))
+
+        self.redis.delete(f'games:{game_id}')
+        self.redis.lrem('games', 1, game_id)
+
+        if self.redis.exists(f'games:{game_id}:viewer'):
+            self.redis.delete(f'games:{game_id}:viewer')
+        if self.redis.exists(f'games:{game_id}:plays'):
+            self.redis.delete(f'games:{game_id}:plays')
 
     def exists(self, game_id):
         return game_id in list([item.decode('utf-8') for item in self.redis.lrange('games', 0, -1)])
@@ -318,7 +338,8 @@ class RedisStorage(DataStorage):
         token = secrets.token_hex(USER_TOKEN_LENGTH // 2)
         game_id = self.get_game_id(key)
         self.redis.hset('rooms', token, game_id)
-        self.redis.hset(f'games:{game_id}', f'players:viewer', token)
+        self.redis.rpush(f'games:{game_id}:viewer', token)
+        self.redis.expire(f'games:{game_id}:viewer', 3600 * 24 * 3)
 
     def get_role(self, key_or_token):
         game_id = self.get_game_id(key_or_token)
@@ -345,6 +366,14 @@ class RedisStorage(DataStorage):
 
     def add_play(self, game_id, play):
         self.redis.rpush(f'games:{game_id}:plays', json.dumps(play))
+        self.redis.expire(f'games:{game_id}:plays', 3600 * 24 * 3)
+
+    def reaper(self):
+        for game_id in self.list_rooms():
+            # if game_id is not represented in the key of games:{game_id}
+            # then it means the game is over and we should clean up
+            if not self.redis.exists(f'games:{game_id}'):
+                self.close_room(game_id)
 
 
 def test_redis_connection(host='localhost', port=6379, db=0):

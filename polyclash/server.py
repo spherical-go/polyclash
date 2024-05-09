@@ -112,7 +112,7 @@ def index():
         table_of_games += f"<li>viewer: {key}</li>"
     html = f"""
     <h1>Welcome to PolyClash</h1>
-    <p>Token: {server_token}</p>
+    <p>Server token: {server_token}</p>
     <h2>List of games</h2>
     <ul>
     {table_of_games}

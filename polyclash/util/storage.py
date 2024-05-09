@@ -135,7 +135,7 @@ class MemoryStorage(DataStorage):
         return self.games[game_id]['plays']
 
     def list_rooms(self):
-        return self.games.keys()
+        return list([key for key in self.games.keys()])
 
     def close_room(self, game_id):
         game = self.games[game_id]

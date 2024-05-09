@@ -64,7 +64,6 @@ def player_canceled(game, role):
 
 
 def delayed_start(game_id):
-    time.sleep(3)
     storage.start_game()
     socketio.emit('start', {'message': 'Game has started'}, room=game_id)
     logger.info(f'game started... {game_id}')
@@ -120,6 +119,11 @@ def index():
     """
 
     return html, 200
+
+
+@app.route('/sphgo/list', methods=['GET'])
+def list_games():
+    return jsonify({'rooms': storage.list_rooms()}), 200
 
 
 @app.route('/sphgo/new', methods=['POST'])

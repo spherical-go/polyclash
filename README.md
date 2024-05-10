@@ -84,7 +84,7 @@ How to release a new version:
 python3 setup.py sdist bdist_wheel
 python3 -m twine upload dist/*
 
-git tag va.b.c master
+git tag va.b.c main
 git push origin va.b.c
 ```
 

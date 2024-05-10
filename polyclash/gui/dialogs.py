@@ -1,20 +1,17 @@
-import os.path as osp
 import time
+import polyclash.gui.icons as icons
 
 from urllib.parse import urlparse
 
-from PyQt5.QtCore import QTimer
 from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QLineEdit, QComboBox, QPushButton, QMessageBox, QAction, \
     QVBoxLayout
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QImage, QPixmap
 
 from polyclash.util.api import get_server, set_server, connect
 from polyclash.game.board import BLACK, WHITE
 from polyclash.game.controller import LOCAL, NETWORK
 from polyclash.game.player import HUMAN, REMOTE
 from polyclash.workers.network import NetworkWorker
-
-png_copy_path = osp.abspath(osp.join(osp.dirname(__file__), "copy.png"))
 
 
 def is_valid_url(url):
@@ -102,11 +99,14 @@ class NetworkGameDialog(QDialog):
         self.window = parent
 
     def manage_keys(self):
+        copy = QPixmap.fromImage(
+            QImage(icons.array_copy.data, icons.array_copy.shape[1], icons.array_copy.shape[0], QImage.Format_RGBA8888))
+
         # Adds widgets for Black, White, and Viewer keys
         for color in ["Black", "White", "Viewer"]:
             setattr(self, f"{color.lower()}_key", QLineEdit(''))
             getattr(self, f"{color.lower()}_key").setReadOnly(True)
-            copyAction = QAction(QIcon(png_copy_path), f'copy{color}', self)
+            copyAction = QAction(QIcon(copy), f'copy{color}', self)
             copyAction.triggered.connect(lambda chk, key=color.lower(): self.copy_text(key))
             getattr(self, f"{color.lower()}_key").addAction(copyAction, QLineEdit.TrailingPosition)
             self.layout().addWidget(QLabel(f'{color} Key'))

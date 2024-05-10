@@ -2,12 +2,12 @@ import numpy as np
 import pyvista as pv
 import colorsys
 
-from os import path as osp
-from polyclash.data.data import triangles, pentagons, triangle2faces, pentagon2faces
+from polyclash.data.data import triangles, pentagons, triangle2faces, pentagon2faces, cities, polysmalls, polylarges
 from polyclash.gui.constants import face_continent_colors, face_oceanic_color
 
-model_path = osp.abspath(osp.join(osp.dirname(__file__), "mesh.vtk"))
-mesh = pv.read(model_path)
+
+faces_list = [[4] + list(small) for small in polysmalls] + [[4] + list(large) for large in polylarges]
+mesh = pv.PolyData(cities, np.hstack(faces_list))
 
 
 def adjust_hue(rgb_color, adjustment_factor):

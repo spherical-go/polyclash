@@ -23,7 +23,7 @@ setuptools.setup(
         "Operating System :: OS Independent",
     ],
     packages=setuptools.find_packages(
-        exclude=['tests', 'model3d', 'scripts', 'bin']
+        exclude=['tests', 'model3d', 'scripts', 'bin'],
     ),
     python_requires='>=3.10',
     install_requires=[

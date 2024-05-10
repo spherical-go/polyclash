@@ -268,7 +268,11 @@ def on_ready(data):
             delayed_thread.start()
 
 
-if __name__ == '__main__':
+def main():
     logger.info(f"Secret: {secret_key}")
     logger.info(f"Token: {server_token}")
     socketio.run(app, host='localhost', port=5000, allow_unsafe_werkzeug=True, debug=True)
+
+
+if __name__ == '__main__':
+    main()

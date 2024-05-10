@@ -8,7 +8,7 @@ from polyclash.game.player import HUMAN, AI
 from polyclash.gui.main import MainWindow
 
 
-if __name__ == "__main__":
+def main():
     app = QApplication(sys.argv)
 
     controller = SphericalGoController()
@@ -29,3 +29,7 @@ if __name__ == "__main__":
     window.delayed_resize(width+1, height+1)
     window.show()
     sys.exit(app.exec_())
+
+
+if __name__ == "__main__":
+    main()

@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="polyclash",
-    version="0.0.2",
+    version="0.0.3",
     author="Mingli Yuan",
     author_email="mingli.yuan@gmail.com",
     description="A python 3d spherical Go game on a snub dodecahedron board",

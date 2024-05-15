@@ -74,7 +74,7 @@ class NetworkGameDialog(QDialog):
 
         # Server input (only enabled for Network mode)
         self.server_input = QLineEdit(self)
-        self.server_input.setPlaceholderText("http://127.0.0.1:5000")
+        self.server_input.setPlaceholderText("https://sphericalgo.org")
         layout.addWidget(QLabel('Server'))
         layout.addWidget(self.server_input)
 

@@ -271,7 +271,7 @@ def on_ready(data):
 def main():
     logger.info(f"Secret: {secret_key}")
     logger.info(f"Token: {server_token}")
-    socketio.run(app, host='localhost', port=5000, allow_unsafe_werkzeug=True, debug=True)
+    socketio.run(app, host='0.0.0.0', port=3302, allow_unsafe_werkzeug=True, debug=False)
 
 
 if __name__ == '__main__':

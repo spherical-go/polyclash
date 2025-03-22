@@ -16,6 +16,11 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Set up Redis
+      uses: shogo82148/actions-setup-redis@v1
+      with:
+        version: 'latest'
+    
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
@@ -52,6 +57,11 @@ jobs:
     
     steps:
     - uses: actions/checkout@v4
+    
+    - name: Set up Redis
+      uses: shogo82148/actions-setup-redis@v1
+      with:
+        version: 'latest'
     
     - name: Set up Python 3.13
       uses: actions/setup-python@v4

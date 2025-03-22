@@ -626,7 +626,7 @@ cities = np.array([
 
 city_manager = CityManager(cities)
 
-axis = np.zeros((8, 3), dtype=np.float_)
+axis = np.zeros((8, 3), dtype=np.float64)
 axis[0] = np.mean(cities[0:15], axis=0)
 axis[1] = np.mean(cities[15:30], axis=0)
 axis[2] = np.mean(cities[30:45], axis=0)

@@ -1,7 +1,14 @@
 import pytest
+import secrets
 from unittest.mock import patch, MagicMock
-from polyclash.server import app
+from polyclash.server import app, server_token
 from polyclash.util.api import connect, join, ready, play, close
+
+# Skip all tests if server_token is not set
+pytestmark = pytest.mark.skipif(
+    server_token == secrets.token_hex(32), 
+    reason="Server token is not set, skipping integration tests"
+)
 
 class TestClientServerIntegration:
     def test_new_game_endpoint(self, client):

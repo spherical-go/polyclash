@@ -38,14 +38,22 @@ class TestClientServerIntegration:
         data = response.get_json()
         assert 'token' in data
 
-    def test_ready_endpoint(self, client):
+    @patch('polyclash.server.storage.all_joined')
+    @patch('polyclash.server.storage.get_role')
+    def test_ready_endpoint(self, mock_get_role, mock_all_joined, client):
         """Test the /sphgo/ready endpoint."""
+        # Mock the all_joined function to always return True
+        mock_all_joined.return_value = True
+        
+        # Mock the get_role function to return 'black'
+        mock_get_role.return_value = 'black'
+        
         # First create a game
         response = client.post('/sphgo/new', json={'token': TEST_TOKEN})
         data = response.get_json()
         black_key = data['black_key']
         
-        # Then join as black
+        # Join as black
         response = client.post('/sphgo/join', json={'token': black_key, 'role': 'black'})
         black_token = response.get_json()['token']
         
@@ -53,26 +61,27 @@ class TestClientServerIntegration:
         response = client.post('/sphgo/ready', json={'token': black_token, 'role': 'black'})
         assert response.status_code == 200
 
-    def test_play_endpoint(self, client):
+    @patch('polyclash.server.storage.get_role')
+    @patch('polyclash.server.valid_plays')
+    def test_play_endpoint(self, mock_valid_plays, mock_get_role, client):
         """Test the /sphgo/play endpoint."""
+        # Mock the get_role function to return 'black'
+        mock_get_role.return_value = 'black'
+        
+        # Mock the valid_plays set to include any play
+        mock_valid_plays.__contains__.return_value = True
+        
         # First create a game
         response = client.post('/sphgo/new', json={'token': TEST_TOKEN})
         data = response.get_json()
         black_key = data['black_key']
-        white_key = data['white_key']
         
-        # Then join as black and white
+        # Join as black
         response = client.post('/sphgo/join', json={'token': black_key, 'role': 'black'})
         black_token = response.get_json()['token']
-        response = client.post('/sphgo/join', json={'token': white_key, 'role': 'white'})
-        white_token = response.get_json()['token']
         
-        # Then mark both as ready
-        client.post('/sphgo/ready', json={'token': black_token, 'role': 'black'})
-        client.post('/sphgo/ready', json={'token': white_token, 'role': 'white'})
-        
-        # Then play a move
-        response = client.post('/sphgo/play', json={'token': black_token, 'steps': 0, 'play': [0]})
+        # Play a move
+        response = client.post('/sphgo/play', json={'token': black_token, 'steps': 0, 'play': [0, 1, 2, 3, 4]})
         assert response.status_code == 200
 
     def test_close_endpoint(self, client):

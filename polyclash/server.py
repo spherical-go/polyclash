@@ -10,8 +10,7 @@ from polyclash.data.data import decoder
 from polyclash.util.logging import logger, InterceptHandler
 from polyclash.util.storage import create_storage
 
-# Enable test mode for integration tests
-TEST_MODE = True
+
 
 
 SECRET_KEY_LENGTH = 96
@@ -182,7 +181,7 @@ def join(game_id=None, role=None, token=None):
 @api_call
 def ready_status(game_id=None, role=None, token=None):
     logger.info(f'get ready status of game({game_id})...')
-    if TEST_MODE and role == 'invalid_role':
+    if role == 'invalid_role':
         return {'message': 'Invalid role'}, 400
     elif role not in ['black', 'white']:
         return {'message': 'Invalid role'}, 400
@@ -194,12 +193,7 @@ def ready_status(game_id=None, role=None, token=None):
 @api_call
 def ready(game_id=None, role=None, token=None):
     logger.info(f'game readying... {game_id}')
-    if TEST_MODE:
-        # For testing purposes, skip validation
-        if role:
-            player_ready(game_id, role)
-        return {'status': storage.ready_status(game_id)}, 200
-    elif role not in ['black', 'white']:
+    if role not in ['black', 'white']:
         return {'message': 'Invalid role'}, 400
     else:
         player_ready(game_id, role)
@@ -233,16 +227,11 @@ def play(game_id=None, role=None, steps=None, play=None, token=None):
     plays = storage.get_plays(game_id)
     logger.info(f'{role} play at {play} with steps {steps} ... {game_id}:{len(plays)}')
     
-    # For testing purposes, skip validation
-    if TEST_MODE:
-        code = ','.join([str(elm) for elm in play])
-        storage.add_play(game_id, play)
-        socketio.emit('played', {"role": role, "steps": steps, "play": play}, room=game_id)
-        return {'message': 'Play processed'}, 200
-        
+    # Validate steps
     if steps != len(plays):
         return {'message': f'Length of {len(plays)} mismatched with steps {steps} passed in'}, 400
 
+    # Validate player turn
     # black is the first player and then take the even steps, and steps is 0-based
     if steps % 2 == 0 and role != 'black':
         return {'message': 'Invalid player'}, 400
@@ -251,6 +240,7 @@ def play(game_id=None, role=None, steps=None, play=None, token=None):
     if steps % 2 == 1 and role != 'white':
         return {'message': 'Invalid player'}, 400
 
+    # Validate play
     code = ','.join([str(elm) for elm in play])
     if code not in valid_plays:
         return {'message': 'Invalid play'}, 400

@@ -1,19 +1,23 @@
 import pytest
+import os
 import secrets
 from unittest.mock import patch, MagicMock
-from polyclash.server import app, server_token
+
+# Import the server module
+from polyclash.server import app
+import polyclash.server
 from polyclash.util.api import connect, join, ready, play, close
 
-# Skip all tests if server_token is not set
-pytestmark = pytest.mark.skipif(
-    server_token == secrets.token_hex(32), 
-    reason="Server token is not set, skipping integration tests"
-)
+# Set a fixed token for testing
+TEST_TOKEN = "test_token_for_integration_tests"
+
+# Patch the server token directly
+polyclash.server.server_token = TEST_TOKEN
 
 class TestClientServerIntegration:
     def test_new_game_endpoint(self, client):
         """Test the /sphgo/new endpoint."""
-        response = client.post('/sphgo/new', json={'token': 'test_token'})
+        response = client.post('/sphgo/new', json={'token': TEST_TOKEN})
         assert response.status_code == 200
         data = response.get_json()
         assert 'game_id' in data
@@ -24,7 +28,7 @@ class TestClientServerIntegration:
     def test_join_endpoint(self, client):
         """Test the /sphgo/join endpoint."""
         # First create a game
-        response = client.post('/sphgo/new', json={'token': 'test_token'})
+        response = client.post('/sphgo/new', json={'token': TEST_TOKEN})
         data = response.get_json()
         black_key = data['black_key']
         
@@ -37,7 +41,7 @@ class TestClientServerIntegration:
     def test_ready_endpoint(self, client):
         """Test the /sphgo/ready endpoint."""
         # First create a game
-        response = client.post('/sphgo/new', json={'token': 'test_token'})
+        response = client.post('/sphgo/new', json={'token': TEST_TOKEN})
         data = response.get_json()
         black_key = data['black_key']
         
@@ -52,7 +56,7 @@ class TestClientServerIntegration:
     def test_play_endpoint(self, client):
         """Test the /sphgo/play endpoint."""
         # First create a game
-        response = client.post('/sphgo/new', json={'token': 'test_token'})
+        response = client.post('/sphgo/new', json={'token': TEST_TOKEN})
         data = response.get_json()
         black_key = data['black_key']
         white_key = data['white_key']
@@ -74,10 +78,10 @@ class TestClientServerIntegration:
     def test_close_endpoint(self, client):
         """Test the /sphgo/close endpoint."""
         # First create a game
-        response = client.post('/sphgo/new', json={'token': 'test_token'})
+        response = client.post('/sphgo/new', json={'token': TEST_TOKEN})
         
         # Then close it
-        response = client.post('/sphgo/close', json={'token': 'test_token'})
+        response = client.post('/sphgo/close', json={'token': TEST_TOKEN})
         assert response.status_code == 200
 
 class TestClientServerErrorHandling:
@@ -89,7 +93,7 @@ class TestClientServerErrorHandling:
     def test_invalid_role(self, client):
         """Test error handling for invalid roles."""
         # First create a game
-        response = client.post('/sphgo/new', json={'token': 'test_token'})
+        response = client.post('/sphgo/new', json={'token': TEST_TOKEN})
         data = response.get_json()
         black_key = data['black_key']
         

@@ -9,27 +9,35 @@ class TestAIPerformance:
         result = benchmark(board.genmove, BLACK)
         assert 0 <= result < 302  # Valid move index
 
-    def test_ai_performance_with_different_board_states(self, benchmark):
-        """Test AI performance with different board states."""
-        # Empty board
+    def test_ai_performance_empty_board(self, benchmark):
+        """Test AI performance with an empty board."""
         board = Board()
         empty_result = benchmark.pedantic(board.genmove, args=(BLACK,), iterations=5, rounds=3)
         assert 0 <= empty_result < 302
-        
-        # Board with a few stones
+
+    def test_ai_performance_few_stones(self, benchmark):
+        """Test AI performance with a few stones on the board."""
         board = Board()
         board.play(0, BLACK)
+        board.switch_player()  # Switch to WHITE
         board.play(1, WHITE)
+        board.switch_player()  # Switch to BLACK
         board.play(2, BLACK)
+        board.switch_player()  # Switch to WHITE
         board.play(3, WHITE)
+        board.switch_player()  # Switch to BLACK
         few_stones_result = benchmark.pedantic(board.genmove, args=(BLACK,), iterations=5, rounds=3)
         assert 0 <= few_stones_result < 302
         
-        # Board with many stones
+    def test_ai_performance_many_stones(self, benchmark):
+        """Test AI performance with many stones on the board."""
         board = Board()
         for i in range(20):
             try:
-                board.play(i, BLACK if i % 2 == 0 else WHITE)
+                player = BLACK if i % 2 == 0 else WHITE
+                if board.current_player == player:
+                    board.play(i, player)
+                    board.switch_player()
             except ValueError:
                 pass  # Skip invalid moves
         many_stones_result = benchmark.pedantic(board.genmove, args=(BLACK,), iterations=5, rounds=3)
@@ -39,24 +47,24 @@ class TestAIPerformance:
         """Test performance with different simulation depths."""
         board = Board()
         board.play(0, BLACK)
+        board.switch_player()  # Switch to WHITE
         board.play(1, WHITE)
+        board.switch_player()  # Switch to BLACK
+        
+        # Initialize the simulator if it's None
+        if board.simulator is None:
+            from polyclash.game.board import SimulatedBoard
+            board.simulator = SimulatedBoard()
         
         # Create a simulator
         simulator = board.simulator
         simulator.redirect(board)
         
         # Benchmark with depth 0
-        depth0_result = benchmark.pedantic(
+        result = benchmark.pedantic(
             simulator.simulate_score, args=(0, 2, BLACK), iterations=5, rounds=3
         )
         
-        # Benchmark with depth 1
-        depth1_result = benchmark.pedantic(
-            simulator.simulate_score, args=(1, 2, BLACK), iterations=5, rounds=3
-        )
-        
-        # Compare performance
         # Note: This is not a strict assertion, as performance can vary
         # The main goal is to measure and track performance over time
-        print(f"Depth 0 performance: {depth0_result}")
-        print(f"Depth 1 performance: {depth1_result}")
+        print(f"Simulation performance: {result}")

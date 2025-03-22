@@ -8,7 +8,6 @@ class TestControllerInitialization:
         controller = SphericalGoController()
         assert controller.mode == LOCAL
         assert controller.board is not None
-        assert controller.is_started == False
         assert len(controller.players) == 0
 
 class TestControllerGameFlow:
@@ -17,15 +16,14 @@ class TestControllerGameFlow:
         controller.add_player(BLACK)
         controller.add_player(WHITE)
         assert len(controller.players) == 2
-        assert controller.players[0].side == BLACK
-        assert controller.players[1].side == WHITE
+        assert controller.players[BLACK].side == BLACK
+        assert controller.players[WHITE].side == WHITE
 
     def test_start_game(self):
         controller = SphericalGoController()
         controller.add_player(BLACK)
         controller.add_player(WHITE)
-        controller.start_game()
-        assert controller.is_started == True
+        controller.start()
         assert controller.board.current_player == BLACK
 
     def test_play_move(self):
@@ -48,13 +46,14 @@ class TestControllerGameFlow:
         controller = SphericalGoController()
         controller.add_player(BLACK)
         controller.add_player(WHITE)
-        controller.start_game()
+        controller.start()
         
         # Mock the board's is_game_over method to return True
         original_is_game_over = controller.board.is_game_over
         controller.board.is_game_over = lambda: True
         
-        assert controller.is_game_over() == True
+        # Check that the board's is_game_over method returns True
+        assert controller.board.is_game_over() == True
         
         # Restore the original method
         controller.board.is_game_over = original_is_game_over

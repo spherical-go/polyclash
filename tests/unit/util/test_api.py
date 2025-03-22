@@ -97,6 +97,21 @@ class TestAPIFunctions:
         mock_response.status_code = 200
         mock_post.return_value = mock_response
         
+        # Set game_token to None
+        from polyclash.util.api import game_token, set_game_token
+        set_game_token(None)
+        
         # Test the close function with game_token set to None
-        with pytest.raises(AttributeError):
-            close('http://test-server.com')
+        # It should not make a request
+        close('http://test-server.com')
+        mock_post.assert_not_called()
+        
+        # Set game_token to a value
+        set_game_token('test_token')
+        
+        # Test the close function with game_token set
+        close('http://test-server.com')
+        mock_post.assert_called_once_with(
+            'http://test-server.com/sphgo/close',
+            json={'token': 'test_token'}
+        )

@@ -11,8 +11,6 @@ from polyclash.util.logging import logger, InterceptHandler
 from polyclash.util.storage import create_storage
 
 
-
-
 SECRET_KEY_LENGTH = 96
 SERVER_TOKEN_LENGTH = 32
 

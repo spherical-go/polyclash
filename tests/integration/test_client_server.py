@@ -15,9 +15,9 @@ TEST_TOKEN = "test_token_for_integration_tests"
 polyclash.server.server_token = TEST_TOKEN
 
 class TestClientServerIntegration:
-    def test_new_game_endpoint(self, client):
+    def test_new_game_endpoint(self, test_client):
         """Test the /sphgo/new endpoint."""
-        response = client.post('/sphgo/new', json={'token': TEST_TOKEN})
+        response = test_client.post('/sphgo/new', json={'token': TEST_TOKEN})
         assert response.status_code == 200
         data = response.get_json()
         assert 'game_id' in data
@@ -25,87 +25,61 @@ class TestClientServerIntegration:
         assert 'white_key' in data
         assert 'viewer_key' in data
 
-    def test_join_endpoint(self, client):
+    def test_join_endpoint(self, test_client, auth_handshake):
         """Test the /sphgo/join endpoint."""
-        # First create a game
-        response = client.post('/sphgo/new', json={'token': TEST_TOKEN})
-        data = response.get_json()
-        black_key = data['black_key']
-        
-        # Then join as black
-        response = client.post('/sphgo/join', json={'token': black_key, 'role': 'black'})
-        assert response.status_code == 200
-        data = response.get_json()
-        assert 'token' in data
+        # Use the auth_handshake fixture to verify join was successful
+        assert auth_handshake['black_token'] is not None
+        assert auth_handshake['white_token'] is not None
 
-    @patch('polyclash.server.storage.all_joined')
-    @patch('polyclash.server.storage.get_role')
-    def test_ready_endpoint(self, mock_get_role, mock_all_joined, client):
+    def test_ready_endpoint(self, test_client, auth_handshake):
         """Test the /sphgo/ready endpoint."""
-        # Mock the all_joined function to always return True
-        mock_all_joined.return_value = True
-        
-        # Mock the get_role function to return 'black'
-        mock_get_role.return_value = 'black'
-        
-        # First create a game
-        response = client.post('/sphgo/new', json={'token': TEST_TOKEN})
-        data = response.get_json()
-        black_key = data['black_key']
-        
-        # Join as black
-        response = client.post('/sphgo/join', json={'token': black_key, 'role': 'black'})
-        black_token = response.get_json()['token']
+        # Use the auth_handshake fixture to get tokens
+        black_token = auth_handshake['black_token']
         
         # Then mark as ready
-        response = client.post('/sphgo/ready', json={'token': black_token, 'role': 'black'})
+        response = test_client.post('/sphgo/ready', json={'token': black_token, 'role': 'black'})
         assert response.status_code == 200
 
-    @patch('polyclash.server.storage.get_role')
-    @patch('polyclash.server.valid_plays')
-    def test_play_endpoint(self, mock_valid_plays, mock_get_role, client):
+    def test_play_endpoint(self, test_client, auth_handshake):
         """Test the /sphgo/play endpoint."""
-        # Mock the get_role function to return 'black'
-        mock_get_role.return_value = 'black'
+        # Use the auth_handshake fixture to get tokens
+        black_token = auth_handshake['black_token']
         
-        # Mock the valid_plays set to include any play
-        mock_valid_plays.__contains__.return_value = True
+        # Mark black as ready
+        response = test_client.post('/sphgo/ready', json={'token': black_token, 'role': 'black'})
+        assert response.status_code == 200
         
-        # First create a game
-        response = client.post('/sphgo/new', json={'token': TEST_TOKEN})
-        data = response.get_json()
-        black_key = data['black_key']
+        # Mark white as ready
+        white_token = auth_handshake['white_token']
+        response = test_client.post('/sphgo/ready', json={'token': white_token, 'role': 'white'})
+        assert response.status_code == 200
         
-        # Join as black
-        response = client.post('/sphgo/join', json={'token': black_key, 'role': 'black'})
-        black_token = response.get_json()['token']
-        
-        # Play a move
-        response = client.post('/sphgo/play', json={'token': black_token, 'steps': 0, 'play': [0, 1, 2, 3, 4]})
+        # Play a move as black (first player)
+        response = test_client.post('/sphgo/play', json={'token': black_token, 'role': 'black', 'steps': 0, 'play': [0, 1, 2, 3, 4]})
         assert response.status_code == 200
 
-    def test_close_endpoint(self, client):
+    def test_close_endpoint(self, test_client, auth_handshake):
         """Test the /sphgo/close endpoint."""
-        # First create a game
-        response = client.post('/sphgo/new', json={'token': TEST_TOKEN})
+        # Use the auth_handshake fixture to get tokens
+        black_token = auth_handshake['black_token']
         
         # Then close it
-        response = client.post('/sphgo/close', json={'token': TEST_TOKEN})
+        response = test_client.post('/sphgo/close', json={'token': black_token})
         assert response.status_code == 200
 
 class TestClientServerErrorHandling:
-    def test_invalid_token(self, client):
+    def test_invalid_token(self, test_client):
         """Test error handling for invalid tokens."""
-        response = client.post('/sphgo/join', json={'token': 'invalid_token', 'role': 'black'})
+        response = test_client.post('/sphgo/join', json={'token': 'invalid_token', 'role': 'black'})
         assert response.status_code == 401
         
-    def test_invalid_role(self, client):
+    def test_invalid_role(self, test_client):
         """Test error handling for invalid roles."""
         # First create a game
-        response = client.post('/sphgo/new', json={'token': TEST_TOKEN})
+        response = test_client.post('/sphgo/new', json={'token': TEST_TOKEN})
         data = response.get_json()
         black_key = data['black_key']
         
         # Then try to join with an invalid role
-        response = client.post('/sphgo/join', json={'token': black_key, 'role': 'invalid_role'})
+        response = test_client.post('/sphgo/join', json={'token': black_key, 'role': 'invalid_role'})
         assert response.status_code == 400

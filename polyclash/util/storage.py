@@ -196,12 +196,25 @@ class MemoryStorage(DataStorage):
     def get_role(self, key_or_token):
         if key_or_token in self.rooms:
             game_id = self.rooms[key_or_token]
+            # Check if it's a key
             if key_or_token == self.games[game_id]['keys']['black']:
                 return 'black'
             elif key_or_token == self.games[game_id]['keys']['white']:
                 return 'white'
             elif key_or_token == self.games[game_id]['keys']['viewer']:
                 return 'viewer'
+            
+            # Check if it's a token
+            if 'players' in self.games[game_id]:
+                if 'black' in self.games[game_id]['players'] and key_or_token == self.games[game_id]['players']['black']:
+                    return 'black'
+                elif 'white' in self.games[game_id]['players'] and key_or_token == self.games[game_id]['players']['white']:
+                    return 'white'
+                
+            # Check if it's a viewer token
+            if 'viewers' in self.games[game_id] and key_or_token in self.games[game_id]['viewers']:
+                return 'viewer'
+                
         raise ValueError('Invalid key or token')
 
     def join_room(self, game_id, role):
@@ -343,11 +356,19 @@ class RedisStorage(DataStorage):
 
     def get_role(self, key_or_token):
         game_id = self.get_game_id(key_or_token)
+        
+        # Check if it's a key
         role = self.redis.hget(f'games:{game_id}', f'keys:{key_or_token}')
         if role:
             return role.decode('utf-8')
-        else:
-            return 'viewer'
+            
+        # Check if it's a player token
+        role = self.redis.hget(f'games:{game_id}', f'players:{key_or_token}')
+        if role:
+            return role.decode('utf-8')
+            
+        # If not a key or player token, assume it's a viewer token
+        return 'viewer'
 
     def join_room(self, game_id, role):
         self.redis.hset(f'games:{game_id}', f'joined:{role}', str(True))
@@ -392,4 +413,3 @@ def create_storage(flag_redis=None):
     if flag_redis:
         return RedisStorage()
     return MemoryStorage()
-

@@ -36,22 +36,11 @@ class TestUILogicIntegration:
         controller.add_player(BLACK)
         controller.add_player(WHITE)
         
-        # Mock the UI update methods
-        original_update_status = main_window.update_status
-        status_updated = False
-        
-        def mock_update_status():
-            nonlocal status_updated
-            status_updated = True
-            original_update_status()
-        
-        main_window.update_status = mock_update_status
-        
         # Start the game
         controller.gameStarted.emit()
         
         # Check that the UI is updated
-        assert status_updated == True
+        assert main_window.update_status.called
         assert controller.board.current_player == BLACK
 
     def test_game_end_updates_ui(self, qapp, main_window):
@@ -61,22 +50,14 @@ class TestUILogicIntegration:
         controller.add_player(WHITE)
         controller.gameStarted.emit()
         
-        # Mock the UI update methods
-        original_update_status = main_window.update_status
-        status_updated = False
-        
-        def mock_update_status():
-            nonlocal status_updated
-            status_updated = True
-            original_update_status()
-        
-        main_window.update_status = mock_update_status
+        # Reset the mock to clear any previous calls
+        main_window.update_status.reset_mock()
         
         # End the game
         controller.gameEnded.emit()
         
         # Check that the UI is updated
-        assert status_updated == True
+        assert main_window.update_status.called
 
     def test_player_switch_updates_ui(self, qapp, main_window):
         """Test that switching players updates the UI."""
@@ -85,20 +66,12 @@ class TestUILogicIntegration:
         controller.add_player(WHITE)
         controller.gameStarted.emit()
         
-        # Mock the UI update methods
-        original_update_status = main_window.update_status
-        status_updated = False
-        
-        def mock_update_status():
-            nonlocal status_updated
-            status_updated = True
-            original_update_status()
-        
-        main_window.update_status = mock_update_status
+        # Reset the mock to clear any previous calls
+        main_window.update_status.reset_mock()
         
         # Place a stone to switch players
         controller.playerPlaced.emit(BLACK, 0)
         
         # Check that the UI is updated
-        assert status_updated == True
+        assert main_window.update_status.called
         assert controller.board.current_player == WHITE

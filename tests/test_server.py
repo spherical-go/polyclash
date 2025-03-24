@@ -7,25 +7,6 @@ from polyclash.util.storage import create_storage
 from polyclash.server import app, server_token
 
 
-@pytest.fixture
-def test_client():
-    client = app.test_client()
-    return client
-
-
-@pytest.fixture
-def socketio_client(test_client):
-    socketio_client = SocketIO(app, client=test_client, async_mode='threading')
-    socketio_client.init_app(app)
-    return socketio_client.test_client(app)
-
-
-@pytest.fixture
-def storage():
-    server.storage = create_storage(flag_redis=False)
-    return server.storage
-
-
 def test_index_page(storage, test_client):
     result = test_client.get('/sphgo/')
     assert result.status_code == 200

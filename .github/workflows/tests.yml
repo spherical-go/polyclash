@@ -39,7 +39,7 @@ jobs:
     
     - name: Run integration tests
       run: |
-        pytest tests/integration -k "not TestUILogicIntegration and not TestClientServerIntegration and not TestClientServerErrorHandling"
+        pytest tests/integration
     
     - name: Run functional tests
       run: |

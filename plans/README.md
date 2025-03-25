@@ -21,8 +21,15 @@ Each plan document follows a consistent structure:
 ## Available Plans
 
 1. [**Roadmap**](roadmap.md): The overall improvement roadmap with all phases
-2. [**Phase 1: Testing Enhancement**](phase1_testing.md): Improving test coverage and quality
-3. [**Phase 3: AI Enhancement**](phase3_ai.md): Implementing advanced AI algorithms
+
+### Phase 1: Foundation Strengthening
+2. [**Phase 1: Testing Enhancement**](phase1_foundation/phase1_testing.md): Improving test coverage and quality
+3. [**Phase 1: Testing Enhancement (Revised)**](phase1_foundation/phase1_testing_revised.md): Updated testing enhancement plan
+4. [**Test Structure Reorganization**](phase1_foundation/implementation/test_structure_reorganization.md): Implementation details for test reorganization
+
+### Phase 3: AI Enhancement
+5. [**Phase 3: AI Enhancement Overview**](phase3_ai/phase3_ai.md): Overview of AI improvements
+6. [**Phase 3.1: MCTS Implementation**](phase3_ai/phase3.1_mcts_implementation.md): Detailed plan for Monte Carlo Tree Search implementation
 
 ## Planned Documents
 

@@ -77,16 +77,4 @@ jobs:
     
     - name: Run performance tests
       run: |
-        pytest tests/performance --benchmark-json=benchmark.json
-    
-    - name: Store benchmark result
-      uses: rhysd/github-action-benchmark@v1
-      with:
-        tool: 'pytest'
-        output-file-path: benchmark.json
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        auto-push: false
-        comment-on-alert: false
-        fail-on-alert: false
-        alert-threshold: '200%'
-        comment-always: false
+        pytest tests/performance

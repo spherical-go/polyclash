@@ -6,40 +6,40 @@ This directory contains detailed implementation plans for the various improvemen
 
 | Implementation Plan | Status | Completion Date |
 |---------------------|--------|----------------|
-| ✅ [Test Structure Reorganization](test_structure_reorganization_completed.md) | **FINISHED** | March 25, 2025 |
-| 📅 Core Game Logic Tests | **PLANNED** | - |
-| 📅 AI Component Tests | **PLANNED** | - |
-| 📅 Network Component Tests | **PLANNED** | - |
-| 📅 UI Component Tests | **PLANNED** | - |
-| 📅 Integration Tests | **PLANNED** | - |
-| 📅 Functional Tests | **PLANNED** | - |
-| 📅 Performance Tests | **PLANNED** | - |
-| 📅 CI/CD Setup | **PLANNED** | - |
+| ✅ [001 - Test Structure Reorganization](001_test_structure_reorganization_completed.md) | **FINISHED** | March 25, 2025 |
+| 📅 002 - Core Game Logic Tests | **PLANNED** | - |
+| 📅 003 - AI Component Tests | **PLANNED** | - |
+| 📅 004 - Network Component Tests | **PLANNED** | - |
+| 📅 005 - UI Component Tests | **PLANNED** | - |
+| 📅 006 - Integration Tests | **PLANNED** | - |
+| 📅 007 - Functional Tests | **PLANNED** | - |
+| 📅 008 - Performance Tests | **PLANNED** | - |
+| 📅 009 - CI/CD Setup | **PLANNED** | - |
 
 **Last Updated:** March 25, 2025
 
 ## Available Implementation Plans
 
-1. [**Test Structure Reorganization (Completed)**](test_structure_reorganization_completed.md): Implementation of the test structure reorganization (completed)
-2. [**Test Structure Reorganization (Original Plan)**](test_structure_reorganization.md): Original detailed plan for reorganizing the test structure
+1. [**001 - Test Structure Reorganization (Completed)**](001_test_structure_reorganization_completed.md): Implementation of the test structure reorganization (completed)
+2. [**001 - Test Structure Reorganization (Original Plan)**](001_test_structure_reorganization.md): Original detailed plan for reorganizing the test structure
 
 ## Planned Implementation Documents
 
 The following implementation plans will be created as the project progresses:
 
-3. **Core Game Logic Tests**: Implementation plan for expanding test coverage of the core game logic
-4. **AI Component Tests**: Implementation plan for testing the AI components
-5. **Network Component Tests**: Implementation plan for testing the network components
-6. **UI Component Tests**: Implementation plan for testing the UI components
-7. **Integration Tests**: Implementation plan for testing component interactions
-8. **Functional Tests**: Implementation plan for testing complete workflows
-9. **Performance Tests**: Implementation plan for testing performance
-10. **CI/CD Setup**: Implementation plan for setting up continuous integration and deployment
-11. **Code Refactoring**: Implementation plan for refactoring the codebase
-12. **MCTS Implementation**: Implementation plan for the Monte Carlo Tree Search algorithm
-13. **Position Evaluation Heuristics**: Implementation plan for improving position evaluation
-14. **Opening Book**: Implementation plan for creating an opening book
-15. **Endgame Solver**: Implementation plan for implementing an endgame solver
+- **002 - Core Game Logic Tests**: Implementation plan for expanding test coverage of the core game logic
+- **003 - AI Component Tests**: Implementation plan for testing the AI components
+- **004 - Network Component Tests**: Implementation plan for testing the network components
+- **005 - UI Component Tests**: Implementation plan for testing the UI components
+- **006 - Integration Tests**: Implementation plan for testing component interactions
+- **007 - Functional Tests**: Implementation plan for testing complete workflows
+- **008 - Performance Tests**: Implementation plan for testing performance
+- **009 - CI/CD Setup**: Implementation plan for setting up continuous integration and deployment
+- **010 - Code Refactoring**: Implementation plan for refactoring the codebase
+- **011 - MCTS Implementation**: Implementation plan for the Monte Carlo Tree Search algorithm
+- **012 - Position Evaluation Heuristics**: Implementation plan for improving position evaluation
+- **013 - Opening Book**: Implementation plan for creating an opening book
+- **014 - Endgame Solver**: Implementation plan for implementing an endgame solver
 
 ## Implementation Approach
 

@@ -85,8 +85,8 @@ jobs:
         tool: 'pytest'
         output-file-path: benchmark.json
         github-token: ${{ secrets.GITHUB_TOKEN }}
-        auto-push: true
-        comment-on-alert: true
+        auto-push: false
+        comment-on-alert: false
         fail-on-alert: false
         alert-threshold: '200%'
-        comment-always: true
+        comment-always: false

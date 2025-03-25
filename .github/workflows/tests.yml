@@ -39,7 +39,7 @@ jobs:
     
     - name: Run integration tests
       run: |
-        pytest tests/integration
+        CI=true pytest tests/integration
     
     - name: Run functional tests
       run: |

@@ -1,6 +1,6 @@
-# Phase 1.3: MCTS Implementation for PolyClash AI
+# Phase 3.1: MCTS Implementation for PolyClash AI
 
-This document outlines the detailed plan for implementing Monte Carlo Tree Search (MCTS) algorithm for the PolyClash AI as part of Phase 1.3 of the improvement roadmap. This implementation will significantly enhance the AI's playing strength and strategic depth.
+This document outlines the detailed plan for implementing Monte Carlo Tree Search (MCTS) algorithm for the PolyClash AI as part of Phase 3.1 of the improvement roadmap. This implementation will significantly enhance the AI's playing strength and strategic depth.
 
 ## Goals
 

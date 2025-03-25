@@ -61,6 +61,8 @@ The smallest live shape in PolyClash requires only 7 stones, remarkably close to
 pip install polyclash
 ```
 
+> **Note**: PolyClash currently supports Python versions up to 3.12 due to PyVista compatibility limitations with Python 3.13+. We recommend using Python 3.10, 3.11, or 3.12 for the best experience.
+
 ### Running the Game
 
 ```bash

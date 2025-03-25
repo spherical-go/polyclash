@@ -7,7 +7,7 @@ This directory contains detailed implementation plans for the various improvemen
 | Implementation Plan | Status | Completion Date |
 |---------------------|--------|----------------|
 | ✅ [002 - Test Structure Reorganization (Completed)](002_test_structure_reorganization_completed.md) | **FINISHED** | March 25, 2025 |
-| 📅 003 - Core Game Logic Tests | **PLANNED** | - |
+| 🔄 003 - Core Game Logic Tests | **ONGOING** | - |
 | 📅 004 - AI Component Tests | **PLANNED** | - |
 | 📅 005 - Network Component Tests | **PLANNED** | - |
 | 📅 006 - UI Component Tests | **PLANNED** | - |

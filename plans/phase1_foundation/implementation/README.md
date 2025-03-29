@@ -7,7 +7,7 @@ This directory contains detailed implementation plans for the various improvemen
 | Implementation Plan | Status | Completion Date |
 |---------------------|--------|----------------|
 | ✅ [002 - Test Structure Reorganization (Completed)](002_test_structure_reorganization_completed.md) | **FINISHED** | March 25, 2025 |
-| 🔄 003 - Core Game Logic Tests | **ONGOING** | - |
+| ✅ [003 - Core Game Logic Tests](003_core_game_logic_tests.md) | **FINISHED** | March 29, 2025 |
 | 📅 004 - AI Component Tests | **PLANNED** | - |
 | 📅 005 - Network Component Tests | **PLANNED** | - |
 | 📅 006 - UI Component Tests | **PLANNED** | - |
@@ -16,18 +16,17 @@ This directory contains detailed implementation plans for the various improvemen
 | 📅 009 - Performance Tests | **PLANNED** | - |
 | 📅 010 - CI/CD Setup | **PLANNED** | - |
 
-**Last Updated:** March 25, 2025
+**Last Updated:** March 29, 2025
 
 ## Available Implementation Plans
 
 1. [**001 - Test Structure Reorganization (Original Plan)**](001_test_structure_reorganization.md): Original detailed plan for reorganizing the test structure
 2. [**002 - Test Structure Reorganization (Completed)**](002_test_structure_reorganization_completed.md): Implementation of the test structure reorganization (completed)
+3. [**003 - Core Game Logic Tests**](003_core_game_logic_tests.md): Implementation plan for expanding test coverage of the core game logic
 
 ## Planned Implementation Documents
 
 The following implementation plans will be created as the project progresses:
-
-- **003 - Core Game Logic Tests**: Implementation plan for expanding test coverage of the core game logic
 - **004 - AI Component Tests**: Implementation plan for testing the AI components
 - **005 - Network Component Tests**: Implementation plan for testing the network components
 - **006 - UI Component Tests**: Implementation plan for testing the UI components

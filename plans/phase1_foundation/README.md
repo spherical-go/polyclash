@@ -1,4 +1,4 @@
-# Phase 1: Foundation Strengthening
+Phase 1: Foundation Strengthening
 
 This directory contains plans and implementation details for Phase 1 of the PolyClash improvement roadmap, which focuses on strengthening the foundation of the project.
 
@@ -13,6 +13,7 @@ Phase 1 is divided into the following subphases:
 1. **Phase 1.1: Enhanced Testing Framework** - Improving test coverage and quality
    - [Testing Enhancement Plan](phase1_testing.md)
    - [Testing Enhancement Plan (Revised)](phase1_testing_revised.md)
+   - [Testing Enhancement Plan (Current Progress)](phase1_testing_revised_update.md)
    - [Implementation Details](implementation/)
 
 2. **Phase 1.2: Code Refactoring** - Improving code structure and quality
@@ -38,10 +39,10 @@ Detailed implementation plans for Phase 1 can be found in the [implementation](i
 | Task | Status | Completion Date |
 |------|--------|----------------|
 | ✅ Test Structure Reorganization | **FINISHED** | March 25, 2025 |
-| 🔄 Core Game Logic Tests | **ONGOING** | - |
-| 📅 AI Component Tests | **PLANNED** | - |
+| ✅ Core Game Logic Tests | **FINISHED** | March 29, 2025 |
+| ✅ AI Component Tests | **FINISHED** | March 29, 2025 |
+| 🔄 GUI Component Tests | **IN PROGRESS (70%)** | - |
 | 📅 Network Component Tests | **PLANNED** | - |
-| 📅 UI Component Tests | **PLANNED** | - |
 | 📅 Integration Tests | **PLANNED** | - |
 | 📅 Functional Tests | **PLANNED** | - |
 | 📅 Performance Tests | **PLANNED** | - |

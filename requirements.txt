@@ -13,7 +13,7 @@ requests==2.32.3
 python-socketio[client]==5.12.1
 
 # Server packages
-flask==3.1.0
+flask==3.1.1
 flask-socketio==5.5.1
 
 # Utility packages

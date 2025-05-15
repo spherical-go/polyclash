@@ -34,7 +34,7 @@ setuptools.setup(
         'pyvistaqt==0.11.2',
         'requests==2.32.3',
         'python-socketio[client]==5.12.1',
-        'flask==3.1.0',
+        'flask==3.1.1',
         'flask-socketio==5.5.1',
         'loguru==0.7.3',
         'redis==5.2.1',

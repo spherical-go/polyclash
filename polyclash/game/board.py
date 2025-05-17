@@ -156,6 +156,9 @@ class Board:
         if self.latest_removes and len(self.latest_removes[-1]) == 1 and point == self.latest_removes[-1][0]:
             raise ValueError("Invalid move: ko rule violation.")
 
+        # prepare a new capture list for this move
+        self.latest_removes.append([])
+
         # if player == BLACK and point in self.white_suicides:
         #     self.white_suicides.remove(point)
 

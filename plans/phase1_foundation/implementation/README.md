@@ -1,4 +1,4 @@
-# PolyClash Implementation Plans
+PolyClash Implementation Plans
 
 This directory contains detailed implementation plans for the various improvement phases outlined in the PolyClash roadmap. These plans provide specific code examples, commands, and step-by-step instructions for implementing the improvements.
 
@@ -8,9 +8,9 @@ This directory contains detailed implementation plans for the various improvemen
 |---------------------|--------|----------------|
 | ✅ [002 - Test Structure Reorganization (Completed)](002_test_structure_reorganization_completed.md) | **FINISHED** | March 25, 2025 |
 | ✅ [003 - Core Game Logic Tests](003_core_game_logic_tests.md) | **FINISHED** | March 29, 2025 |
-| 📅 004 - AI Component Tests | **PLANNED** | - |
-| 📅 005 - Network Component Tests | **PLANNED** | - |
-| 📅 006 - UI Component Tests | **PLANNED** | - |
+| ✅ [004 - AI Component Tests](004_ai_component_tests.md) | **FINISHED** | March 29, 2025 |
+| 🔄 005 - GUI Component Tests | **IN PROGRESS (70%)** | - |
+| 📅 006 - Network Component Tests | **PLANNED** | - |
 | 📅 007 - Integration Tests | **PLANNED** | - |
 | 📅 008 - Functional Tests | **PLANNED** | - |
 | 📅 009 - Performance Tests | **PLANNED** | - |
@@ -23,13 +23,21 @@ This directory contains detailed implementation plans for the various improvemen
 1. [**001 - Test Structure Reorganization (Original Plan)**](001_test_structure_reorganization.md): Original detailed plan for reorganizing the test structure
 2. [**002 - Test Structure Reorganization (Completed)**](002_test_structure_reorganization_completed.md): Implementation of the test structure reorganization (completed)
 3. [**003 - Core Game Logic Tests**](003_core_game_logic_tests.md): Implementation plan for expanding test coverage of the core game logic
+4. [**004 - AI Component Tests**](004_ai_component_tests.md): Implementation of AI component testing
+
+## Current Implementation Focus (005 - GUI Component Tests)
+
+We're currently implementing comprehensive tests for GUI components with significant progress:
+
+- ✅ OverlayInfo component tests (100% coverage)
+- ✅ OverlayMap component tests (100% coverage)
+- 🔄 Dialog component tests (47% coverage)
+- 🔄 View Sphere framework tests (syntax fixed, implementation ongoing)
 
 ## Planned Implementation Documents
 
 The following implementation plans will be created as the project progresses:
-- **004 - AI Component Tests**: Implementation plan for testing the AI components
-- **005 - Network Component Tests**: Implementation plan for testing the network components
-- **006 - UI Component Tests**: Implementation plan for testing the UI components
+- **006 - Network Component Tests**: Implementation plan for testing the network components
 - **007 - Integration Tests**: Implementation plan for testing component interactions
 - **008 - Functional Tests**: Implementation plan for testing complete workflows
 - **009 - Performance Tests**: Implementation plan for testing performance
@@ -56,7 +64,7 @@ To use these implementation plans:
 
 1. Start with the first plan in the current phase
 2. Follow the steps in order
-3. Use the code examples as a guide, but adapt them to the specific needs of the project
+3. Use the code examples as a guide but adapt them to the specific needs of the project
 4. Verify that each step is working correctly before moving on to the next
 5. Once all steps are complete, move on to the next implementation plan
 

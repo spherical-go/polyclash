@@ -61,7 +61,7 @@ class LocalGameDialog(QDialog):
         controller.set_mode(LOCAL)
         controller.add_player(BLACK, kind=HUMAN if black_kind == "Human" else AI)
         controller.add_player(WHITE, kind=HUMAN if white_kind == "Human" else AI)
-        controller.start_game()
+        controller.start()
         self.window.update()
         self.close()
 

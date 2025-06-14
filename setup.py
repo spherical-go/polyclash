@@ -32,7 +32,7 @@ setuptools.setup(
         'PyQt5==5.15.11',
         'pyvista==0.44.2',
         'pyvistaqt==0.11.2',
-        'requests==2.32.3',
+        'requests==2.32.4',
         'python-socketio[client]==5.12.1',
         'flask==3.1.1',
         'flask-socketio==5.5.1',

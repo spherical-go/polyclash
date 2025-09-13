@@ -77,7 +77,13 @@ class SphereView(QtInteractor):
     def change_view(self, row, col):
         self.camera.position = 6 * axis[row + 4 * col]
         self.camera.focal_point = np.zeros((3,))
-        self.camera.view_up = axis[(row + self.cyclic_pad) % 4 + 4 * col]
+        try:
+            self.camera.up = axis[(row + self.cyclic_pad) % 4 + 4 * col]
+        except Exception:
+            try:
+                self.camera.view_up = axis[(row + self.cyclic_pad) % 4 + 4 * col]
+            except Exception:
+                self.camera.SetViewUp(axis[(row + self.cyclic_pad) % 4 + 4 * col])
         self.update()
 
 
@@ -96,7 +102,13 @@ class ActiveSphereView(SphereView):
         self.add_axes(interactive=True)
         self.camera.position = 6 * axis[0]
         self.camera.focal_point = np.zeros((3,))
-        self.camera.view_up = axis[self.cyclic_pad]
+        try:
+            self.camera.up = axis[self.cyclic_pad]
+        except Exception:
+            try:
+                self.camera.view_up = axis[self.cyclic_pad]
+            except Exception:
+                self.camera.SetViewUp(axis[self.cyclic_pad])
 
         self.setup_scene()
 

@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QThread, pyqtSignal, QMutex, QWaitCondition
+from PyQt5.QtCore import QMutex, QThread, QWaitCondition, pyqtSignal
 
 
 class AIPlayerWorker(QThread):
@@ -52,4 +52,3 @@ class AIPlayerWorker(QThread):
             self.start()
         self.wake_up()
         self.trigger.emit()  # Move trigger.emit to ensure it's only called once per step
-

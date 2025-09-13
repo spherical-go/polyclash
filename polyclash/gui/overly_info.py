@@ -1,10 +1,9 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter, QBrush, QColor
+from PyQt5.QtGui import QBrush, QColor, QPainter
 from PyQt5.QtWidgets import QWidget
 
 from polyclash.game.board import BLACK
 from polyclash.gui.constants import stone_black_color, stone_white_color
-
 
 black = QColor(*[int(255 * elm) for elm in stone_black_color])
 white = QColor(*[int(255 * elm) for elm in stone_white_color])
@@ -26,7 +25,9 @@ class OverlayInfo(QWidget):
         painter.setOpacity(0.5)  # 50% transparent
 
         # draw a translucent background
-        painter.setBrush(QBrush(QColor(192, 192, 192, 127)))  # light gray, semi-transparent
+        painter.setBrush(
+            QBrush(QColor(192, 192, 192, 127))
+        )  # light gray, semi-transparent
         painter.drawRect(self.rect())  # cover the entire widget area
 
         # draw a circle disk with color
@@ -58,6 +59,6 @@ class OverlayInfo(QWidget):
             self.change_color(BLACK)
             self.change_score(0, 0, 1)
         if message == "add_stone":
-            self.change_score(*kwargs['score'])
+            self.change_score(*kwargs["score"])
         if message == "remove_stone":
-            self.change_score(*kwargs['score'])
+            self.change_score(*kwargs["score"])

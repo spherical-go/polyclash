@@ -1,6 +1,9 @@
-import pytest
 import time
+
+import pytest
+
 from polyclash.game.timer import Timer
+
 
 class TestTimer:
     def test_timer_initialization(self):
@@ -25,8 +28,10 @@ class TestTimer:
         assert timer.start_time is None
         time_after_pause = timer.get_time()
         time.sleep(0.1)
-        assert timer.get_time() == time_after_pause  # Time should not decrease after pausing
-        
+        assert (
+            timer.get_time() == time_after_pause
+        )  # Time should not decrease after pausing
+
         timer.resume()
         assert timer.paused == False
         assert timer.start_time is not None

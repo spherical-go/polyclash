@@ -1,15 +1,14 @@
 import numpy as np
 import pyvista as pv
-
+from PyQt5.QtGui import QImage
 from pyvistaqt import QtInteractor
 from vtkmodules.vtkCommonCore import vtkCommand
 
-from PyQt5.QtGui import QImage
-
-from polyclash.gui.constants import stone_empty_color, stone_black_color, stone_white_color
-from polyclash.gui.mesh import mesh, face_colors
+from polyclash.data.data import axis, cities, city_manager
 from polyclash.game.board import BLACK
-from polyclash.data.data import cities, city_manager, axis
+from polyclash.gui.constants import (stone_black_color, stone_empty_color,
+                                     stone_white_color)
+from polyclash.gui.mesh import face_colors, mesh
 
 hidden = None
 
@@ -38,7 +37,14 @@ class SphereView(QtInteractor):
 
     def initialize_interactor(self):
         self.set_background("darkgray")
-        self.add_mesh(mesh, show_edges=True, color="lightblue", pickable=False, scalars=face_colors, rgba=True)
+        self.add_mesh(
+            mesh,
+            show_edges=True,
+            color="lightblue",
+            pickable=False,
+            scalars=face_colors,
+            rgba=True,
+        )
         for idx, city in enumerate(cities):
             sphere = pv.Sphere(radius=0.03, center=city)
             actor = self.add_mesh(sphere, color=stone_empty_color, pickable=True)
@@ -57,18 +63,26 @@ class SphereView(QtInteractor):
 
     def on_reset(self):
         for ix, actor in self.spheres.items():
-            actor.GetProperty().SetColor(stone_empty_color[0], stone_empty_color[1], stone_empty_color[2])
+            actor.GetProperty().SetColor(
+                stone_empty_color[0], stone_empty_color[1], stone_empty_color[2]
+            )
 
     def on_stone_added(self, point, color):
         actor = self.spheres[point]
         if color == BLACK:
-            actor.GetProperty().SetColor(stone_black_color[0], stone_black_color[1], stone_black_color[2])
+            actor.GetProperty().SetColor(
+                stone_black_color[0], stone_black_color[1], stone_black_color[2]
+            )
         else:
-            actor.GetProperty().SetColor(stone_white_color[0], stone_white_color[1], stone_white_color[2])
+            actor.GetProperty().SetColor(
+                stone_white_color[0], stone_white_color[1], stone_white_color[2]
+            )
 
     def on_stone_removed(self, point):
         actor = self.spheres[point]
-        actor.GetProperty().SetColor(stone_empty_color[0], stone_empty_color[1], stone_empty_color[2])
+        actor.GetProperty().SetColor(
+            stone_empty_color[0], stone_empty_color[1], stone_empty_color[2]
+        )
 
     def on_player_switched(self, side):
         # not implemented
@@ -88,7 +102,14 @@ class SphereView(QtInteractor):
 
 
 class ActiveSphereView(SphereView):
-    def __init__(self, parent=None, controller=None, status_bar=None, overlay_info=None, overlay_map=None):
+    def __init__(
+        self,
+        parent=None,
+        controller=None,
+        status_bar=None,
+        overlay_info=None,
+        overlay_map=None,
+    ):
         super().__init__(parent)
         self.controller = controller
         self.picker = None
@@ -116,8 +137,12 @@ class ActiveSphereView(SphereView):
         self.controller.board.register_observer(self.hidden)
 
     def setup_scene(self):
-        self.picker = self.interactor.GetRenderWindow().GetInteractor().CreateDefaultPicker()
-        self.interactor.AddObserver(vtkCommand.LeftButtonPressEvent, self.left_button_press_event)
+        self.picker = (
+            self.interactor.GetRenderWindow().GetInteractor().CreateDefaultPicker()
+        )
+        self.interactor.AddObserver(
+            vtkCommand.LeftButtonPressEvent, self.left_button_press_event
+        )
 
     def on_player_switched(self, side):
         if self.controller.side is None:

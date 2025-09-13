@@ -1,16 +1,15 @@
 import time
-import polyclash.gui.icons as icons
-
 from urllib.parse import urlparse
 
-from PyQt5.QtWidgets import QApplication, QDialog, QLabel, QLineEdit, QComboBox, QPushButton, QMessageBox, QAction, \
-    QVBoxLayout
 from PyQt5.QtGui import QIcon, QImage, QPixmap
+from PyQt5.QtWidgets import (QAction, QApplication, QComboBox, QDialog, QLabel,
+                             QLineEdit, QMessageBox, QPushButton, QVBoxLayout)
 
-from polyclash.util.api import get_server, set_server, connect
+import polyclash.gui.icons as icons
 from polyclash.game.board import BLACK, WHITE
 from polyclash.game.controller import LOCAL, NETWORK
 from polyclash.game.player import HUMAN, REMOTE
+from polyclash.util.api import connect, get_server, set_server
 from polyclash.workers.network import NetworkWorker
 
 
@@ -25,23 +24,23 @@ def is_valid_url(url):
 class LocalGameDialog(QDialog):
     def __init__(self, parent=None):
         super(LocalGameDialog, self).__init__(parent)
-        self.setWindowTitle('Start A Local Game')
+        self.setWindowTitle("Start A Local Game")
         self.setFixedWidth(200)
         layout = QVBoxLayout(self)
 
         self.black_type = QComboBox(self)
         self.black_type.addItem("Human")
         self.black_type.addItem("AI")
-        layout.addWidget(QLabel('Black Type'))
+        layout.addWidget(QLabel("Black Type"))
         layout.addWidget(self.black_type)
 
         self.white_type = QComboBox(self)
         self.white_type.addItem("Human")
         self.white_type.addItem("AI")
-        layout.addWidget(QLabel('White Type'))
+        layout.addWidget(QLabel("White Type"))
         layout.addWidget(self.white_type)
 
-        self.start_button = QPushButton('Start', self)
+        self.start_button = QPushButton("Start", self)
         self.start_button.clicked.connect(self.on_start_clicked)
         layout.addWidget(self.start_button)
 
@@ -49,12 +48,16 @@ class LocalGameDialog(QDialog):
         self.window = parent
 
     def on_start_clicked(self):
-        from polyclash.game.player import HUMAN, AI
+        from polyclash.game.player import AI, HUMAN
 
         black_kind = self.black_type.currentText()
         white_kind = self.white_type.currentText()
-        if black_kind == 'AI' and white_kind == 'AI':
-            QMessageBox.critical(self, 'Error', 'Black and White players must not be AI at the same time.')
+        if black_kind == "AI" and white_kind == "AI":
+            QMessageBox.critical(
+                self,
+                "Error",
+                "Black and White players must not be AI at the same time.",
+            )
             return
 
         controller = self.window.controller
@@ -69,21 +72,21 @@ class LocalGameDialog(QDialog):
 class NetworkGameDialog(QDialog):
     def __init__(self, parent=None):
         super(NetworkGameDialog, self).__init__(parent)
-        self.setWindowTitle('Create A Network Game Room')
+        self.setWindowTitle("Create A Network Game Room")
         layout = QVBoxLayout(self)
 
         # Server input (only enabled for Network mode)
         self.server_input = QLineEdit(self)
         self.server_input.setPlaceholderText("https://sphericalgo.org")
-        layout.addWidget(QLabel('Server'))
+        layout.addWidget(QLabel("Server"))
         layout.addWidget(self.server_input)
 
         self.token = QLineEdit(self)
-        layout.addWidget(QLabel('Token'))
+        layout.addWidget(QLabel("Token"))
         layout.addWidget(self.token)
 
         # Connection management
-        self.connect_button = QPushButton('Connect', self)
+        self.connect_button = QPushButton("Connect", self)
         self.connect_button.clicked.connect(self.on_connect_clicked)
         layout.addWidget(self.connect_button)
 
@@ -91,7 +94,7 @@ class NetworkGameDialog(QDialog):
         self.manage_keys()
 
         # Close button
-        self.close_button = QPushButton('Close', self)
+        self.close_button = QPushButton("Close", self)
         self.close_button.clicked.connect(self.on_close_clicked)
         layout.addWidget(self.close_button)
 
@@ -100,16 +103,26 @@ class NetworkGameDialog(QDialog):
 
     def manage_keys(self):
         copy = QPixmap.fromImage(
-            QImage(icons.array_copy.data, icons.array_copy.shape[1], icons.array_copy.shape[0], QImage.Format_RGBA8888))
+            QImage(
+                icons.array_copy.data,
+                icons.array_copy.shape[1],
+                icons.array_copy.shape[0],
+                QImage.Format_RGBA8888,
+            )
+        )
 
         # Adds widgets for Black, White, and Viewer keys
         for color in ["Black", "White", "Viewer"]:
-            setattr(self, f"{color.lower()}_key", QLineEdit(''))
+            setattr(self, f"{color.lower()}_key", QLineEdit(""))
             getattr(self, f"{color.lower()}_key").setReadOnly(True)
-            copyAction = QAction(QIcon(copy), f'copy{color}', self)
-            copyAction.triggered.connect(lambda chk, key=color.lower(): self.copy_text(key))
-            getattr(self, f"{color.lower()}_key").addAction(copyAction, QLineEdit.TrailingPosition)
-            self.layout().addWidget(QLabel(f'{color} Key'))
+            copyAction = QAction(QIcon(copy), f"copy{color}", self)
+            copyAction.triggered.connect(
+                lambda chk, key=color.lower(): self.copy_text(key)
+            )
+            getattr(self, f"{color.lower()}_key").addAction(
+                copyAction, QLineEdit.TrailingPosition
+            )
+            self.layout().addWidget(QLabel(f"{color} Key"))
             self.layout().addWidget(getattr(self, f"{color.lower()}_key"))
 
     def copy_text(self, key):
@@ -120,10 +133,10 @@ class NetworkGameDialog(QDialog):
         server = self.server_input.text()
         token = self.token.text()
         if not server:
-            QMessageBox.critical(self, 'Error', 'Server address is required')
+            QMessageBox.critical(self, "Error", "Server address is required")
             return
         if not is_valid_url(server):
-            QMessageBox.critical(self, 'Error', 'Invalid server address')
+            QMessageBox.critical(self, "Error", "Invalid server address")
             return
 
         try:
@@ -133,9 +146,9 @@ class NetworkGameDialog(QDialog):
                 self.white_key.setText(white_key)
                 self.viewer_key.setText(viewer_key)
             else:
-                QMessageBox.critical(self, 'Error', 'Failed to connect to the server')
+                QMessageBox.critical(self, "Error", "Failed to connect to the server")
         except ValueError as e:
-            QMessageBox.critical(self, 'Error', str(e))
+            QMessageBox.critical(self, "Error", str(e))
             self.close()
 
     def on_close_clicked(self):
@@ -156,14 +169,16 @@ def restart_network_worker(window, server, role, key, fn):
     else:
         window.network_worker = NetworkWorker(window, server=server, role=role, key=key)
         window.network_worker.start()
-        window.network_worker.messageReceived.connect(window.handle_network_notification)
+        window.network_worker.messageReceived.connect(
+            window.handle_network_notification
+        )
         window.network_worker.messageReceived.connect(fn)
 
 
 class JoinGameDialog(QDialog):
     def __init__(self, parent=None):
         super(JoinGameDialog, self).__init__(parent)
-        self.setWindowTitle('Join Game')
+        self.setWindowTitle("Join Game")
 
         layout = QVBoxLayout(self)
 
@@ -173,34 +188,36 @@ class JoinGameDialog(QDialog):
             self.server_input.setText(server)
         else:
             self.server_input.setPlaceholderText("http://127.0.0.1:5000")
-        layout.addWidget(QLabel('Server'))
+        layout.addWidget(QLabel("Server"))
         layout.addWidget(self.server_input)
 
-        layout.addWidget(QLabel('Role'))
+        layout.addWidget(QLabel("Role"))
         self.role_select = QComboBox(self)
-        self.role_select.addItem('Black')
-        self.role_select.addItem('White')
-        self.role_select.addItem('Viewer')
+        self.role_select.addItem("Black")
+        self.role_select.addItem("White")
+        self.role_select.addItem("Viewer")
         layout.addWidget(self.role_select)
 
-        layout.addWidget(QLabel('Key'))
-        self.key_input = QLineEdit('')
+        layout.addWidget(QLabel("Key"))
+        self.key_input = QLineEdit("")
         layout.addWidget(self.key_input)
 
-        self.join_button = QPushButton('Join', self)
+        self.join_button = QPushButton("Join", self)
         self.join_button.clicked.connect(self.on_join_clicked)
         layout.addWidget(self.join_button)
 
-        layout.addWidget(QLabel('Room status'))
-        self.room_status = QLabel('Neither')  # room status can be 'Neither', 'Black', 'White', 'Both', or 'Canceled'
+        layout.addWidget(QLabel("Room status"))
+        self.room_status = QLabel(
+            "Neither"
+        )  # room status can be 'Neither', 'Black', 'White', 'Both', or 'Canceled'
         layout.addWidget(self.room_status)
 
-        self.ready_button = QPushButton('Ready', self)
+        self.ready_button = QPushButton("Ready", self)
         self.ready_button.setEnabled(False)
         self.ready_button.clicked.connect(self.on_ready_clicked)
         layout.addWidget(self.ready_button)
 
-        self.cancel_button = QPushButton('Cancel', self)
+        self.cancel_button = QPushButton("Cancel", self)
         self.cancel_button.setEnabled(False)
         self.cancel_button.clicked.connect(self.on_cancel_clicked)
         layout.addWidget(self.cancel_button)
@@ -217,8 +234,8 @@ class JoinGameDialog(QDialog):
         key = self.key_input.text()
 
         def check_joined_status(event, data):
-            if event == 'joined':
-                joined_role = data.get('role')
+            if event == "joined":
+                joined_role = data.get("role")
                 if joined_role == role:
                     self.window.controller.add_player(role, kind=HUMAN)
                 else:
@@ -228,21 +245,23 @@ class JoinGameDialog(QDialog):
                     time.sleep(5)
                     status = self.api.joined_status(server, key)
                     self.room_status.setText(status)
-                    if status == 'Both':
+                    if status == "Both":
                         self.ready_button.setEnabled(True)
-                        self.window.status_bar.showMessage('Ready')
-                        self.window.network_worker.messageReceived.disconnect(check_joined_status)
-                    elif status == 'Canceled':
+                        self.window.status_bar.showMessage("Ready")
+                        self.window.network_worker.messageReceived.disconnect(
+                            check_joined_status
+                        )
+                    elif status == "Canceled":
                         self.window.controller.reset()
-                        self.window.status_bar.showMessage('Canceled')
+                        self.window.status_bar.showMessage("Canceled")
                     self.update()
-                except Exception as e:
-                    self.room_status.setText('None')
+                except Exception:
+                    self.room_status.setText("None")
 
         try:
             restart_network_worker(self.window, server, role, key, check_joined_status)
             self.window.controller.set_mode(NETWORK)
-            self.window.controller.set_side(BLACK if role == 'black' else WHITE)
+            self.window.controller.set_side(BLACK if role == "black" else WHITE)
             time.sleep(2)
             self.api.join(server, role, key)
 
@@ -266,13 +285,15 @@ class JoinGameDialog(QDialog):
             server = self.server_input.text()
             key = self.key_input.text()
 
-            if event == 'ready':
+            if event == "ready":
                 try:
                     both_ready = self.api.ready_status(server, key)
                     if both_ready:
-                        self.window.network_worker.messageReceived.disconnect(check_ready_status)
+                        self.window.network_worker.messageReceived.disconnect(
+                            check_ready_status
+                        )
                         self.window.controller.start()
-                        self.window.status_bar.showMessage('Game started')
+                        self.window.status_bar.showMessage("Game started")
                         self.close()
                 except Exception as e:
                     self.window.status_bar.showMessage(str(e))

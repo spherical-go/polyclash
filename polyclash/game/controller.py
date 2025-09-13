@@ -1,11 +1,10 @@
-from PyQt5.QtCore import pyqtSignal, QObject
+from PyQt5.QtCore import QObject, pyqtSignal
 
-from polyclash.util import api
 from polyclash.data.data import encoder
-from polyclash.game.board import BLACK, WHITE, Board
-from polyclash.game.player import PlayerFactory, HUMAN, REMOTE, AI
+from polyclash.game.board import Board
+from polyclash.game.player import AI, HUMAN, REMOTE, PlayerFactory
+from polyclash.util import api
 from polyclash.util.logging import logger
-
 
 # mode
 LOCAL = 0
@@ -57,7 +56,9 @@ class SphericalGoController(QObject):
         if self.mode == VIEW and kind != REMOTE:
             raise InvalidPlayerError("Invalid player kind for view mode")
 
-        player = PlayerFactory.create_player(kind, board=self.board, side=side, **kwargs)
+        player = PlayerFactory.create_player(
+            kind, board=self.board, side=side, **kwargs
+        )
         self.players[side] = player
         player.stonePlaced.connect(self.player_played)
 
@@ -104,7 +105,9 @@ class SphericalGoController(QObject):
                 self.switch_player()
 
     def switch_player(self):
-        logger.info(f"Switching player...{self.board.current_player} -> {-self.board.current_player}")
+        logger.info(
+            f"Switching player...{self.board.current_player} -> {-self.board.current_player}"
+        )
         self.board.switch_player()
 
     def resign(self, player):
@@ -140,6 +143,7 @@ class SphericalGoController(QObject):
 
 class InvalidPlayerError(Exception):
     """Exception raised for errors in the input player type or game mode."""
+
     def __init__(self, message="Invalid player configuration"):
         self.message = message
         super().__init__(self.message)
@@ -147,7 +151,7 @@ class InvalidPlayerError(Exception):
 
 class InvalidTurnError(Exception):
     """Exception raised for errors in the player turn."""
+
     def __init__(self, message="Invalid player's turn"):
         self.message = message
         super().__init__(self.message)
-

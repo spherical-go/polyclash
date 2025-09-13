@@ -1,7 +1,9 @@
 import pytest
-from polyclash.game.controller import SphericalGoController, LOCAL, NETWORK
+
 from polyclash.game.board import BLACK, WHITE
-from polyclash.game.player import HumanPlayer, AIPlayer, HUMAN, AI
+from polyclash.game.controller import LOCAL, NETWORK, SphericalGoController
+from polyclash.game.player import AI, HUMAN, AIPlayer, HumanPlayer
+
 
 class TestControllerInitialization:
     def test_controller_creation(self):
@@ -9,6 +11,7 @@ class TestControllerInitialization:
         assert controller.mode == LOCAL
         assert controller.board is not None
         assert len(controller.players) == 0
+
 
 class TestControllerGameFlow:
     def test_add_player(self):
@@ -31,12 +34,12 @@ class TestControllerGameFlow:
         controller.add_player(BLACK)
         controller.add_player(WHITE)
         controller.start()
-        
+
         # Play a move
         controller.play(BLACK, 0)
         assert controller.board.board[0] == BLACK
         assert controller.board.current_player == WHITE
-        
+
         # Play another move
         controller.play(WHITE, 1)
         assert controller.board.board[1] == WHITE
@@ -47,16 +50,17 @@ class TestControllerGameFlow:
         controller.add_player(BLACK)
         controller.add_player(WHITE)
         controller.start()
-        
+
         # Mock the board's is_game_over method to return True
         original_is_game_over = controller.board.is_game_over
         controller.board.is_game_over = lambda: True
-        
+
         # Check that the board's is_game_over method returns True
         assert controller.board.is_game_over() == True
-        
+
         # Restore the original method
         controller.board.is_game_over = original_is_game_over
+
 
 class TestControllerPlayerTypes:
     def test_add_human_player(self):

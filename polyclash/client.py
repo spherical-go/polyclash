@@ -4,7 +4,7 @@ from PyQt5.QtWidgets import QApplication
 
 from polyclash.game.board import BLACK, WHITE
 from polyclash.game.controller import SphericalGoController
-from polyclash.game.player import HUMAN, AI
+from polyclash.game.player import AI, HUMAN
 from polyclash.gui.main import MainWindow
 
 
@@ -26,7 +26,7 @@ def main():
     window.resize(width, height)
 
     controller.board.reset()
-    window.delayed_resize(width+1, height+1)
+    window.delayed_resize(width + 1, height + 1)
     window.show()
     sys.exit(app.exec_())
 

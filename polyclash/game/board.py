@@ -1,12 +1,12 @@
-
+import math
+from collections import OrderedDict
+from random import sample
 
 import numpy as np
-import math
 
-from random import sample
-from collections import OrderedDict
-from polyclash.data.data import cities, neighbors, polysmalls, polylarges, polylarge_area, polysmall_area, total_area, \
-    encoder
+from polyclash.data.data import (cities, encoder, neighbors, polylarge_area,
+                                 polylarges, polysmall_area, polysmalls,
+                                 total_area)
 
 BLACK = 1
 WHITE = -1
@@ -104,7 +104,9 @@ class Board:
         for neighbor in self.neighbors[point]:
             if self.board[neighbor] == 0:  # 如果邻居是空的，则有气
                 return True
-            elif self.board[neighbor] == color and self.has_liberty(neighbor, color, visited):
+            elif self.board[neighbor] == color and self.has_liberty(
+                neighbor, color, visited
+            ):
                 # 如果邻居是同色，并且递归发现有气，那么这个点也有气
                 return True
 
@@ -153,7 +155,11 @@ class Board:
         if turn_check and player != self.current_player:
             raise ValueError("Invalid move: not the player's turn.")
 
-        if self.latest_removes and len(self.latest_removes[-1]) == 1 and point == self.latest_removes[-1][0]:
+        if (
+            self.latest_removes
+            and len(self.latest_removes[-1]) == 1
+            and point == self.latest_removes[-1][0]
+        ):
             raise ValueError("Invalid move: ko rule violation.")
 
         # if player == BLACK and point in self.white_suicides:
@@ -180,12 +186,18 @@ class Board:
             raise ValueError("Invalid move: suicide is not allowed.")
 
         self.turns[self.counter] = encoder[point]
-        self.notify_observers("add_stone", point=point, player=player, score=self.score())
+        self.notify_observers(
+            "add_stone", point=point, player=player, score=self.score()
+        )
         self.latest_player = player
 
     def get_empties(self, player):
         empty_points = set([ix for ix, point in enumerate(self.board) if point == 0])
-        if self.latest_removes and len(self.latest_removes[-1]) == 1 and self.latest_removes[-1][0] in empty_points:
+        if (
+            self.latest_removes
+            and len(self.latest_removes[-1]) == 1
+            and self.latest_removes[-1][0] in empty_points
+        ):
             empty_points.remove(self.latest_removes[-1][0])
         if player == BLACK:
             for point in self.black_suicides:
@@ -198,17 +210,25 @@ class Board:
     def score(self):
         total_black_area, total_white_area, total_unclaimed_area = 0, 0, 0
         for piece in polysmalls:
-            black_area, white_area, unclaimed_area = calculate_area(self.board, piece, polysmall_area)
+            black_area, white_area, unclaimed_area = calculate_area(
+                self.board, piece, polysmall_area
+            )
             total_black_area += black_area
             total_white_area += white_area
             total_unclaimed_area += unclaimed_area
         for piece in polylarges:
-            black_area, white_area, unclaimed_area = calculate_area(self.board, piece, polylarge_area)
+            black_area, white_area, unclaimed_area = calculate_area(
+                self.board, piece, polylarge_area
+            )
             total_black_area += black_area
             total_white_area += white_area
             total_unclaimed_area += unclaimed_area
 
-        return total_black_area / total_area, total_white_area / total_area, total_unclaimed_area / total_area
+        return (
+            total_black_area / total_area,
+            total_white_area / total_area,
+            total_unclaimed_area / total_area,
+        )
 
     def is_game_over(self):
         return len(self.get_empties(self.current_player)) == 0
@@ -267,19 +287,23 @@ class SimulatedBoard(Board):
         try:
             # 假设在 point 落子，计算得分，需要考虑复原棋盘的状态
             self.play(point, player, turn_check=False)  # 模拟落子
-            black_area_ratio, white_area_ratio, unclaimed_area_ratio = self.score()  # 计算得分
+            black_area_ratio, white_area_ratio, unclaimed_area_ratio = (
+                self.score()
+            )  # 计算得分
 
             empty_points = sample(self.get_empties(-player), trail)
             total_rival_area_ratio, total_rival_gain = 0, 0
             for rival_point in empty_points:
-                rival_area_ratio, rival_gain = self.simulate_score(depth + 1, rival_point, -player)  # 递归计算对手的得分
+                rival_area_ratio, rival_gain = self.simulate_score(
+                    depth + 1, rival_point, -player
+                )  # 递归计算对手的得分
                 total_rival_area_ratio += rival_area_ratio
                 total_rival_gain += rival_gain
             mean_rival_area_ratio = total_rival_area_ratio / trail
             mean_rival_gain = total_rival_gain / trail
         except ValueError as e:
             print(e)
-            if 'suicide' in str(e):
+            if "suicide" in str(e):
                 raise e
 
         self.board[point] = 0  # 恢复棋盘状态

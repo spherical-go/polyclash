@@ -10,7 +10,9 @@ REMOTE = 2
 
 
 class Player(QObject):
-    stonePlaced = pyqtSignal(int)  # Define a signal to emit when a stone is placed by the player
+    stonePlaced = pyqtSignal(
+        int
+    )  # Define a signal to emit when a stone is placed by the player
 
     def __init__(self, kind, **kwargs):
         super().__init__()
@@ -24,7 +26,9 @@ class Player(QObject):
         self.board.play(position, self.side)
 
     def place_stone(self, position):
-        self.stonePlaced.emit(position)  # Emit signal when stone is placed by the player
+        self.stonePlaced.emit(
+            position
+        )  # Emit signal when stone is placed by the player
 
 
 class HumanPlayer(Player):

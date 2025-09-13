@@ -1,5 +1,5 @@
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPainter, QBrush, QColor
+from PyQt5.QtGui import QBrush, QColor, QPainter
 from PyQt5.QtWidgets import QWidget
 
 
@@ -27,7 +27,9 @@ class OverlayMap(QWidget):
         if self.last_width != self.width() or self.last_height != self.height():
             self.last_width = self.width()
             self.last_height = self.height()
-            self.scaled_images = [[None for _ in range(self.columns)] for _ in range(self.rows)]
+            self.scaled_images = [
+                [None for _ in range(self.columns)] for _ in range(self.rows)
+            ]
             self.update()
 
     def paintEvent(self, event):
@@ -37,7 +39,9 @@ class OverlayMap(QWidget):
         painter.setOpacity(0.5)  # 50% transparent
 
         # draw a translucent background
-        painter.setBrush(QBrush(QColor(192, 192, 192, 127)))  # light gray, semi-transparent
+        painter.setBrush(
+            QBrush(QColor(192, 192, 192, 127))
+        )  # light gray, semi-transparent
         painter.drawRect(self.rect())  # cover the entire widget area
 
         img_height = self.height() // self.rows
@@ -45,10 +49,14 @@ class OverlayMap(QWidget):
         painter.setOpacity(1.0)
         for row in range(self.rows):
             for col in range(self.columns):
-                if self.scaled_images[row][col] is None and self.images[row][col] is not None:
+                if (
+                    self.scaled_images[row][col] is None
+                    and self.images[row][col] is not None
+                ):
                     # only when the scaled image is not cached, scale the image
-                    self.scaled_images[row][col] = self.images[row][col].scaled(img_width, img_height,
-                                                                                Qt.KeepAspectRatio)
+                    self.scaled_images[row][col] = self.images[row][col].scaled(
+                        img_width, img_height, Qt.KeepAspectRatio
+                    )
                 img = self.scaled_images[row][col]
                 if img:
                     x = col * img_width

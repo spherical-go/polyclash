@@ -1,5 +1,10 @@
 -r requirements.txt
 
+black
+ruff
+isort
+mypy
+
 # Development tools - temporarily commented out due to installation issues
 # numba==0.58.1
 # networkx==3.1

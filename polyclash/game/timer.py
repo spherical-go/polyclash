@@ -34,4 +34,3 @@ class Timer:
 
     def is_expired(self):
         return self.get_time() <= 0
-

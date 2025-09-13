@@ -36,6 +36,10 @@ dependencies = [
 [project.optional-dependencies]
 # Synchronized with requirements-dev.txt (excluding commented-out lines)
 dev = [
+  "black",
+  "isort",
+  "ruff",
+  "mypy",
   "pytest",
   "pytest-cov",
   "pytest-mock",

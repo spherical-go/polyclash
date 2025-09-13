@@ -90,10 +90,7 @@ class FakeWindow(QWidget):
 @pytest.fixture(scope="session")
 def qapp():
     app = QApplication.instance()
-    if app is None:
-        app = QApplication([])
     yield app
-    app.quit()
 
 
 def test_local_game_dialog_ai_vs_ai_blocked(qapp, monkeypatch):

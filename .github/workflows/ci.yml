@@ -9,10 +9,6 @@ on:
 jobs:
   lint_and_test:
     runs-on: ubuntu-latest
-    env:
-      CI: "true"
-      QT_QPA_PLATFORM: offscreen
-      PYVISTA_OFF_SCREEN: "true"
     steps:
       - name: Checkout
         uses: actions/checkout@v4

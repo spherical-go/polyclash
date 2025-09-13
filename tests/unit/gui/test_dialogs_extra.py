@@ -93,7 +93,7 @@ def qapp():
     if app is None:
         app = QApplication([])
     yield app
-    # app.quit()
+    app.quit()
 
 
 def test_local_game_dialog_ai_vs_ai_blocked(qapp, monkeypatch):

@@ -20,7 +20,7 @@ This roadmap outlines a comprehensive plan for improving the PolyClash project a
 
 ### 1.3 Technical Debt Reduction (1 month)
 - Update dependencies to latest stable versions
-- Implement modern dependency management (Poetry/Pipenv)
+- Adopt uv for dependency and environment management
 - Standardize logging practices
 - Improve exception handling
 - Add type hints throughout the codebase

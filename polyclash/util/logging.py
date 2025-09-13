@@ -1,23 +1,26 @@
-from logging import Handler
+from __future__ import annotations
+
+from logging import Handler, LogRecord
 from pathlib import Path
+from typing import Any
 
 from loguru import logger as logging
 
 
-def setup_logging():
+def setup_logging() -> tuple[Path, str, Any]:
     # get the hidden directory path of the current user
-    logging_dir = Path.home() / ".polyclash"
+    logging_dir: Path = Path.home() / ".polyclash"
 
     # if the hidden directory does not exist, create it
     if not logging_dir.exists():
         logging_dir.mkdir()
 
     # log file path is app.log under the hidden folder
-    logging_file = "app.log"
-    log_file_path = logging_dir / logging_file
+    logging_file: str = "app.log"
+    log_file_path: Path = logging_dir / logging_file
 
     # add handler to logger
-    formatter = "{time} - {level} - [{process.id}] - [{thread.id}] - {file} - {line} - {message}"
+    formatter: str = "{time} - {level} - [{process.id}] - [{thread.id}] - {file} - {line} - {message}"
     logging.add(
         log_file_path,
         format=formatter,
@@ -34,6 +37,6 @@ logging_dir, logging_file, logger = setup_logging()
 
 
 class InterceptHandler(Handler):
-    def emit(self, record):
+    def emit(self, record: LogRecord) -> None:
         logger_opt = logger.opt(depth=6, exception=record.exc_info)
         logger_opt.log(record.levelno, record.getMessage())

@@ -61,3 +61,17 @@ Tracker = "https://github.com/spherical-go/polyclash/issues"
 
 [tool.setuptools.packages.find]
 exclude = ["tests*", "model3d*", "scripts*", "bin*"]
+
+[tool.setuptools.package-data]
+polyclash = ["py.typed"]
+
+[tool.mypy]
+packages = ["polyclash"]
+ignore_missing_imports = true
+disable_error_code = ["import-untyped"]
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_return_any = true
+no_implicit_optional = true
+show_error_codes = true
+pretty = true

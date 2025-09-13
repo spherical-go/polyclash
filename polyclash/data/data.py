@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.spatial import cKDTree
+from typing import List, Tuple
 
 pentagons = np.arange(60, dtype=np.int16).reshape(12, 5)
 
@@ -1183,7 +1184,7 @@ for k, v in indexer.items():
         decoder[tuple([k[4], k[0], k[1], k[2], k[3]])] = v
 
 # position -> encoding
-encoder = list([tuple() for i in range(302)])
+encoder: list[tuple[int, ...]] = [tuple() for _ in range(302)]
 for k, v in indexer.items():
     encoder[v] = tuple(sorted(k))
 

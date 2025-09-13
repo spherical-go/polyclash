@@ -10,7 +10,7 @@ from polyclash.gui.constants import face_continent_colors, face_oceanic_color
 faces_list = [[4] + list(small) for small in polysmalls] + [
     [4] + list(large) for large in polylarges
 ]
-mesh = pv.PolyData(cities, np.hstack(faces_list))
+mesh = pv.PolyData(cities, np.hstack(faces_list))  # type: ignore[arg-type]
 
 
 def adjust_hue(rgb_color, adjustment_factor):

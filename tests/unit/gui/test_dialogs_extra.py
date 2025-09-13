@@ -89,7 +89,11 @@ class FakeWindow(QWidget):
 
 @pytest.fixture(scope="session")
 def qapp():
+    # Ensure a single QApplication for the whole test session.
     app = QApplication.instance()
+    if app is None:
+        app = QApplication([])
+    # Note: avoid calling app.quit() at teardown to prevent CI teardown segfaults.
     yield app
 
 

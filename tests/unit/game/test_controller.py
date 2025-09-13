@@ -1,7 +1,5 @@
-import pytest
-
 from polyclash.game.board import BLACK, WHITE
-from polyclash.game.controller import LOCAL, NETWORK, SphericalGoController
+from polyclash.game.controller import LOCAL, SphericalGoController
 from polyclash.game.player import AI, HUMAN, AIPlayer, HumanPlayer
 
 

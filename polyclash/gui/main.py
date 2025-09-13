@@ -6,8 +6,7 @@ import polyclash.game.board as board
 import polyclash.util.api as api
 from polyclash.data.data import decoder
 from polyclash.game.player import HUMAN, REMOTE
-from polyclash.gui.dialogs import (JoinGameDialog, LocalGameDialog,
-                                   NetworkGameDialog)
+from polyclash.gui.dialogs import JoinGameDialog, LocalGameDialog, NetworkGameDialog
 from polyclash.gui.overly_info import OverlayInfo
 from polyclash.gui.overly_map import OverlayMap
 from polyclash.gui.view_sphere import ActiveSphereView
@@ -191,7 +190,6 @@ class MainWindow(QMainWindow):
         event.accept()
 
     def delayed_resize(self, width, height):
-
         def resize_window():
             self.resize(width, height)
             self.update()

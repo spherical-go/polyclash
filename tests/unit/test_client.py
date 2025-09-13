@@ -1,7 +1,5 @@
 from unittest.mock import MagicMock, patch
 
-import pytest
-
 import polyclash.client as client
 
 
@@ -16,7 +14,6 @@ class TestClient:
             patch("polyclash.client.QApplication") as mock_app,
             patch("polyclash.client.MainWindow") as mock_window,
         ):
-
             # Setup return values
             mock_instance = MagicMock()
             mock_window.return_value = mock_instance

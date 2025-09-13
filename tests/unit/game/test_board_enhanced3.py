@@ -1,12 +1,16 @@
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import numpy as np
-import pytest
 
-from polyclash.data.data import cities, decoder, neighbors
-from polyclash.game.board import (BLACK, WHITE, Board, SimulatedBoard,
-                                  calculate_area, calculate_distance,
-                                  calculate_potential)
+from polyclash.game.board import (
+    BLACK,
+    WHITE,
+    Board,
+    SimulatedBoard,
+    calculate_area,
+    calculate_distance,
+    calculate_potential,
+)
 
 
 class TestSimulatedBoard:

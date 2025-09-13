@@ -140,7 +140,7 @@ def list_games():
 @api_call
 def new():
     data = storage.create_room()
-    logger.info(f'game created... {data["game_id"]}')
+    logger.info(f"game created... {data['game_id']}")
     return data, 200
 
 

@@ -1,8 +1,13 @@
-import pytest
-
 from polyclash.game.board import BLACK, WHITE, Board
-from polyclash.game.player import (AI, HUMAN, REMOTE, AIPlayer, HumanPlayer,
-                                   Player, RemotePlayer)
+from polyclash.game.player import (
+    AI,
+    HUMAN,
+    REMOTE,
+    AIPlayer,
+    HumanPlayer,
+    Player,
+    RemotePlayer,
+)
 
 
 class TestPlayerCreation:

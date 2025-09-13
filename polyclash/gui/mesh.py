@@ -3,14 +3,21 @@ import colorsys
 import numpy as np
 import pyvista as pv
 
-from polyclash.data.data import (cities, pentagon2faces, pentagons, polylarges,
-                                 polysmalls, triangle2faces, triangles)
+from polyclash.data.data import (
+    cities,
+    pentagon2faces,
+    pentagons,
+    polylarges,
+    polysmalls,
+    triangle2faces,
+    triangles,
+)
 from polyclash.gui.constants import face_continent_colors, face_oceanic_color
 
 faces_list = [[4] + list(small) for small in polysmalls] + [
     [4] + list(large) for large in polylarges
 ]
-mesh = pv.PolyData(cities, np.hstack(faces_list))  # type: ignore[arg-type]
+mesh = pv.PolyData(cities, np.hstack(faces_list))
 
 
 def adjust_hue(rgb_color, adjustment_factor):

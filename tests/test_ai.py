@@ -1,6 +1,5 @@
 import unittest
 
-from polyclash.data.data import decoder, neighbors
 from polyclash.game.board import BLACK, WHITE, Board
 
 

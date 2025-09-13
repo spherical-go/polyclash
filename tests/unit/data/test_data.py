@@ -1,12 +1,25 @@
 import numpy as np
-import pytest
 
-from polyclash.data.data import (CityManager, axis, cities, city_manager,
-                                 decoder, encoder, get_areas, indexer,
-                                 neighbors, pentagon2faces, pentagons,
-                                 polylarge_area, polylarges, polysmall_area,
-                                 polysmalls, total_area, triangle2faces,
-                                 triangles)
+from polyclash.data.data import (
+    CityManager,
+    axis,
+    cities,
+    city_manager,
+    decoder,
+    encoder,
+    get_areas,
+    indexer,
+    neighbors,
+    pentagon2faces,
+    pentagons,
+    polylarge_area,
+    polylarges,
+    polysmall_area,
+    polysmalls,
+    total_area,
+    triangle2faces,
+    triangles,
+)
 
 
 class TestDataStructures:

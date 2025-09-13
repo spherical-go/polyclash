@@ -1,11 +1,8 @@
 from unittest.mock import Mock, patch
 
-import numpy as np
-import pytest
-
-from polyclash.game.board import BLACK, WHITE, Board
+from polyclash.game.board import BLACK, WHITE
 from polyclash.game.controller import SphericalGoController
-from polyclash.game.player import AI, HUMAN, Player
+from polyclash.game.player import AI, HUMAN
 from polyclash.workers.ai_play import AIPlayerWorker
 
 

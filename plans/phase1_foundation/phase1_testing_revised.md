@@ -119,7 +119,7 @@ def test_overlay_map_interaction():
     # Test map clicking behavior
     with patch.object(overlay, 'on_click') as mock_on_click:
         # Simulate clicking on the map
-        event = QMouseEvent(QEvent.MouseButtonPress, QPointF(10, 10), 
+        event = QMouseEvent(QEvent.MouseButtonPress, QPointF(10, 10),
                             Qt.LeftButton, Qt.LeftButton, Qt.NoModifier)
         overlay.mousePressEvent(event)
         mock_on_click.assert_called_once()

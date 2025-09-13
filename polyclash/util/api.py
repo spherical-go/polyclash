@@ -49,7 +49,9 @@ def set_viewer_key(key: Optional[str]) -> None:
     viewer_key = key
 
 
-def connect(server: str, token: str) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+def connect(
+    server: str, token: str
+) -> Tuple[Optional[str], Optional[str], Optional[str]]:
     """
     Create a new game on the server.
 

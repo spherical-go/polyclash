@@ -86,7 +86,7 @@ class SphericalGoController(QObject):
     gameResigned = pyqtSignal(int)
     gameEnded = pyqtSignal()
     gameClosed = pyqtSignal()
-    
+
     def __init__(self, mode=LOCAL, board=None):
         # Initialize the controller
         # Set up the game board and players
@@ -108,7 +108,7 @@ class Board:
         # Initialize the board
         # Set up the data structures for the game state
         # Register observers for notifications
-        
+
     def play(self, point, player, turn_check=True):
         # Validate the move
         # Update the board state
@@ -125,7 +125,7 @@ The `Player` class and its subclasses (`polyclash/game/player.py`) represent the
 ```python
 class Player(QObject):
     stonePlaced = pyqtSignal(int)  # Signal emitted when a stone is placed
-    
+
     def __init__(self, kind, **kwargs):
         # Initialize the player
         # Set up the player's properties
@@ -144,7 +144,7 @@ The AI is implemented in the `AIPlayer` class and the `AIPlayerWorker` class (`p
 ```python
 class AIPlayerWorker(QThread):
     trigger = pyqtSignal()
-    
+
     def __init__(self, player):
         # Initialize the worker thread
         # Set up the thread synchronization
@@ -172,7 +172,7 @@ def join(server, role, token):
 ```python
 class NetworkWorker(QThread):
     messageReceived = pyqtSignal(str, object)
-    
+
     def __init__(self, parent=None, server=None, role=None, key=None):
         # Initialize the worker thread
         # Set up the Socket.IO client
@@ -196,15 +196,15 @@ The client initialization flow is as follows:
 ```python
 def main():
     app = QApplication(sys.argv)
-    
+
     controller = SphericalGoController()
     controller.add_player(BLACK, kind=HUMAN)
     controller.add_player(WHITE, kind=AI)
-    
+
     window = MainWindow(controller=controller)
-    
+
     # Size and position the window
-    
+
     controller.board.reset()
     window.show()
     sys.exit(app.exec_())

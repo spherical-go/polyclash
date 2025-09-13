@@ -257,7 +257,7 @@ class TestAPIFunctions:
             'white_key': 'test_white_key',
             'viewer_key': 'test_viewer_key'
         }
-        
+
         # Test the connect function
         black_key, white_key, viewer_key = connect('http://test-server.com', 'test_token')
         assert black_key == 'test_black_key'
@@ -429,13 +429,13 @@ class TestUILogicIntegration:
         controller.add_player(BLACK)
         controller.add_player(WHITE)
         controller.start_game()
-        
+
         # Mock the view_sphere's update method
         main_window.view_sphere.update = lambda: None
-        
+
         # Place a stone
         controller.play(0)
-        
+
         # Check that the board state is updated
         assert controller.board.board[0] == BLACK
 
@@ -459,11 +459,11 @@ class TestCompleteGameScenarios:
         controller.add_player(BLACK, kind=HUMAN)
         controller.add_player(WHITE, kind=AI)
         controller.start_game()
-        
+
         # Play a few moves
         controller.play(0)  # Human plays
         # AI will automatically play
-        
+
         # Check game state
         assert controller.board.counter >= 2
         assert controller.is_started
@@ -519,15 +519,15 @@ def run_tests():
     """Run the tests with pytest."""
     # Change to the project root directory
     os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    
+
     # Run the tests
     result = subprocess.run(['pytest'], capture_output=True, text=True)
-    
+
     # Print the output
     print(result.stdout)
     if result.stderr:
         print(result.stderr, file=sys.stderr)
-    
+
     # Return the exit code
     return result.returncode
 

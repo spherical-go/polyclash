@@ -4,12 +4,9 @@ import numpy as np
 import pytest
 
 from polyclash.data.data import decoder, neighbors
-from polyclash.game.board import (BLACK, WHITE, Board, SimulatedBoard,
-                                  calculate_area, calculate_distance,
-                                  calculate_potential)
+from polyclash.game.board import BLACK, WHITE, Board
+
 # Importing the original test classes to ensure we keep their tests
-from tests.unit.game.test_board import (TestBoardInitialization,
-                                        TestBoardLiberties, TestBoardPlay)
 
 
 class TestBoardHasLiberty:

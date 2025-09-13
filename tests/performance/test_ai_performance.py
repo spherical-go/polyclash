@@ -1,5 +1,3 @@
-import pytest
-
 from polyclash.game.board import BLACK, WHITE, Board
 
 

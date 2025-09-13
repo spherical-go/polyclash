@@ -1,6 +1,5 @@
 import numpy as np
 from scipy.spatial import cKDTree
-from typing import List, Tuple
 
 pentagons = np.arange(60, dtype=np.int16).reshape(12, 5)
 

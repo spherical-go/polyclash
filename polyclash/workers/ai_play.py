@@ -45,7 +45,7 @@ class AIPlayerWorker(QThread):
         self.wait_condition.wakeAll()
         self.mutex.unlock()
 
-    def sleep(self) -> None:  # type: ignore[override]
+    def sleep(self) -> None:
         self.mutex.lock()
         self.waiting = True
         self.mutex.unlock()

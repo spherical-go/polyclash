@@ -1,31 +1,32 @@
+import pickle as pkl
+
 import numpy as np
 import pyvista as pv
-import pickle as pkl
 
 # Load the snub dodecahedron model from a VTK file
 # 从 VTK 文件加载扭棱十二面体模型
-model_path = 'model3d/snub_dodecahedron_new.vtk'
+model_path = "model3d/snub_dodecahedron_new.vtk"
 mesh = pv.read(model_path)
 vertices = mesh.points
 
 # Load additional data from a NPZ file
 # 从 NPZ 文件加载额外数据
-data_path = 'model3d/snub_dodecahedron_new.npz'
+data_path = "model3d/snub_dodecahedron_new.npz"
 npz_data = np.load(data_path)
-edges = npz_data['edges']
-pentagons = npz_data['pentagons']
-triangles = npz_data['triangles']
+edges = npz_data["edges"]
+pentagons = npz_data["pentagons"]
+triangles = npz_data["triangles"]
 
 # Load cities data from a NPZ file
 # 从 NPZ 文件加载城市数据
-cities_path = 'model3d/cities.npz'
+cities_path = "model3d/cities.npz"
 cities_data = np.load(cities_path)
-cities = cities_data['cities']
+cities = cities_data["cities"]
 
 
 # build index to cities
 # 建立城市索引
-index = {}
+index: dict[tuple[int, ...], int] = {}
 for i in range(60):  # 60 vertices of the snub dodecahedron
     index[(i,)] = i
 for i in range(150):  # 150 edges of the snub dodecahedron
@@ -39,7 +40,7 @@ for i in range(12):  # 12 pentagons of the snub dodecahedron
 
 # Define the neighbors table
 # 定义邻居表
-neighbors = {}
+neighbors: dict[int, set[int]] = {}
 for v1, v2 in edges:
     edg = index[tuple([v1, v2])]
     if v1 not in neighbors:
@@ -104,11 +105,15 @@ for i, pentagon in enumerate(pentagons):
     polylarges.append([center, edge3, vertex4, edge4])
     polylarges.append([center, edge4, vertex0, edge0])
     start = 3 * len(triangle2faces)
-    pentagon2faces.append([
-        start + 5 * i, start + 5 * i + 1,
-        start + 5 * i + 2, start + 5 * i + 3,
-        start + 5 * i + 4
-    ])
+    pentagon2faces.append(
+        [
+            start + 5 * i,
+            start + 5 * i + 1,
+            start + 5 * i + 2,
+            start + 5 * i + 3,
+            start + 5 * i + 4,
+        ]
+    )
     neighbors[center] = {edge0, edge1, edge2, edge3, edge4}
     if edge0 not in neighbors:
         neighbors[edge0] = set()
@@ -143,25 +148,28 @@ for i in range(302):
 
 # Create the mesh
 # 创建网格
-faces_list = [[4] + small for small in polysmalls] + [[4] + large for large in polylarges]
+faces_list = [[4] + small for small in polysmalls] + [
+    [4] + large for large in polylarges
+]
 poly_data = pv.PolyData(cities, np.hstack(faces_list))
 
 # Save the model as a VTK file
 # 保存模型为 VTK 文件
 poly_data.save("model3d/board.vtk")
-np.savez('model3d/board.npz',
-         vertices=vertices,
-         edges=edges,
-         triangles=triangles,
-         pentagons=pentagons,
-         cities=cities,
-         polysmalls=np.array(polysmalls, dtype=np.int_),
-         polylarges=np.array(polylarges, dtype=np.int_),
-         triangle2faces=np.array(triangle2faces, dtype=np.int_),
-         pentagon2faces=np.array(pentagon2faces, dtype=np.int_),
-         )
-pkl.dump(neighbors, open('model3d/board.pkl', 'wb'))
-pkl.dump(index, open('model3d/index.pkl', 'wb'))
+np.savez(
+    "model3d/board.npz",
+    vertices=vertices,
+    edges=edges,
+    triangles=triangles,
+    pentagons=pentagons,
+    cities=cities,
+    polysmalls=np.array(polysmalls, dtype=np.int_),
+    polylarges=np.array(polylarges, dtype=np.int_),
+    triangle2faces=np.array(triangle2faces, dtype=np.int_),
+    pentagon2faces=np.array(pentagon2faces, dtype=np.int_),
+)
+pkl.dump(neighbors, open("model3d/board.pkl", "wb"))
+pkl.dump(index, open("model3d/index.pkl", "wb"))
 
 
 print("Data saved!")
@@ -171,7 +179,7 @@ print("Visualizing...")
 # Visualize the mesh
 # 可视化
 plotter = pv.Plotter()
-plotter.add_mesh(poly_data, show_edges=True, color='lightblue')
+plotter.add_mesh(poly_data, show_edges=True, color="lightblue")
 plotter.show()
 
 print("Bye!")

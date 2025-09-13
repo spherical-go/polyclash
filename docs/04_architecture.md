@@ -11,11 +11,11 @@ graph TD
     A[Client] --> B[GUI Components]
     A --> C[Game Logic]
     A --> D[Network Communication]
-    
+
     E[Server] --> F[REST API]
     E --> G[Socket.IO]
     E --> H[Storage]
-    
+
     D <--> G
 ```
 
@@ -46,7 +46,7 @@ graph TD
     A[MainWindow] --> B[SphereView]
     A --> C[OverlayInfo]
     A --> D[OverlayMap]
-    
+
     B --> B1[ActiveSphereView]
     B --> B2[PassiveSphereView]
 ```
@@ -64,11 +64,11 @@ graph TD
 graph TD
     A[Controller] --> B[Board]
     A --> C[Player]
-    
+
     C --> C1[HumanPlayer]
     C --> C2[AIPlayer]
     C --> C3[RemotePlayer]
-    
+
     C2 --> D[AIPlayerWorker]
 ```
 

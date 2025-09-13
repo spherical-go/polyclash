@@ -1,13 +1,6 @@
-import os
-import secrets
-from unittest.mock import MagicMock, patch
-
-import pytest
-
 import polyclash.server
+
 # Import the server module
-from polyclash.server import app
-from polyclash.util.api import close, connect, join, play, ready
 
 # Set a fixed token for testing
 TEST_TOKEN = "test_token_for_integration_tests"

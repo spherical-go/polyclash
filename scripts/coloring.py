@@ -3,23 +3,23 @@ import pyvista as pv
 
 # Load the snub dodecahedron model from a VTK file
 # 从 VTK 文件加载扭棱十二面体模型
-model_path = 'model3d/snub_dodecahedron_new.vtk'
+model_path = "model3d/snub_dodecahedron_new.vtk"
 mesh = pv.read(model_path)
 vertices = mesh.points
 
 # Load additional data from a NPZ file
 # 从 NPZ 文件加载额外数据
-data_path = 'model3d/snub_dodecahedron_new.npz'
+data_path = "model3d/snub_dodecahedron_new.npz"
 npz_data = np.load(data_path)
-edges = npz_data['edges']
-pentagons = npz_data['pentagons']
-triangles = npz_data['triangles']
+edges = npz_data["edges"]
+pentagons = npz_data["pentagons"]
+triangles = npz_data["triangles"]
 
 # Load cities data from a NPZ file
 # 从 NPZ 文件加载城市数据
-cities_path = 'model3d/cities.npz'
+cities_path = "model3d/cities.npz"
 cities_data = np.load(cities_path)
-cities = cities_data['cities']
+cities = cities_data["cities"]
 
 
 # Define colors for different purposes
@@ -58,7 +58,7 @@ for i in range(mesh.n_cells):
 
 # Set the color data to the mesh object
 # 将颜色数据设置到网格对象
-mesh.cell_data['colors'] = face_colors
+mesh.cell_data["colors"] = face_colors
 
 
 # Create a PyVista plotter object and display the mesh with applied colors
@@ -68,8 +68,14 @@ plotter.add_mesh(mesh, scalars=face_colors, rgba=True)
 
 # Add city labels
 # 添加城市标签
-plotter.add_point_labels(cities[:60], range(60), point_color=city_color, point_size=10,
-                         render_points_as_spheres=True, text_color=font_color, font_size=100, shape_opacity=0.0)
+plotter.add_point_labels(
+    cities[:60],
+    range(60),
+    point_color=city_color,
+    point_size=10,
+    render_points_as_spheres=True,
+    text_color=font_color,
+    font_size=100,
+    shape_opacity=0.0,
+)
 plotter.show()
-
-

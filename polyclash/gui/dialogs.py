@@ -2,8 +2,17 @@ import time
 from urllib.parse import urlparse
 
 from PyQt5.QtGui import QIcon, QImage, QPixmap
-from PyQt5.QtWidgets import (QAction, QApplication, QComboBox, QDialog, QLabel,
-                             QLineEdit, QMessageBox, QPushButton, QVBoxLayout)
+from PyQt5.QtWidgets import (
+    QAction,
+    QApplication,
+    QComboBox,
+    QDialog,
+    QLabel,
+    QLineEdit,
+    QMessageBox,
+    QPushButton,
+    QVBoxLayout,
+)
 
 import polyclash.gui.icons as icons
 from polyclash.game.board import BLACK, WHITE

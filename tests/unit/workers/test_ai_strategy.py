@@ -1,12 +1,8 @@
 from unittest.mock import Mock, patch
 
 import numpy as np
-import pytest
 
 from polyclash.game.board import BLACK, WHITE, Board, SimulatedBoard
-from polyclash.game.controller import SphericalGoController
-from polyclash.game.player import AI, HUMAN, Player
-from polyclash.workers.ai_play import AIPlayerWorker
 
 
 class TestAIStrategy:

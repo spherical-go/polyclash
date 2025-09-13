@@ -1,5 +1,3 @@
-import pytest
-
 from polyclash.game.board import BLACK, WHITE
 from polyclash.game.controller import SphericalGoController
 from polyclash.game.player import AI, HUMAN

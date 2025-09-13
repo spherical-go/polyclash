@@ -20,7 +20,9 @@ def setup_logging() -> tuple[Path, str, Any]:
     log_file_path: Path = logging_dir / logging_file
 
     # add handler to logger
-    formatter: str = "{time} - {level} - [{process.id}] - [{thread.id}] - {file} - {line} - {message}"
+    formatter: str = (
+        "{time} - {level} - [{process.id}] - [{thread.id}] - {file} - {line} - {message}"
+    )
     logging.add(
         log_file_path,
         format=formatter,

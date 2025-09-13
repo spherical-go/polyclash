@@ -40,6 +40,7 @@ dev = [
   "isort",
   "ruff",
   "mypy",
+  "pre-commit",
   "pytest",
   "pytest-cov",
   "pytest-mock",
@@ -75,3 +76,14 @@ warn_return_any = true
 no_implicit_optional = true
 show_error_codes = true
 pretty = true
+
+[tool.ruff]
+target-version = "py310"
+
+[tool.ruff.lint]
+# Enable core error/warning rules
+select = ["E", "F"]
+# Let Black handle line length; ignore E501 globally to avoid conflicts.
+ignore = ["E501"]
+# Tests often use explicit True/False asserts and temporary unused variables; ignore them in tests.
+per-file-ignores = { "tests/**" = ["E712", "F841"] }

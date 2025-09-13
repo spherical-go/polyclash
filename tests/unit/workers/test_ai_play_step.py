@@ -1,8 +1,4 @@
-from unittest.mock import Mock, patch
-
-import numpy as np
-import pytest
-from PyQt5.QtCore import QMutex, QThread, QWaitCondition, pyqtSignal
+from unittest.mock import Mock
 
 from polyclash.workers.ai_play import AIPlayerWorker
 

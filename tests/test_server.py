@@ -1,11 +1,6 @@
-import time
-
 import pytest
-from flask_socketio import SocketIO
 
-import polyclash.server as server
-from polyclash.server import app, server_token
-from polyclash.util.storage import create_storage
+from polyclash.server import server_token
 
 
 def test_index_page(storage, test_client):

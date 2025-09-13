@@ -1,11 +1,7 @@
-import os
-import tempfile
-
 import pytest
 from PyQt5.QtWidgets import QApplication
 
 from polyclash.game.controller import SphericalGoController
-from polyclash.gui.main import MainWindow
 from polyclash.server import app as flask_app
 from polyclash.server import socketio
 

@@ -175,46 +175,46 @@ sequenceDiagram
     participant Client1 as Client (Black)
     participant Server
     participant Client2 as Client (White)
-    
+
     Client1->>Server: POST /sphgo/new
     Server-->>Client1: {black_key, white_key, viewer_key}
-    
+
     Note over Client1, Client2: Share keys
-    
+
     Client1->>Server: POST /sphgo/join (black_key)
     Server-->>Client1: {status}
     Client2->>Server: POST /sphgo/join (white_key)
     Server-->>Client2: {status}
-    
+
     Client1->>Server: Socket.IO connect
     Client1->>Server: Socket.IO join {key}
     Server-->>Client1: Socket.IO joined {role, token, plays}
-    
+
     Client2->>Server: Socket.IO connect
     Client2->>Server: Socket.IO join {key}
     Server-->>Client2: Socket.IO joined {role, token, plays}
-    
+
     Client1->>Server: POST /sphgo/ready
     Server-->>Client1: {status}
     Server-->>Client2: Socket.IO ready {role}
-    
+
     Client2->>Server: POST /sphgo/ready
     Server-->>Client2: {status}
     Server-->>Client1: Socket.IO ready {role}
-    
+
     Server-->>Client1: Socket.IO start
     Server-->>Client2: Socket.IO start
-    
+
     Client1->>Server: POST /sphgo/play {steps, play}
     Server-->>Client1: {message}
     Server-->>Client2: Socket.IO played {role, steps, play}
-    
+
     Client2->>Server: POST /sphgo/play {steps, play}
     Server-->>Client2: {message}
     Server-->>Client1: Socket.IO played {role, steps, play}
-    
+
     Note over Client1, Client2: Game continues...
-    
+
     Client1->>Server: POST /sphgo/close
     Server-->>Client1: {message}
 ```

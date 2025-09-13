@@ -6,8 +6,11 @@ from vtkmodules.vtkCommonCore import vtkCommand
 
 from polyclash.data.data import axis, cities, city_manager
 from polyclash.game.board import BLACK
-from polyclash.gui.constants import (stone_black_color, stone_empty_color,
-                                     stone_white_color)
+from polyclash.gui.constants import (
+    stone_black_color,
+    stone_empty_color,
+    stone_white_color,
+)
 from polyclash.gui.mesh import face_colors, mesh
 
 hidden = None

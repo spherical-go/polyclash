@@ -1,4 +1,3 @@
-import types
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -174,9 +173,10 @@ def test_network_game_dialog_connect_failure(qapp, monkeypatch):
     dlg.server_input.setText("http://example.com")
     dlg.token.setText("abc")
 
-    with patch("polyclash.gui.dialogs.connect", side_effect=ValueError("boom")), patch(
-        "polyclash.gui.dialogs.QMessageBox.critical"
-    ) as mock_critical:
+    with (
+        patch("polyclash.gui.dialogs.connect", side_effect=ValueError("boom")),
+        patch("polyclash.gui.dialogs.QMessageBox.critical") as mock_critical,
+    ):
         closed = {"v": False}
 
         def fake_close():
@@ -244,7 +244,9 @@ def test_restart_network_worker_existing(qapp):
     existing = ExistingWorker()
     window.network_worker = existing
 
-    restart_network_worker(window, server="http://s2", role="white", key="k2", fn=lambda *_: None)
+    restart_network_worker(
+        window, server="http://s2", role="white", key="k2", fn=lambda *_: None
+    )
 
     assert existing.stopped is True
     assert existing.server == "http://s2"

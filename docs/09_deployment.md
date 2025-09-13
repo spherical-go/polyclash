@@ -78,10 +78,10 @@ If you're using Redis for storage (recommended for production):
    ```bash
    # Ubuntu/Debian
    sudo apt-get install redis-server
-   
+
    # CentOS/RHEL
    sudo yum install redis
-   
+
    # macOS
    brew install redis
    ```
@@ -90,7 +90,7 @@ If you're using Redis for storage (recommended for production):
    ```bash
    # Ubuntu/Debian/CentOS/RHEL
    sudo systemctl start redis
-   
+
    # macOS
    brew services start redis
    ```
@@ -99,7 +99,7 @@ If you're using Redis for storage (recommended for production):
    ```bash
    # Ubuntu/Debian/CentOS/RHEL
    sudo systemctl enable redis
-   
+
    # macOS
    brew services start redis
    ```
@@ -180,10 +180,10 @@ For production deployments, it's recommended to use Nginx as a reverse proxy in 
    ```bash
    # Ubuntu/Debian
    sudo apt-get install nginx
-   
+
    # CentOS/RHEL
    sudo yum install nginx
-   
+
    # macOS
    brew install nginx
    ```
@@ -193,7 +193,7 @@ For production deployments, it's recommended to use Nginx as a reverse proxy in 
    server {
        listen 80;
        server_name polyclash.example.com;
-   
+
        location /sphgo {
            proxy_pass http://127.0.0.1:7763;
            proxy_set_header Host $host;
@@ -201,19 +201,19 @@ For production deployments, it's recommended to use Nginx as a reverse proxy in 
            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
            proxy_set_header X-Forwarded-Proto $scheme;
        }
-   
+
        location /socket.io {
            proxy_redirect off;
            proxy_buffering off;
-   
+
            proxy_set_header Host $host;
            proxy_set_header X-Real-IP $remote_addr;
            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-               
+
            proxy_http_version 1.1;
            proxy_set_header Upgrade $http_upgrade;
            proxy_set_header Connection "Upgrade";
-               
+
            proxy_pass http://127.0.0.1:7763/socket.io;
        }
    }
@@ -234,7 +234,7 @@ For secure communication, configure SSL/TLS with Let's Encrypt:
    ```bash
    # Ubuntu/Debian
    sudo apt-get install certbot python3-certbot-nginx
-   
+
    # CentOS/RHEL
    sudo yum install certbot python3-certbot-nginx
    ```

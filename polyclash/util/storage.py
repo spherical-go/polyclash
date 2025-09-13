@@ -12,7 +12,6 @@ GAME_ID_LENGTH = 64
 
 
 class DataStorage(ABC):
-
     @abstractmethod
     def create_room(self):
         pass

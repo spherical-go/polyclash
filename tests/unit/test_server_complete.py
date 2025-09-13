@@ -1,18 +1,20 @@
-import json
-import os
 from functools import wraps
 from unittest.mock import ANY, MagicMock, patch
 
 import pytest
 from flask import Flask, request
-from werkzeug.test import Client
 
-from polyclash.server import (api_call, app, cancel, close, delayed_start,
-                              index, join, joined_status, list_games, new,
-                              on_join, on_ready, play, player_join_room,
-                              player_ready, ready, ready_status, secret_key,
-                              server_token, socketio, storage, valid_plays,
-                              viewer_join_room)
+from polyclash.server import (
+    app,
+    delayed_start,
+    on_join,
+    on_ready,
+    player_join_room,
+    player_ready,
+    server_token,
+    valid_plays,
+    viewer_join_room,
+)
 
 
 @pytest.fixture

@@ -1,7 +1,5 @@
 import time
 
-import pytest
-
 from polyclash.game.timer import Timer
 
 

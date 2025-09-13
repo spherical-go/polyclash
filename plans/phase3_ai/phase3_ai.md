@@ -48,12 +48,12 @@ class MCTSNode:
         self.visits = 0
         self.wins = 0
         self.untried_moves = state.get_legal_moves()
-        
+
     def select_child(self):
         # UCB1 formula: wi/ni + C * sqrt(ln(N)/ni)
         C = 1.41  # Exploration parameter
         return max(self.children, key=lambda c: c.wins/c.visits + C * math.sqrt(math.log(self.visits)/c.visits))
-        
+
     def expand(self):
         move = self.untried_moves.pop()
         next_state = self.state.copy()
@@ -61,14 +61,14 @@ class MCTSNode:
         child = MCTSNode(next_state, self, move)
         self.children.append(child)
         return child
-        
+
     def update(self, result):
         self.visits += 1
         self.wins += result
-        
+
     def is_fully_expanded(self):
         return len(self.untried_moves) == 0
-        
+
     def is_terminal(self):
         return self.state.is_game_over()
 ```
@@ -84,37 +84,37 @@ class MCTSPlayer(AIPlayer):
         super().__init__(**kwargs)
         self.simulation_count = kwargs.get('simulation_count', 1000)
         self.time_limit = kwargs.get('time_limit', 5.0)  # seconds
-        
+
     def genmove(self, board, player):
         root = MCTSNode(board)
         end_time = time.time() + self.time_limit
-        
+
         # Run simulations until time limit or simulation count is reached
         for _ in range(self.simulation_count):
             if time.time() > end_time:
                 break
-                
+
             # Selection
             node = root
             while node.is_fully_expanded() and not node.is_terminal():
                 node = node.select_child()
-                
+
             # Expansion
             if not node.is_terminal():
                 node = node.expand()
-                
+
             # Simulation
             state = node.state.copy()
             while not state.is_game_over():
                 move = random.choice(state.get_legal_moves())
                 state.play(move)
-                
+
             # Backpropagation
             result = 1 if state.get_winner() == player else 0
             while node is not None:
                 node.update(result)
                 node = node.parent
-                
+
         # Return the move with the most visits
         return max(root.children, key=lambda c: c.visits).move
 ```
@@ -136,7 +136,7 @@ class Pattern:
     def __init__(self, template, weight):
         self.template = template
         self.weight = weight
-        
+
     def matches(self, board, position):
         # Check if the pattern matches at the given position
         # ...
@@ -175,28 +175,28 @@ def calculate_influence(board, player):
 ```python
 def evaluate_position(board, player):
     score = 0
-    
+
     # Territory
     black_score, white_score, _ = board.score()
     territory_score = black_score - white_score if player == BLACK else white_score - black_score
     score += TERRITORY_WEIGHT * territory_score
-    
+
     # Connectivity
     connectivity = calculate_connectivity(board, player)
     score += CONNECTIVITY_WEIGHT * connectivity
-    
+
     # Influence
     influence = calculate_influence(board, player)
     score += INFLUENCE_WEIGHT * sum(influence)
-    
+
     # Group safety
     safety = calculate_group_safety(board, player)
     score += SAFETY_WEIGHT * safety
-    
+
     # Potential
     potential = calculate_potential(board, player)
     score += POTENTIAL_WEIGHT * potential
-    
+
     return score
 ```
 
@@ -212,18 +212,18 @@ class OpeningBook:
     def __init__(self, filename):
         self.openings = {}
         self.load(filename)
-        
+
     def load(self, filename):
         # Load openings from file
         # ...
-        
+
     def get_move(self, board):
         # Find a matching opening position
         board_hash = self.hash_board(board)
         if board_hash in self.openings:
             return self.openings[board_hash]
         return None
-        
+
     def hash_board(self, board):
         # Create a hash of the board state
         # ...
@@ -242,7 +242,7 @@ def genmove(self, board, player):
         move = self.opening_book.get_move(board)
         if move is not None:
             return move
-            
+
     # Fall back to MCTS
     return self.mcts_genmove(board, player)
 ```
@@ -259,21 +259,21 @@ def solve_endgame(board, player, alpha, beta, depth):
     # Check if game is over
     if board.is_game_over():
         return board.score()
-        
+
     # Check transposition table
     board_hash = hash_board(board)
     if board_hash in transposition_table:
         return transposition_table[board_hash]
-        
+
     # Get legal moves
     moves = board.get_legal_moves()
-    
+
     # If no moves, pass
     if not moves:
         new_board = board.copy()
         new_board.pass_move()
         return -solve_endgame(new_board, -player, -beta, -alpha, depth + 1)
-        
+
     # Try each move
     best_score = -float('inf')
     for move in moves:
@@ -284,7 +284,7 @@ def solve_endgame(board, player, alpha, beta, depth):
         alpha = max(alpha, best_score)
         if alpha >= beta:
             break
-            
+
     # Store result in transposition table
     transposition_table[board_hash] = best_score
     return best_score
@@ -300,7 +300,7 @@ def is_endgame(board):
     # Check if the game is in the endgame phase
     empty_count = sum(1 for stone in board.board if stone == 0)
     return empty_count <= ENDGAME_THRESHOLD
-    
+
 def genmove(self, board, player):
     if is_endgame(board):
         return self.solve_endgame(board, player)
@@ -351,7 +351,7 @@ def apply_difficulty(self, moves, scores, difficulty):
     if difficulty == 'advanced':
         # Always choose the best move
         return moves[np.argmax(scores)]
-        
+
     if difficulty == 'intermediate':
         # Sometimes choose a suboptimal move
         if random.random() < 0.2:  # 20% chance
@@ -360,7 +360,7 @@ def apply_difficulty(self, moves, scores, difficulty):
             return moves[random.choice(top_indices)]
         else:
             return moves[np.argmax(scores)]
-            
+
     if difficulty == 'beginner':
         # Often choose a suboptimal move
         if random.random() < 0.4:  # 40% chance
@@ -382,21 +382,21 @@ def apply_difficulty(self, moves, scores, difficulty):
 def parallel_mcts(board, player, num_threads=4):
     root = MCTSNode(board)
     end_time = time.time() + TIME_LIMIT
-    
+
     def worker():
         while time.time() < end_time:
             # Run one MCTS iteration
             # ...
-            
+
     threads = []
     for _ in range(num_threads):
         thread = threading.Thread(target=worker)
         thread.start()
         threads.append(thread)
-        
+
     for thread in threads:
         thread.join()
-        
+
     return max(root.children, key=lambda c: c.visits).move
 ```
 
@@ -410,13 +410,13 @@ class BitBoard:
     def __init__(self):
         self.black_stones = 0  # 64-bit integer
         self.white_stones = 0  # 64-bit integer
-        
+
     def play(self, position, player):
         if player == BLACK:
             self.black_stones |= (1 << position)
         else:
             self.white_stones |= (1 << position)
-            
+
     def has_stone(self, position, player):
         if player == BLACK:
             return (self.black_stones & (1 << position)) != 0
@@ -438,7 +438,7 @@ def guided_simulation(board, player):
         if not moves:
             board.pass_move()
             continue
-            
+
         # Choose moves with some heuristics
         capture_moves = [m for m in moves if would_capture(board, m, player)]
         if capture_moves:
@@ -446,10 +446,10 @@ def guided_simulation(board, player):
         else:
             # Choose a move that's close to existing stones
             move = choose_move_by_proximity(board, moves, player)
-            
+
         board.play(move, player)
         player = -player
-        
+
     return board.get_winner()
 ```
 
@@ -521,14 +521,14 @@ def generate_opening_book(games, min_frequency=5):
             if player == winner:
                 openings[board_hash][move]['wins'] += 1
             board.play(move, player)
-            
+
     # Filter out rare moves
     filtered_openings = {}
     for board_hash, moves in openings.items():
         filtered_moves = {move: data for move, data in moves.items() if data['count'] >= min_frequency}
         if filtered_moves:
             filtered_openings[board_hash] = filtered_moves
-            
+
     return filtered_openings
 ```
 

@@ -4,9 +4,16 @@ from random import sample
 
 import numpy as np
 
-from polyclash.data.data import (cities, encoder, neighbors, polylarge_area,
-                                 polylarges, polysmall_area, polysmalls,
-                                 total_area)
+from polyclash.data.data import (
+    cities,
+    encoder,
+    neighbors,
+    polylarge_area,
+    polylarges,
+    polysmall_area,
+    polysmalls,
+    total_area,
+)
 
 BLACK = 1
 WHITE = -1

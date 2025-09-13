@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt
 
 from polyclash.game.board import BLACK, WHITE
 from polyclash.game.controller import LOCAL, SphericalGoController
-from polyclash.game.player import AI, HUMAN
+from polyclash.game.player import HUMAN
 from polyclash.gui.dialogs import LocalGameDialog
 from polyclash.gui.main import MainWindow
 

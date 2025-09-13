@@ -48,13 +48,13 @@ class MCTSNode:
         self.visits = 0             # Number of visits
         self.wins = 0               # Number of wins
         self.untried_moves = state.get_legal_moves()  # Moves not yet expanded
-        
+
     def select_child(self):
         # UCB1 formula for balancing exploration and exploitation
         C = 1.41  # Exploration parameter
-        return max(self.children, key=lambda c: c.wins/c.visits + 
+        return max(self.children, key=lambda c: c.wins/c.visits +
                   C * math.sqrt(math.log(self.visits)/c.visits))
-        
+
     def expand(self):
         # Create a child node by trying an untried move
         move = self.untried_moves.pop()
@@ -63,15 +63,15 @@ class MCTSNode:
         child = MCTSNode(next_state, self, move)
         self.children.append(child)
         return child
-        
+
     def update(self, result):
         # Update node statistics
         self.visits += 1
         self.wins += result
-        
+
     def is_fully_expanded(self):
         return len(self.untried_moves) == 0
-        
+
     def is_terminal(self):
         return self.state.is_game_over()
 ```
@@ -85,41 +85,41 @@ class MCTS:
     def __init__(self, simulation_count=1000, time_limit=5.0):
         self.simulation_count = simulation_count
         self.time_limit = time_limit
-        
+
     def search(self, state):
         root = MCTSNode(state)
         end_time = time.time() + self.time_limit
-        
+
         for _ in range(self.simulation_count):
             if time.time() > end_time:
                 break
-                
+
             # Selection phase
             node = self.select(root)
-            
+
             # Expansion phase
             if not node.is_terminal():
                 node = node.expand()
-                
+
             # Simulation phase
             result = self.simulate(node.state)
-            
+
             # Backpropagation phase
             self.backpropagate(node, result)
-                
+
         # Return the best move
         return self.best_move(root)
-    
+
     def select(self, node):
         while not node.is_terminal() and node.is_fully_expanded():
             node = node.select_child()
         return node
-        
+
     def simulate(self, state):
         # Random playout until game end
         state_copy = state.copy()
         current_player = state_copy.current_player
-        
+
         while not state_copy.is_game_over():
             legal_moves = state_copy.get_empties(state_copy.current_player)
             if not legal_moves:
@@ -129,21 +129,21 @@ class MCTS:
                 state_copy.play(move, state_copy.current_player)
             except ValueError:
                 continue
-                
+
         # Determine winner
         black_score, white_score, _ = state_copy.score()
         if black_score > white_score:
             return 1 if current_player == BLACK else 0
         else:
             return 1 if current_player == WHITE else 0
-    
+
     def backpropagate(self, node, result):
         while node is not None:
             node.update(result)
             node = node.parent
             # Flip result for opponent's perspective
             result = 1 - result
-            
+
     def best_move(self, root):
         # Return move with highest visit count
         return max(root.children, key=lambda c: c.visits).move
@@ -161,7 +161,7 @@ class MCTSPlayer(Player):
         self.simulation_count = kwargs.get('simulation_count', 1000)
         self.time_limit = kwargs.get('time_limit', 5.0)
         self.mcts = MCTS(self.simulation_count, self.time_limit)
-        
+
     def auto_place(self):
         while self.board.current_player == self.side:
             try:
@@ -182,7 +182,7 @@ Extend the `Board` class to support MCTS operations:
 ```python
 class Board:
     # Add methods to support MCTS
-    
+
     def copy(self):
         """Create a deep copy of the board state"""
         board_copy = Board()
@@ -216,12 +216,12 @@ def simulate(self, state):
     """Improved simulation with heuristic guidance"""
     state_copy = state.copy()
     current_player = state_copy.current_player
-    
+
     while not state_copy.is_game_over():
         legal_moves = state_copy.get_empties(state_copy.current_player)
         if not legal_moves:
             break
-            
+
         # Prioritize moves that capture stones
         capture_moves = []
         for move in legal_moves:
@@ -232,17 +232,17 @@ def simulate(self, state):
                     capture_moves.append(move)
             except ValueError:
                 continue
-                
+
         if capture_moves and random.random() < 0.8:  # 80% chance to choose a capture move
             move = random.choice(capture_moves)
         else:
             move = random.choice(legal_moves)
-            
+
         try:
             state_copy.play(move, state_copy.current_player)
         except ValueError:
             continue
-            
+
     # Determine winner
     black_score, white_score, _ = state_copy.score()
     if black_score > white_score:
@@ -261,25 +261,25 @@ class MCTSNode:
         # Existing attributes
         self.amaf_wins = 0  # All-Moves-As-First wins
         self.amaf_visits = 0  # All-Moves-As-First visits
-        
+
     def select_child(self):
         # RAVE formula
         C = 1.41  # Exploration parameter
         beta = 0.5  # RAVE weight parameter
-        
+
         def score(child):
             # UCB score
             ucb = child.wins/child.visits + C * math.sqrt(math.log(self.visits)/child.visits)
-            
+
             # RAVE score
             if child.amaf_visits > 0:
                 rave = child.amaf_wins/child.amaf_visits
             else:
                 rave = 0
-                
+
             # Combine UCB and RAVE
             return (1-beta) * ucb + beta * rave
-            
+
         return max(self.children, key=score)
 ```
 
@@ -293,11 +293,11 @@ def expand(self):
     k = 10  # Widening parameter
     c = 0.5  # Widening exponent
     max_children = int(k * self.visits**c)
-    
+
     if len(self.children) >= max_children:
         # Don't expand further at this visit count
         return self.select_child()
-        
+
     # Regular expansion
     move = self.untried_moves.pop()
     next_state = self.state.copy()
@@ -316,7 +316,7 @@ def add_virtual_loss(self):
     """Add a virtual loss to this node"""
     self.visits += 1
     self.wins -= 1  # Subtract a win (add a loss)
-    
+
 def remove_virtual_loss(self):
     """Remove the virtual loss from this node"""
     self.visits -= 1
@@ -333,11 +333,11 @@ def simulate(self, state):
     state_copy = state.copy()
     current_player = state_copy.current_player
     max_moves = 100  # Maximum number of moves to simulate
-    
+
     for _ in range(max_moves):
         if state_copy.is_game_over():
             break
-            
+
         # Early stopping condition
         black_score, white_score, _ = state_copy.score()
         score_diff = abs(black_score - white_score)
@@ -347,7 +347,7 @@ def simulate(self, state):
                 return 1 if current_player == BLACK else 0
             else:
                 return 1 if current_player == WHITE else 0
-                
+
         # Regular simulation step
         # ...
 ```
@@ -363,11 +363,11 @@ class ParallelMCTS(MCTS):
     def __init__(self, simulation_count=1000, time_limit=5.0, num_threads=4):
         super().__init__(simulation_count, time_limit)
         self.num_threads = num_threads
-        
+
     def search(self, state):
         root = MCTSNode(state)
         end_time = time.time() + self.time_limit
-        
+
         def worker():
             while time.time() < end_time:
                 # Run one MCTS iteration
@@ -376,16 +376,16 @@ class ParallelMCTS(MCTS):
                     node = node.expand()
                 result = self.simulate(node.state)
                 self.backpropagate(node, result)
-                
+
         threads = []
         for _ in range(self.num_threads):
             thread = threading.Thread(target=worker)
             thread.start()
             threads.append(thread)
-            
+
         for thread in threads:
             thread.join()
-            
+
         return self.best_move(root)
 ```
 
@@ -402,7 +402,7 @@ class MCTSNode:
         self.children = []  # Child nodes
         self.visits = 0  # Number of visits
         self.wins = 0  # Number of wins
-        
+
         # Store only legal moves instead of full state
         if state is not None:
             self.untried_moves = state.get_legal_moves()
@@ -410,7 +410,7 @@ class MCTSNode:
         else:
             self.untried_moves = []
             self.player = None
-            
+
         # Don't store state in leaf nodes to save memory
         if parent is not None and parent.parent is not None:
             self.state = None
@@ -428,13 +428,13 @@ def select(self, node):
         # Add virtual loss to encourage thread divergence
         node.add_virtual_loss()
         path.append(node)
-        
+
         # Use numpy for faster child selection
         if len(node.children) > 10:
             visits = np.array([c.visits for c in node.children])
             wins = np.array([c.wins for c in node.children])
             log_visits = np.log(node.visits)
-            
+
             # UCB1 formula
             C = 1.41
             ucb_scores = wins / visits + C * np.sqrt(log_visits / visits)
@@ -442,11 +442,11 @@ def select(self, node):
             node = node.children[best_idx]
         else:
             node = node.select_child()
-            
+
     # Remove virtual losses
     for n in path:
         n.remove_virtual_loss()
-        
+
     return node
 ```
 
@@ -459,13 +459,13 @@ def profile_mcts():
     """Profile MCTS performance"""
     import cProfile
     import pstats
-    
+
     board = Board()
     mcts = MCTS(simulation_count=1000, time_limit=5.0)
-    
+
     # Profile the search function
     cProfile.runctx('mcts.search(board)', globals(), locals(), 'mcts_profile.prof')
-    
+
     # Analyze the results
     stats = pstats.Stats('mcts_profile.prof')
     stats.strip_dirs().sort_stats('cumulative').print_stats(20)
@@ -482,23 +482,23 @@ def test_mcts_node():
     """Test MCTSNode functionality"""
     board = Board()
     node = MCTSNode(board)
-    
+
     # Test initialization
     assert node.visits == 0
     assert node.wins == 0
     assert len(node.untried_moves) > 0
-    
+
     # Test expansion
     child = node.expand()
     assert child in node.children
     assert child.parent == node
     assert child.visits == 0
-    
+
     # Test update
     child.update(1)
     assert child.visits == 1
     assert child.wins == 1
-    
+
     # Test selection
     node.visits = 10
     node.wins = 5
@@ -520,15 +520,15 @@ def test_mcts_integration():
     """Test MCTS integration with the game"""
     board = Board()
     mcts = MCTS(simulation_count=100, time_limit=1.0)
-    
+
     # Test search function
     move = mcts.search(board)
     assert move in board.get_empties(board.current_player)
-    
+
     # Test playing a move
     board.play(move, board.current_player)
     assert board.board[move] == board.current_player
-    
+
     # Test MCTSPlayer
     board = Board()
     player = MCTSPlayer(side=BLACK, simulation_count=100, time_limit=1.0)
@@ -546,12 +546,12 @@ def benchmark_mcts():
     """Benchmark MCTS against current AI"""
     wins = 0
     games = 100
-    
+
     for i in range(games):
         board = Board()
         mcts_player = MCTSPlayer(side=BLACK)
         current_ai = AIPlayer(side=WHITE)
-        
+
         while not board.is_game_over():
             if board.current_player == BLACK:
                 move = mcts_player.mcts.search(board)
@@ -559,11 +559,11 @@ def benchmark_mcts():
             else:
                 move = board.genmove(WHITE)
                 board.play(move, WHITE)
-                
+
         black_score, white_score, _ = board.score()
         if black_score > white_score:
             wins += 1
-            
+
     win_rate = wins / games
     return win_rate
 ```

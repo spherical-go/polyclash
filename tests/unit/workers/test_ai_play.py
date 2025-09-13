@@ -1,12 +1,8 @@
-from unittest.mock import Mock, patch
+from unittest.mock import Mock
 
-import numpy as np
-import pytest
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import QThread
 
-from polyclash.game.board import BLACK, WHITE, Board, SimulatedBoard
-from polyclash.game.controller import SphericalGoController
-from polyclash.game.player import Player
+from polyclash.game.board import Board
 from polyclash.workers.ai_play import AIPlayerWorker
 
 

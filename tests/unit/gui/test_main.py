@@ -1,10 +1,8 @@
 from unittest.mock import MagicMock, patch
 
 import pytest
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QMainWindow
 
-from polyclash.game.board import BLACK, WHITE
+from polyclash.game.board import BLACK
 from polyclash.game.controller import SphericalGoController
 
 

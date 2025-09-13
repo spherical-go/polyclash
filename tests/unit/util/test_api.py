@@ -1,9 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-import pytest
-
-from polyclash.util.api import (close, connect, join, play, ready,
-                                set_player_token)
+from polyclash.util.api import close, connect, join, play, ready, set_player_token
 
 
 class TestAPIFunctions:
@@ -99,7 +96,7 @@ class TestAPIFunctions:
         mock_post.return_value = mock_response
 
         # Set game_token to None
-        from polyclash.util.api import game_token, set_game_token
+        from polyclash.util.api import set_game_token
 
         set_game_token(None)
 

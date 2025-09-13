@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "polyclash"
-version = "0.1.0"
+version = "0.0.6"
 description = "A python 3d spherical Go game on a snub dodecahedron board"
 readme = "README.md"
 requires-python = ">=3.10"

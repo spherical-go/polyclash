@@ -1,0 +1,59 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "polyclash"
+version = "0.1.0"
+description = "A python 3d spherical Go game on a snub dodecahedron board"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { file = "LICENSE" }
+authors = [
+  { name = "Mingli Yuan", email = "mingli.yuan@gmail.com" },
+]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+# Synchronized with requirements.txt
+dependencies = [
+  "numpy==2.3.3",
+  "scipy==1.16.2",
+  "PyQt5==5.15.11",
+  "pyvista==0.46.3",
+  "pyvistaqt==0.11.3",
+  "requests==2.32.5",
+  "python-socketio[client]==5.13.0",
+  "flask==3.1.2",
+  "flask-socketio==5.5.1",
+  "loguru==0.7.3",
+  "redis==6.4.0",
+]
+
+[project.optional-dependencies]
+# Synchronized with requirements-dev.txt (excluding commented-out lines)
+dev = [
+  "pytest",
+  "pytest-cov",
+  "pytest-mock",
+  "pytest-benchmark",
+  "pytest-asyncio",
+  "pytest-qt",
+  "pytest-flask",
+]
+
+[project.scripts]
+polyclash-client = "polyclash.client:main"
+polyclash-server = "polyclash.server:main"
+
+[project.urls]
+Homepage = "https://github.com/spherical-go/polyclash"
+Documentation = "https://github.com/spherical-go/polyclash"
+Source = "https://github.com/spherical-go/polyclash"
+Tracker = "https://github.com/spherical-go/polyclash/issues"
+
+[tool.setuptools.packages.find]
+exclude = ["tests*", "model3d*", "scripts*", "bin*"]

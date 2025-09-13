@@ -33,7 +33,7 @@ mkdir -p tests/performance
 Create a root `conftest.py` file with shared fixtures:
 
 ```python
-# tests/conftest.py
+# tests/conftest.pyb
 import pytest
 from polyclash.game.board import Board
 from polyclash.game.controller import SphericalGoController
@@ -65,7 +65,7 @@ def white_player():
 Create module-specific `conftest.py` files with fixtures relevant to each module:
 
 ```python
-# tests/unit/game/conftest.py
+# tests/unit/game/conftest.pyb
 import pytest
 from polyclash.game.board import Board, BLACK, WHITE
 
@@ -91,7 +91,7 @@ def board_with_capture():
 ```
 
 ```python
-# tests/unit/gui/conftest.py
+# tests/unit/gui/conftest.pyb
 import pytest
 from PyQt5.QtWidgets import QApplication
 from polyclash.gui.main import MainWindow
@@ -114,7 +114,7 @@ def main_window(qapp):
 ```
 
 ```python
-# tests/integration/conftest.py
+# tests/integration/conftest.pyb
 import pytest
 import tempfile
 import os

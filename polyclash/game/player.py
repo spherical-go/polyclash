@@ -47,39 +47,11 @@ class HumanPlayer(Player):
 
 
 class AIPlayer(Player):
+    """AI player — uses HRM (Hierarchical Reasoning Model) when available,
+    falls back to the built-in heuristic otherwise."""
+
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(kind=AI, **kwargs)
-        self.worker: AIPlayerWorker = AIPlayerWorker(self)
-
-    def auto_place(self) -> None:
-        # Assume board and side are set by controller when player is attached
-        if self.board is None or self.side is None:
-            raise ValueError("Player is not attached to a board or side")
-        while self.board.current_player == self.side:
-            try:
-                self.board.disable_notification()
-                position = self.board.genmove(self.side)
-                self.board.enable_notification()
-                self.play(position)
-                break  # Exit the loop if move was successful
-            except ValueError:
-                continue  # Try again if an error occurred
-
-    def stop_worker(self) -> None:
-        if self.worker.isRunning():
-            self.worker.stop()
-            self.worker.wait()
-
-
-class HRMAIPlayer(Player):
-    """AI player powered by HRM (Hierarchical Reasoning Model) + MCTS.
-
-    Requires hrm-polyclash package. Falls back to the built-in heuristic
-    if the package or checkpoint is unavailable.
-    """
-
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(kind=HRM_AI, **kwargs)
         self.worker: AIPlayerWorker = AIPlayerWorker(self)
         self._hrm_player: Any = None
 
@@ -95,14 +67,15 @@ class HRMAIPlayer(Player):
                 checkpoint_file=checkpoint_file,
                 num_mcts_sims=num_mcts_sims,
             )
-            logger.info("HRM AI player loaded successfully")
+            logger.info("AI player: HRM engine loaded")
         except Exception as e:
-            logger.warning(f"HRM AI unavailable ({e}), will fall back to heuristic")
+            logger.info(f"AI player: HRM unavailable ({e}), using heuristic")
 
     def auto_place(self) -> None:
         if self.board is None or self.side is None:
             raise ValueError("Player is not attached to a board or side")
 
+        # Try HRM first
         if self._hrm_player is not None:
             position = self._hrm_player.genmove(self.board, self.side)
             if position is not None:
@@ -119,7 +92,7 @@ class HRMAIPlayer(Player):
                 )
                 return
 
-        # Fallback to built-in heuristic
+        # Fallback to heuristic
         while self.board.current_player == self.side:
             try:
                 self.board.disable_notification()
@@ -134,6 +107,14 @@ class HRMAIPlayer(Player):
         if self.worker.isRunning():
             self.worker.stop()
             self.worker.wait()
+
+
+class HRMAIPlayer(AIPlayer):
+    """Explicit HRM AI player — same as AIPlayer but with kind=HRM_AI."""
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        self.kind = HRM_AI
 
 
 class RemotePlayer(Player):

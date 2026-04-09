@@ -17,7 +17,7 @@ from PyQt5.QtWidgets import (
 import polyclash.gui.icons as icons
 from polyclash.game.board import BLACK, WHITE
 from polyclash.game.controller import LOCAL, NETWORK
-from polyclash.game.player import AI, HRM_AI, HUMAN, REMOTE
+from polyclash.game.player import AI, HUMAN, REMOTE
 from polyclash.util.api import connect, get_server, set_server
 from polyclash.workers.network import NetworkWorker
 
@@ -40,14 +40,12 @@ class LocalGameDialog(QDialog):
         self.black_type = QComboBox(self)
         self.black_type.addItem("Human")
         self.black_type.addItem("AI")
-        self.black_type.addItem("HRM AI")
         layout.addWidget(QLabel("Black Type"))
         layout.addWidget(self.black_type)
 
         self.white_type = QComboBox(self)
         self.white_type.addItem("Human")
         self.white_type.addItem("AI")
-        self.white_type.addItem("HRM AI")
         layout.addWidget(QLabel("White Type"))
         layout.addWidget(self.white_type)
 
@@ -58,18 +56,10 @@ class LocalGameDialog(QDialog):
         self.setLayout(layout)
         self.window = parent
 
-    @staticmethod
-    def _text_to_kind(text: str) -> int:
-        if text == "HRM AI":
-            return HRM_AI
-        elif text == "AI":
-            return AI
-        return HUMAN
-
     def on_start_clicked(self):
-        black_kind = self._text_to_kind(self.black_type.currentText())
-        white_kind = self._text_to_kind(self.white_type.currentText())
-        if black_kind != HUMAN and white_kind != HUMAN:
+        black_kind = HUMAN if self.black_type.currentText() == "Human" else AI
+        white_kind = HUMAN if self.white_type.currentText() == "Human" else AI
+        if black_kind == AI and white_kind == AI:
             QMessageBox.critical(
                 self,
                 "Error",

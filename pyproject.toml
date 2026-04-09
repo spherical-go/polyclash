@@ -49,6 +49,9 @@ dev = [
   "pytest-qt",
   "pytest-flask",
 ]
+hrm = [
+  "hrm-polyclash",
+]
 
 [project.scripts]
 polyclash-client = "polyclash.client:main"

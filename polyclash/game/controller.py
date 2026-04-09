@@ -2,7 +2,7 @@ from PyQt5.QtCore import QObject, pyqtSignal
 
 from polyclash.data.data import encoder
 from polyclash.game.board import Board
-from polyclash.game.player import AI, HUMAN, REMOTE, PlayerFactory
+from polyclash.game.player import AI, HRM_AI, HUMAN, REMOTE, PlayerFactory
 from polyclash.util import api
 from polyclash.util.logging import logger
 
@@ -75,7 +75,7 @@ class SphericalGoController(QObject):
             self.board.reset()
 
             while not self.board.is_game_over():
-                if self.get_current_player().kind == AI:
+                if self.get_current_player().kind in (AI, HRM_AI):
                     self.get_current_player().auto_place()
                     self.switch_player()
                 else:
@@ -100,7 +100,7 @@ class SphericalGoController(QObject):
             self.board.play(placement, side)
             self.switch_player()
 
-            if self.get_current_player().kind == AI:
+            if self.get_current_player().kind in (AI, HRM_AI):
                 self.get_current_player().auto_place()
                 self.switch_player()
 

@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from PyQt5.QtCore import QObject, pyqtSignal
 
 from polyclash.game.timer import Timer
+from polyclash.util.logging import logger
 from polyclash.workers.ai_play import AIPlayerWorker
 
 if TYPE_CHECKING:
@@ -14,6 +15,7 @@ if TYPE_CHECKING:
 HUMAN: int = 0
 AI: int = 1
 REMOTE: int = 2
+HRM_AI: int = 3
 
 
 class Player(QObject):
@@ -69,6 +71,71 @@ class AIPlayer(Player):
             self.worker.wait()
 
 
+class HRMAIPlayer(Player):
+    """AI player powered by HRM (Hierarchical Reasoning Model) + MCTS.
+
+    Requires hrm-polyclash package. Falls back to the built-in heuristic
+    if the package or checkpoint is unavailable.
+    """
+
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(kind=HRM_AI, **kwargs)
+        self.worker: AIPlayerWorker = AIPlayerWorker(self)
+        self._hrm_player: Any = None
+
+        checkpoint_dir: str = kwargs.get("checkpoint_dir", "./temp")
+        checkpoint_file: str = kwargs.get("checkpoint_file", "best.pkl")
+        num_mcts_sims: int = kwargs.get("num_mcts_sims", 50)
+
+        try:
+            from hrm_polyclash.bridge import HRMPlayer
+
+            self._hrm_player = HRMPlayer(
+                checkpoint_dir=checkpoint_dir,
+                checkpoint_file=checkpoint_file,
+                num_mcts_sims=num_mcts_sims,
+            )
+            logger.info("HRM AI player loaded successfully")
+        except Exception as e:
+            logger.warning(f"HRM AI unavailable ({e}), will fall back to heuristic")
+
+    def auto_place(self) -> None:
+        if self.board is None or self.side is None:
+            raise ValueError("Player is not attached to a board or side")
+
+        if self._hrm_player is not None:
+            position = self._hrm_player.genmove(self.board, self.side)
+            if position is not None:
+                self.board.disable_notification()
+                try:
+                    self.board.play(position, self.side)
+                finally:
+                    self.board.enable_notification()
+                self.board.notify_observers(
+                    "add_stone",
+                    point=position,
+                    player=self.side,
+                    score=self.board.score(),
+                )
+                return
+
+        # Fallback to built-in heuristic
+        while self.board.current_player == self.side:
+            try:
+                self.board.disable_notification()
+                position = self.board.genmove(self.side)
+                self.board.enable_notification()
+                self.play(position)
+                break
+            except ValueError:
+                continue
+
+    def stop_worker(self) -> None:
+        if self.worker.isRunning():
+            self.worker.stop()
+            self.worker.wait()
+
+
 class RemotePlayer(Player):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__(kind=REMOTE, **kwargs)
@@ -82,6 +149,8 @@ class PlayerFactory:
             return HumanPlayer(**kwargs)
         elif kind == AI:
             return AIPlayer(**kwargs)
+        elif kind == HRM_AI:
+            return HRMAIPlayer(**kwargs)
         elif kind == REMOTE:
             return RemotePlayer(**kwargs)
         else:

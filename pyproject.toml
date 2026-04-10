@@ -54,6 +54,7 @@ hrm = [
 ]
 
 [project.scripts]
+polyclash = "polyclash.cli:main"
 polyclash-client = "polyclash.client:main"
 polyclash-server = "polyclash.server:main"
 

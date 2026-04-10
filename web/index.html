@@ -58,6 +58,16 @@
   <script src="/web/js/light-rules.js"></script>
   <script src="/web/js/board-renderer.js"></script>
   <script src="/web/js/game-client.js"></script>
+  <script>
+    // Auto-fill server token from URL query parameter (for solo mode)
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var token = params.get('token');
+      if (token) {
+        window._serverToken = token;
+      }
+    })();
+  </script>
   <script src="/web/js/main.js"></script>
 </body>
 </html>

@@ -94,7 +94,12 @@ def api_call(func):
         try:
             data = request.get_json()
             token = data.get("token") or data.get("key")
-            if token == server_token:
+            skip_auth = os.environ.get("POLYCLASH_NO_AUTH") or os.environ.get(
+                "POLYCLASH_SOLO_MODE"
+            )
+            if skip_auth:
+                pass  # auth disabled (solo or no-auth mode)
+            elif token == server_token:
                 pass  # server-level token, skip player auth
             elif token and storage.contains(token):
                 game_id = storage.get_game_id(token)

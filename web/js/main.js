@@ -63,5 +63,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Start animation loop
     renderer.animate();
 
+    // Auto-start local game if token was provided via URL (solo mode)
+    if (window._serverToken) {
+        var statusBar = document.getElementById('status-bar');
+        statusBar.textContent = 'Starting game...';
+        var serverUrl = document.getElementById('server-url').value;
+        setTimeout(function () {
+            client.startLocalGame(serverUrl);
+        }, 500);
+    }
+
     console.log('PolyClash Web Client initialized');
 });

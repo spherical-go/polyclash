@@ -16,7 +16,31 @@
     var STONE_WHITE_COLOR = new THREE.Color(1.0, 1.0, 1.0);
     var STONE_RADIUS = 0.015;
     var STONE_PLACED_SCALE = 2.0;  // placed stones are 2x the empty marker
-    var CAMERA_DISTANCE = 6;
+    var RING_SEGMENTS = 32;
+
+    // Reusable circle geometry (unit circle in XY plane, to be scaled/positioned)
+    function createCircleGeometry(radius, segments) {
+        var pts = [];
+        for (var i = 0; i <= segments; i++) {
+            var a = (i / segments) * Math.PI * 2;
+            pts.push(new THREE.Vector3(Math.cos(a) * radius, Math.sin(a) * radius, 0));
+        }
+        var geo = new THREE.BufferGeometry().setFromPoints(pts);
+        return geo;
+    }
+
+    // Place a LineLoop at a city position, oriented outward from sphere center
+    function createRing(position, radius, color) {
+        var geo = createCircleGeometry(radius, RING_SEGMENTS);
+        var mat = new THREE.LineBasicMaterial({ color: color });
+        var ring = new THREE.LineLoop(geo, mat);
+        ring.position.set(position[0], position[1], position[2]);
+        // Orient ring face outward: lookAt a point further from center
+        var outward = new THREE.Vector3(position[0] * 2, position[1] * 2, position[2] * 2);
+        ring.lookAt(outward);
+        return ring;
+    }
+    var CAMERA_DISTANCE = 3.5;
     var BG_COLOR = 0x555555;
 
     function BoardRenderer(canvas) {
@@ -28,6 +52,7 @@
         this.mouse = new THREE.Vector2();
         this._highlightedIndices = [];
         this._hoveredIndex = -1;
+        this._hoverRing = null;
         this._currentPlayerColor = 1; // 1 = black, -1 = white
         this._lastMoveMarker = null;
 
@@ -277,28 +302,22 @@
             }
 
             if (newIndex !== self._hoveredIndex) {
-                // Restore previous hovered stone
-                if (self._hoveredIndex >= 0) {
-                    var prevMesh = self.stoneMeshes[self._hoveredIndex];
-                    if (prevMesh && prevMesh.userData.stoneIndex !== undefined) {
-                        // Only restore if stone is still empty (not placed)
-                        var scale = prevMesh.scale.x;
-                        if (scale !== STONE_PLACED_SCALE) {
-                            prevMesh.material.color.copy(STONE_EMPTY_COLOR);
-                            prevMesh.scale.set(1, 1, 1);
-                        }
-                    }
+                // Remove previous hover ring
+                if (self._hoverRing) {
+                    self.scene.remove(self._hoverRing);
+                    self._hoverRing.geometry.dispose();
+                    self._hoverRing.material.dispose();
+                    self._hoverRing = null;
                 }
 
-                // Highlight new hovered stone (only if empty)
+                // Add hover ring on empty stone
                 if (newIndex >= 0) {
                     var mesh = self.stoneMeshes[newIndex];
                     if (mesh && mesh.scale.x !== STONE_PLACED_SCALE) {
-                        var hoverColor = self._currentPlayerColor === 1
-                            ? new THREE.Color(0.25, 0.25, 0.25)   // dark gray for black's turn
-                            : new THREE.Color(0.85, 0.85, 0.85);  // light gray for white's turn
-                        mesh.material.color.copy(hoverColor);
-                        mesh.scale.set(1.5, 1.5, 1.5);
+                        var hoverColor = self._currentPlayerColor === 1 ? 0x444444 : 0xcccccc;
+                        var city = self.boardData.cities[newIndex];
+                        self._hoverRing = createRing(city, 0.04, hoverColor);
+                        self.scene.add(self._hoverRing);
                     }
                 }
 
@@ -307,14 +326,13 @@
         });
 
         this.canvas.addEventListener("mouseleave", function () {
-            if (self._hoveredIndex >= 0) {
-                var mesh = self.stoneMeshes[self._hoveredIndex];
-                if (mesh && mesh.scale.x !== STONE_PLACED_SCALE) {
-                    mesh.material.color.copy(STONE_EMPTY_COLOR);
-                    mesh.scale.set(1, 1, 1);
-                }
-                self._hoveredIndex = -1;
+            if (self._hoverRing) {
+                self.scene.remove(self._hoverRing);
+                self._hoverRing.geometry.dispose();
+                self._hoverRing.material.dispose();
+                self._hoverRing = null;
             }
+            self._hoveredIndex = -1;
         });
     };
 
@@ -335,19 +353,12 @@
             this._lastMoveMarker = null;
         }
 
-        var mesh = this.stoneMeshes[index];
-        if (!mesh) return;
+        if (!this.boardData || !this.boardData.cities[index]) return;
 
-        var ringGeo = new THREE.SphereGeometry(0.035, 16, 12);
-        var ringMat = new THREE.MeshBasicMaterial({
-            color: 0xff0000,
-            wireframe: true,
-        });
-        var ring = new THREE.Mesh(ringGeo, ringMat);
-        ring.position.copy(mesh.position);
-        ring.name = "lastMoveMarker";
-        this.scene.add(ring);
-        this._lastMoveMarker = ring;
+        var city = this.boardData.cities[index];
+        this._lastMoveMarker = createRing(city, 0.038, 0xff4444);
+        this._lastMoveMarker.name = "lastMoveMarker";
+        this.scene.add(this._lastMoveMarker);
     };
 
     // ── Camera views ────────────────────────────────────────────────────
@@ -370,6 +381,8 @@
             // Smooth ease-in-out
             t = t * t * (3 - 2 * t);
             self.camera.position.lerpVectors(start, target, t);
+            // Spherical interpolation: keep constant distance from origin
+            self.camera.position.normalize().multiplyScalar(CAMERA_DISTANCE);
             self.camera.lookAt(0, 0, 0);
             if (t < 1) {
                 requestAnimationFrame(tweenStep);

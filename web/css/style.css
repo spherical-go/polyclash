@@ -242,6 +242,29 @@ button:active {
   transform: scale(0.97);
 }
 
+.view-btn:active {
+  transform: none;
+}
+
+/* ── Language selector ──────────────────────────────── */
+
+#lang-selector {
+  position: fixed;
+  bottom: 30px;
+  right: 16px;
+  z-index: 10;
+}
+
+#lang-select {
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
 /* ── Responsive ─────────────────────────────────────── */
 
 @media (max-width: 600px) {

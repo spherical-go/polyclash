@@ -89,7 +89,7 @@ class GameClient {
 
             // Fetch initial state
             await this.fetchState();
-            this.showStatus('Local game started – you are Black.');
+            this.showStatus(i18n.t('status_local_started'));
         } catch (err) {
             console.error('startLocalGame error:', err);
             this.showStatus('Error starting local game: ' + err.message);
@@ -223,20 +223,20 @@ class GameClient {
     async playMove(point) {
         // Guard: must have an active game
         if (!this.token || !this.serverUrl) {
-            this.showStatus('Start a game first.');
+            this.showStatus(i18n.t('status_start_game'));
             return;
         }
 
         // Only allow moves when it is our turn
         if (this.mode === 'network' && this.currentPlayer !== this.side) {
-            this.showStatus('Not your turn.');
+            this.showStatus(i18n.t('status_not_turn'));
             return;
         }
 
         // Quick client-side legality check
         var legal = this.rules.getLegalMoves(this.currentPlayer);
         if (legal.indexOf(point) === -1) {
-            this.showStatus('Illegal move.');
+            this.showStatus(i18n.t('status_illegal'));
             return;
         }
 
@@ -275,18 +275,18 @@ class GameClient {
 
     async pass() {
         if (!this.token || !this.serverUrl) {
-            this.showStatus('Start a game first.');
+            this.showStatus(i18n.t('status_start_game'));
             return;
         }
 
         if (this.mode === 'local') {
             this.counter++;
-            this.showStatus('Player passed.');
+            this.showStatus(i18n.t('status_passed'));
             await this.fetchState();
             await this.requestAIMove();
         } else {
             this.counter++;
-            this.showStatus('Player passed.');
+            this.showStatus(i18n.t('status_passed'));
             await this.fetchState();
         }
     }
@@ -370,16 +370,16 @@ class GameClient {
         var turnText = document.getElementById('turn-text');
         var turnDot = document.getElementById('turn-dot');
 
-        if (blackEl) blackEl.textContent = 'Black: ' + (this.score.black * 100).toFixed(1) + '%';
-        if (whiteEl) whiteEl.textContent = 'White: ' + (this.score.white * 100).toFixed(1) + '%';
-        if (unclaimedEl) unclaimedEl.textContent = 'Unclaimed: ' + (this.score.unclaimed * 100).toFixed(1) + '%';
-        if (turnText) turnText.textContent = this.currentPlayer === 1 ? "Black's turn" : "White's turn";
+        if (blackEl) blackEl.textContent = i18n.t('score_black') + ': ' + (this.score.black * 100).toFixed(1) + '%';
+        if (whiteEl) whiteEl.textContent = i18n.t('score_white') + ': ' + (this.score.white * 100).toFixed(1) + '%';
+        if (unclaimedEl) unclaimedEl.textContent = i18n.t('score_unclaimed') + ': ' + (this.score.unclaimed * 100).toFixed(1) + '%';
+        if (turnText) turnText.textContent = this.currentPlayer === 1 ? i18n.t('turn_black') : i18n.t('turn_white');
         if (turnDot) {
             turnDot.className = this.currentPlayer === 1 ? 'turn-dot' : 'turn-dot white';
         }
 
         var moveCounterEl = document.getElementById('move-counter');
-        if (moveCounterEl) moveCounterEl.textContent = 'Move: ' + this.counter;
+        if (moveCounterEl) moveCounterEl.textContent = i18n.t('move_label') + ': ' + this.counter;
     }
 
     async resetGame() {
@@ -418,12 +418,12 @@ class GameClient {
         }
         this.renderer.highlightLegalMoves([]);
         this.updateUI();
-        this.showStatus('Game reset.');
+        this.showStatus(i18n.t('status_reset'));
     }
 
     async downloadRecord() {
         if (!this.token || !this.serverUrl) {
-            this.showStatus('Start a game first.');
+            this.showStatus(i18n.t('status_start_game'));
             return;
         }
 

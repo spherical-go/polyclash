@@ -2,9 +2,7 @@ import pytest
 from flask_socketio import SocketIO
 
 import polyclash.server as server
-from polyclash.game.board import BLACK, WHITE, Board
-from polyclash.game.controller import SphericalGoController
-from polyclash.game.player import Player
+from polyclash.game.board import Board
 from polyclash.server import app
 from polyclash.util.storage import create_storage
 
@@ -18,24 +16,6 @@ server.server_token = TEST_TOKEN
 def empty_board():
     """Fixture for an empty board."""
     return Board()
-
-
-@pytest.fixture
-def controller():
-    """Fixture for a controller with an empty board."""
-    return SphericalGoController()
-
-
-@pytest.fixture
-def black_player():
-    """Fixture for a black player."""
-    return Player(BLACK)
-
-
-@pytest.fixture
-def white_player():
-    """Fixture for a white player."""
-    return Player(WHITE)
 
 
 @pytest.fixture

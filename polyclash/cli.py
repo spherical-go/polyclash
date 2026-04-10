@@ -32,19 +32,12 @@ def main() -> None:
         "--token", default=None, help="Set server token (default: auto-generated)"
     )
 
-    # --- polyclash client --- (legacy PyQt client)
-    sub.add_parser("client", help="Launch desktop PyQt client")
-
     args = parser.parse_args()
 
     if args.command == "play":
         _run_solo(args.port)
     elif args.command == "serve":
         _run_serve(args.host, args.port, args.no_auth, args.token)
-    elif args.command == "client":
-        from polyclash.client import main as client_main
-
-        client_main()
     else:
         parser.print_help()
 

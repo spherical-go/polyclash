@@ -11,6 +11,9 @@
 
     var translations = {
         en: {
+            // Game title
+            game_title: "PolyClash",
+
             // View names (4 continents + 4 oceans)
             view_0: "Amberland",
             view_1: "Jadeland",
@@ -48,6 +51,8 @@
         },
 
         "zh-Hans": {
+            game_title: "\u661f\u9010",
+
             view_0: "\u7425\u73c0\u6d32",
             view_1: "\u7fe0\u7389\u6d32",
             view_2: "\u6d41\u91d1\u6d32",
@@ -63,7 +68,7 @@
             turn_black: "\u9ed1\u65b9\u843d\u5b50",
             turn_white: "\u767d\u65b9\u843d\u5b50",
             move_label: "\u624b\u6570",
-            status_welcome: "\u6b22\u8fce\u6765\u5230 PolyClash",
+            status_welcome: "\u6b22\u8fce\u6765\u5230\u661f\u9010",
             status_start_game: "\u8bf7\u5148\u5f00\u5c40\u3002",
             status_illegal: "\u975e\u6cd5\u843d\u5b50\u3002",
             status_not_turn: "\u8fd8\u6ca1\u8f6e\u5230\u4f60\u3002",
@@ -83,6 +88,8 @@
         },
 
         "zh-Hant": {
+            game_title: "\u661f\u9010",
+
             view_0: "\u7425\u73c0\u6d32",
             view_1: "\u7fe0\u7389\u6d32",
             view_2: "\u6d41\u91d1\u6d32",
@@ -98,7 +105,7 @@
             turn_black: "\u9ed1\u65b9\u843d\u5b50",
             turn_white: "\u767d\u65b9\u843d\u5b50",
             move_label: "\u624b\u6578",
-            status_welcome: "\u6b61\u8fce\u4f86\u5230 PolyClash",
+            status_welcome: "\u6b61\u8fce\u4f86\u5230\u661f\u9010",
             status_start_game: "\u8acb\u5148\u958b\u5c40\u3002",
             status_illegal: "\u975e\u6cd5\u843d\u5b50\u3002",
             status_not_turn: "\u9084\u6c92\u8f2a\u5230\u4f60\u3002",
@@ -118,6 +125,8 @@
         },
 
         ja: {
+            game_title: "\u661f\u9010",
+
             view_0: "\u7425\u73c0\u5927\u9678",
             view_1: "\u7fe1\u7fe0\u5927\u9678",
             view_2: "\u9ec4\u91d1\u5927\u9678",
@@ -133,7 +142,7 @@
             turn_black: "\u9ed2\u306e\u756a",
             turn_white: "\u767d\u306e\u756a",
             move_label: "\u624b\u6570",
-            status_welcome: "PolyClash \u3078\u3088\u3046\u3053\u305d",
+            status_welcome: "\u661f\u9010\u3078\u3088\u3046\u3053\u305d",
             btn_local: "\u30ed\u30fc\u30ab\u30eb\u5bfe\u5c40",
             btn_pass: "\u30d1\u30b9",
             btn_reset: "\u30ea\u30bb\u30c3\u30c8",
@@ -141,6 +150,8 @@
         },
 
         ko: {
+            game_title: "\u661f\u9010",
+
             view_0: "\ud638\ubc15 \ub300\ub959",
             view_1: "\ube44\ucde8 \ub300\ub959",
             view_2: "\ud669\uae08 \ub300\ub959",
@@ -156,7 +167,7 @@
             turn_black: "\ud751\uc758 \ucc28\ub840",
             turn_white: "\ubc31\uc758 \ucc28\ub840",
             move_label: "\uc218",
-            status_welcome: "PolyClash\uc5d0 \uc624\uc2e0 \uac83\uc744 \ud658\uc601\ud569\ub2c8\ub2e4",
+            status_welcome: "\u661f\u9010\uc5d0 \uc624\uc2e0 \uac83\uc744 \ud658\uc601\ud569\ub2c8\ub2e4",
             btn_local: "\ub85c\uceec \uac8c\uc784",
             btn_pass: "\ud328\uc2a4",
             btn_reset: "\ub9ac\uc14b",

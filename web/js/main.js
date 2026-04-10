@@ -29,6 +29,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     // ---- Update all UI labels from i18n ----
 
     function updateAllLabels() {
+        // Page title
+        document.title = i18n.t('game_title');
+
         document.getElementById('btn-new-local').textContent = i18n.t('btn_local');
         document.getElementById('btn-pass').textContent = i18n.t('btn_pass');
         document.getElementById('btn-reset').textContent = i18n.t('btn_reset');

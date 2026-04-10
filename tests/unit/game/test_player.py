@@ -67,6 +67,7 @@ class TestAIPlayerFunctionality:
         board.genmove.return_value = 0
 
         player = AIPlayer(side=BLACK, board=board)
+        player._hrm_player = None  # Force heuristic fallback path
 
         # Mock the worker
         mocker.patch.object(player, "worker")

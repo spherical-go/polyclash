@@ -258,6 +258,7 @@ class GameClient {
 
             console.log('Move played at point', point);
             this.counter++;
+            this.renderer.markLastMove(point);
 
             // Refresh state from server
             await this.fetchState();
@@ -272,6 +273,24 @@ class GameClient {
         }
     }
 
+    async pass() {
+        if (!this.token || !this.serverUrl) {
+            this.showStatus('Start a game first.');
+            return;
+        }
+
+        if (this.mode === 'local') {
+            this.counter++;
+            this.showStatus('Player passed.');
+            await this.fetchState();
+            await this.requestAIMove();
+        } else {
+            this.counter++;
+            this.showStatus('Player passed.');
+            await this.fetchState();
+        }
+    }
+
     async requestAIMove() {
         try {
             var res = await this._post('/sphgo/genmove', { token: this.gameToken });
@@ -283,6 +302,9 @@ class GameClient {
             var data = await res.json();
             console.log('AI played at point', data.point);
             this.counter++;
+            if (data.point !== undefined) {
+                this.renderer.markLastMove(data.point);
+            }
 
             // Refresh state from server
             await this.fetchState();
@@ -324,7 +346,8 @@ class GameClient {
         this.currentPlayer = currentPlayer;
         this.rules.setState(boardArray);
 
-        // Update renderer stones
+        // Update renderer stones and current player hover color
+        this.renderer.setCurrentPlayerColor(currentPlayer);
         for (var i = 0; i < 302; i++) {
             this.renderer.setStone(i, boardArray[i]);
         }
@@ -354,6 +377,9 @@ class GameClient {
         if (turnDot) {
             turnDot.className = this.currentPlayer === 1 ? 'turn-dot' : 'turn-dot white';
         }
+
+        var moveCounterEl = document.getElementById('move-counter');
+        if (moveCounterEl) moveCounterEl.textContent = 'Move: ' + this.counter;
     }
 
     async resetGame() {

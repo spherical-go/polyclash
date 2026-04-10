@@ -118,6 +118,39 @@ html, body {
   border-color: var(--color-white-stone);
 }
 
+#move-counter {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* ── View map (right side) ─────────────────────────── */
+
+#view-map {
+  position: fixed;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  pointer-events: auto;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 10px;
+}
+
+.view-map-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.view-btn {
+  font-size: 11px;
+  padding: 6px 10px;
+  min-width: 56px;
+}
+
 /* ── Status bar ─────────────────────────────────────── */
 
 #status-bar {

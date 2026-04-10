@@ -27,6 +27,9 @@
         this.raycaster = new THREE.Raycaster();
         this.mouse = new THREE.Vector2();
         this._highlightedIndices = [];
+        this._hoveredIndex = -1;
+        this._currentPlayerColor = 1; // 1 = black, -1 = white
+        this._lastMoveMarker = null;
 
         // Renderer – use window dimensions because canvas CSS is 100% viewport
         var w = window.innerWidth;
@@ -242,7 +245,7 @@
 
     BoardRenderer.prototype.setupPicking = function () {
         var self = this;
-        this.canvas.addEventListener("click", function (event) {
+        this.canvas.addEventListener("pointerdown", function (event) {
             var rect = self.canvas.getBoundingClientRect();
             self.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
             self.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -256,6 +259,95 @@
                 }
             }
         });
+
+        this.canvas.addEventListener("mousemove", function (event) {
+            var rect = self.canvas.getBoundingClientRect();
+            self.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            self.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            self.raycaster.setFromCamera(self.mouse, self.camera);
+            var intersects = self.raycaster.intersectObjects(self.stoneMeshes, false);
+
+            var newIndex = -1;
+            if (intersects.length > 0) {
+                var idx = intersects[0].object.userData.stoneIndex;
+                if (idx !== undefined) {
+                    newIndex = idx;
+                }
+            }
+
+            if (newIndex !== self._hoveredIndex) {
+                // Restore previous hovered stone
+                if (self._hoveredIndex >= 0) {
+                    var prevMesh = self.stoneMeshes[self._hoveredIndex];
+                    if (prevMesh && prevMesh.userData.stoneIndex !== undefined) {
+                        // Only restore if stone is still empty (not placed)
+                        var scale = prevMesh.scale.x;
+                        if (scale !== STONE_PLACED_SCALE) {
+                            prevMesh.material.color.copy(STONE_EMPTY_COLOR);
+                            prevMesh.scale.set(1, 1, 1);
+                        }
+                    }
+                }
+
+                // Highlight new hovered stone (only if empty)
+                if (newIndex >= 0) {
+                    var mesh = self.stoneMeshes[newIndex];
+                    if (mesh && mesh.scale.x !== STONE_PLACED_SCALE) {
+                        var hoverColor = self._currentPlayerColor === 1
+                            ? new THREE.Color(0.25, 0.25, 0.25)   // dark gray for black's turn
+                            : new THREE.Color(0.85, 0.85, 0.85);  // light gray for white's turn
+                        mesh.material.color.copy(hoverColor);
+                        mesh.scale.set(1.5, 1.5, 1.5);
+                    }
+                }
+
+                self._hoveredIndex = newIndex;
+            }
+        });
+
+        this.canvas.addEventListener("mouseleave", function () {
+            if (self._hoveredIndex >= 0) {
+                var mesh = self.stoneMeshes[self._hoveredIndex];
+                if (mesh && mesh.scale.x !== STONE_PLACED_SCALE) {
+                    mesh.material.color.copy(STONE_EMPTY_COLOR);
+                    mesh.scale.set(1, 1, 1);
+                }
+                self._hoveredIndex = -1;
+            }
+        });
+    };
+
+    // ── Hover color ────────────────────────────────────────────────────
+
+    BoardRenderer.prototype.setCurrentPlayerColor = function (player) {
+        this._currentPlayerColor = player;
+    };
+
+    // ── Last move marker ────────────────────────────────────────────────
+
+    BoardRenderer.prototype.markLastMove = function (index) {
+        // Remove previous marker
+        if (this._lastMoveMarker) {
+            this.scene.remove(this._lastMoveMarker);
+            this._lastMoveMarker.geometry.dispose();
+            this._lastMoveMarker.material.dispose();
+            this._lastMoveMarker = null;
+        }
+
+        var mesh = this.stoneMeshes[index];
+        if (!mesh) return;
+
+        var ringGeo = new THREE.SphereGeometry(0.035, 16, 12);
+        var ringMat = new THREE.MeshBasicMaterial({
+            color: 0xff0000,
+            wireframe: true,
+        });
+        var ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.position.copy(mesh.position);
+        ring.name = "lastMoveMarker";
+        this.scene.add(ring);
+        this._lastMoveMarker = ring;
     };
 
     // ── Camera views ────────────────────────────────────────────────────

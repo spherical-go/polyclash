@@ -52,6 +52,10 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     });
 
+    document.getElementById('btn-pass').addEventListener('click', function () {
+        client.pass();
+    });
+
     document.getElementById('btn-save-record').addEventListener('click', function () {
         client.downloadRecord();
     });
@@ -59,6 +63,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.getElementById('btn-reset').addEventListener('click', function () {
         client.resetGame();
     });
+
+    // View map buttons
+    var viewButtons = document.querySelectorAll('.view-btn');
+    for (var i = 0; i < viewButtons.length; i++) {
+        viewButtons[i].addEventListener('click', function () {
+            var viewIndex = parseInt(this.getAttribute('data-view'), 10);
+            renderer.changeView(viewIndex);
+        });
+    }
 
     // Start animation loop
     renderer.animate();

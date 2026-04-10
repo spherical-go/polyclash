@@ -29,6 +29,7 @@
       <div id="turn-indicator">
         <span class="turn-dot" id="turn-dot"></span>
         <span id="turn-text">Black's turn</span>
+        <span id="move-counter">Move: 0</span>
       </div>
     </div>
 
@@ -39,6 +40,19 @@
       <button id="btn-pass">Pass</button>
       <button id="btn-save-record">Save Record</button>
       <button id="btn-reset">Reset</button>
+    </div>
+
+    <div id="view-map">
+      <div class="view-map-grid">
+        <button class="view-btn" data-view="0">View 1</button>
+        <button class="view-btn" data-view="1">View 2</button>
+        <button class="view-btn" data-view="2">View 3</button>
+        <button class="view-btn" data-view="3">View 4</button>
+        <button class="view-btn" data-view="4">View 5</button>
+        <button class="view-btn" data-view="5">View 6</button>
+        <button class="view-btn" data-view="6">View 7</button>
+        <button class="view-btn" data-view="7">View 8</button>
+      </div>
     </div>
 
     <div id="connection-panel">
@@ -52,9 +66,9 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="/web/vendor/three.min.js"></script>
+  <script src="/web/vendor/socket.io.min.js"></script>
+  <script src="/web/vendor/OrbitControls.js"></script>
   <script src="/web/js/light-rules.js"></script>
   <script src="/web/js/board-renderer.js"></script>
   <script src="/web/js/game-client.js"></script>

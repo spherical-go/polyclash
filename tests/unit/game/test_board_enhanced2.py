@@ -63,14 +63,15 @@ class TestBoardGetEmpties:
         assert 11 not in empties
 
     def test_get_empties_with_ko(self):
-        """Test getting empty points with a ko situation."""
+        """Test getting empty points (superko is enforced in play, not get_empties)."""
         board = Board()
-        # Setup a ko situation
-        board.latest_removes.append([42])  # Simulating a ko point
+        # Ko filtering is no longer done in get_empties; superko is checked in play()
+        board.latest_removes.append([42])
 
         empties = board.get_empties(BLACK)
 
-        assert 42 not in empties
+        # Point 42 is empty and should be in empties (superko checked at play time)
+        assert 42 in empties
 
     def test_get_empties_with_suicides(self):
         """Test getting empty points with suicide points."""

@@ -52,6 +52,10 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
     });
 
+    document.getElementById('btn-save-record').addEventListener('click', function () {
+        client.downloadRecord();
+    });
+
     document.getElementById('btn-reset').addEventListener('click', function () {
         client.resetGame();
     });

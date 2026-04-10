@@ -1,3 +1,4 @@
+import hashlib
 import math
 from collections import OrderedDict
 from random import sample
@@ -17,6 +18,21 @@ from polyclash.data.data import (
 
 BLACK = 1
 WHITE = -1
+
+
+def _init_zobrist() -> tuple[list[int], list[int]]:
+    """Generate Zobrist random numbers deterministically from a seed."""
+    keys_black: list[int] = []
+    keys_white: list[int] = []
+    for i in range(302):
+        seed_b = hashlib.sha256(f"zobrist_black_{i}".encode()).digest()
+        seed_w = hashlib.sha256(f"zobrist_white_{i}".encode()).digest()
+        keys_black.append(int.from_bytes(seed_b[:8], "big"))
+        keys_white.append(int.from_bytes(seed_w[:8], "big"))
+    return keys_black, keys_white
+
+
+ZOBRIST_BLACK, ZOBRIST_WHITE = _init_zobrist()
 
 
 def calculate_area(boarddata, piece, area):
@@ -58,22 +74,26 @@ def calculate_potential(board, point, counter):
 
 
 class Board:
-    def __init__(self):
+    def __init__(self) -> None:
         self.board_size = 302
         self.board = np.zeros([self.board_size])
         self.current_player = BLACK
         self.neighbors = neighbors
-        self.latest_player = None
-        self.latest_removes = [[]]
-        self.black_suicides = set()
-        self.white_suicides = set()
+        self.latest_player: int | None = None
+        self.latest_removes: list[list[int]] = [[]]
+        self.black_suicides: set[int] = set()
+        self.white_suicides: set[int] = set()
 
-        self.turns = OrderedDict()
+        self.turns: OrderedDict[int, tuple[int, ...]] = OrderedDict()
 
-        self._observers = []
+        self._observers: list[object] = []
         self.notification_enabled = True
 
-        self.simulator = None
+        self.simulator: "SimulatedBoard | None" = None
+
+        self.zobrist_hash: int = 0
+        self.history_hashes: set[int] = set()
+        self.komi: float = 3.75
 
     @property
     def counter(self):
@@ -120,8 +140,12 @@ class Board:
         # 如果所有路径都检查完毕，仍然没有发现有气，返回False
         return False
 
-    def remove_stone(self, point):
+    def remove_stone(self, point: int) -> None:
         color = self.board[point]
+        if color == BLACK:
+            self.zobrist_hash ^= ZOBRIST_BLACK[point]
+        elif color == WHITE:
+            self.zobrist_hash ^= ZOBRIST_WHITE[point]
         self.board[point] = 0
         self.latest_removes[-1].append(point)
         self.notify_observers("remove_stone", point=point, score=self.score())
@@ -130,20 +154,22 @@ class Board:
             if self.board[neighbor] == color:
                 self.remove_stone(neighbor)
 
-    def reset(self):
+    def reset(self) -> None:
         self.board = np.zeros([self.board_size])
         self.current_player = BLACK
         self.latest_removes = [[]]
         self.black_suicides = set()
         self.white_suicides = set()
         self.turns = OrderedDict()
+        self.zobrist_hash = 0
+        self.history_hashes = set()
         self.notify_observers("reset", **{})
 
     def switch_player(self):
         self.current_player = -self.current_player
         self.notify_observers("switch_player", side=self.current_player)
 
-    def play(self, point, player, turn_check=True):
+    def play(self, point: int, player: int, turn_check: bool = True) -> None:
         if self.latest_player and self.latest_player == player:
             return
 
@@ -162,21 +188,14 @@ class Board:
         if turn_check and player != self.current_player:
             raise ValueError("Invalid move: not the player's turn.")
 
-        if (
-            self.latest_removes
-            and len(self.latest_removes[-1]) == 1
-            and point == self.latest_removes[-1][0]
-        ):
-            raise ValueError("Invalid move: ko rule violation.")
-
-        # if player == BLACK and point in self.white_suicides:
-        #     self.white_suicides.remove(point)
-
-        # if player == WHITE and point in self.black_suicides:
-        #     self.black_suicides.remove(point)
+        # Save zobrist hash before the move for rollback on suicide
+        prev_zobrist = self.zobrist_hash
 
         self.board[point] = player
-        # print(point, encoder[point], self.neighbors[point])
+        if player == BLACK:
+            self.zobrist_hash ^= ZOBRIST_BLACK[point]
+        else:
+            self.zobrist_hash ^= ZOBRIST_WHITE[point]
 
         for neighbor in self.neighbors[point]:
             if self.board[neighbor] == -player:  # Opponent's stone
@@ -184,34 +203,37 @@ class Board:
                     self.remove_stone(neighbor)
 
         if not self.has_liberty(point):
-            # 如果自己的棋也没有气，则为自杀棋，撤回落子
             self.board[point] = 0
+            self.zobrist_hash = prev_zobrist
             if player == BLACK:
                 self.black_suicides.add(point)
             else:
                 self.white_suicides.add(point)
             raise ValueError("Invalid move: suicide is not allowed.")
 
+        if self.zobrist_hash in self.history_hashes:
+            # Undo the move: restore board and zobrist hash
+            self.board[point] = 0
+            for removed in self.latest_removes[-1]:
+                self.board[removed] = -player
+            self.zobrist_hash = prev_zobrist
+            raise ValueError("Invalid move: superko violation.")
+
+        self.history_hashes.add(self.zobrist_hash)
         self.turns[self.counter] = encoder[point]
         self.notify_observers(
             "add_stone", point=point, player=player, score=self.score()
         )
         self.latest_player = player
 
-    def get_empties(self, player):
+    def get_empties(self, player: int) -> list[int]:
         empty_points = set([ix for ix, point in enumerate(self.board) if point == 0])
-        if (
-            self.latest_removes
-            and len(self.latest_removes[-1]) == 1
-            and self.latest_removes[-1][0] in empty_points
-        ):
-            empty_points.remove(self.latest_removes[-1][0])
         if player == BLACK:
             for point in self.black_suicides:
-                empty_points.remove(point)
+                empty_points.discard(point)
         if player == WHITE:
             for point in self.white_suicides:
-                empty_points.remove(point)
+                empty_points.discard(point)
         return list(empty_points)
 
     def score(self):
@@ -237,6 +259,11 @@ class Board:
             total_unclaimed_area / total_area,
         )
 
+    def final_score(self) -> tuple[float, float]:
+        """Return (black_score, white_score) with komi applied to white."""
+        black_ratio, white_ratio, _ = self.score()
+        return black_ratio, white_ratio + self.komi / total_area
+
     def is_game_over(self):
         return len(self.get_empties(self.current_player)) == 0
 
@@ -254,7 +281,7 @@ class SimulatedBoard(Board):
     def __init__(self):
         super().__init__()
 
-    def redirect(self, board):
+    def redirect(self, board: Board) -> None:
         self.board = board.board.copy()
         self.current_player = board.current_player
         self.latest_removes = board.latest_removes.copy()
@@ -262,6 +289,8 @@ class SimulatedBoard(Board):
         self.white_suicides = board.white_suicides.copy()
         self.orginal_counter = board.counter
         self.turns = board.turns.copy()
+        self.zobrist_hash = board.zobrist_hash
+        self.history_hashes = set()  # don't enforce superko in simulation
 
     def genmove(self, player):
         best_score = -math.inf

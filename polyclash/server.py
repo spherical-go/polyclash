@@ -7,6 +7,7 @@ from flask_socketio import SocketIO, emit, join_room
 
 from polyclash.data.data import decoder, encoder
 from polyclash.game.board import BLACK, WHITE, Board
+from polyclash.game.record import GameRecord
 from polyclash.util.logging import InterceptHandler, logger
 from polyclash.util.storage import create_storage
 
@@ -317,6 +318,14 @@ def play(game_id=None, role=None, steps=None, play=None, token=None):
     )
 
     return {"message": "Play processed"}, 200
+
+
+@app.route("/sphgo/record", methods=["POST"])
+@api_call
+def record(game_id=None, role=None, token=None):
+    board = boards[game_id]
+    game_record = GameRecord.from_board(board)
+    return game_record.to_dict(), 200
 
 
 @socketio.on("join")

@@ -395,6 +395,35 @@ class GameClient {
         this.showStatus('Game reset.');
     }
 
+    async downloadRecord() {
+        if (!this.token || !this.serverUrl) {
+            this.showStatus('Start a game first.');
+            return;
+        }
+
+        try {
+            var res = await this._post('/sphgo/record', { token: this.token });
+            if (!res.ok) {
+                this.showStatus('Failed to fetch game record.');
+                return;
+            }
+            var data = await res.json();
+            var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'polyclash-record-' + (this.gameId || 'game') + '.pgr.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            this.showStatus('Game record downloaded.');
+        } catch (err) {
+            console.error('downloadRecord error:', err);
+            this.showStatus('Error downloading record: ' + err.message);
+        }
+    }
+
     // ---------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------

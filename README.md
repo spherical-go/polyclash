@@ -53,23 +53,34 @@ The smallest live shape in PolyClash requires only 7 stones, remarkably close to
 - **Network Play**: Play against other players over a local network or the internet
 - **Cross-Platform**: Works on Windows, macOS, and Linux
 
-## Getting Started
+## Play Now
 
-### Installation
+### Zero Install — Browser Only
+
+Join a public server or ask a friend for their server URL. Just open the link in your browser.
+
+### Host Your Own Server — One Click
+
+Deploy your own game server for your community in seconds:
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/polyclash?referralCode=polyclash)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/spherical-go/polyclash)
+
+Or with Docker:
+
+```bash
+docker run -p 3302:3302 ghcr.io/spherical-go/polyclash
+```
+
+Or with pip:
 
 ```bash
 pip install polyclash
+polyclash play          # Solo: opens browser automatically
+polyclash serve         # LAN/Network: friends connect via your IP
 ```
 
-> **Note**: PolyClash currently supports Python versions up to 3.12 due to PyVista compatibility limitations with Python 3.13+. We recommend using Python 3.10, 3.11, or 3.12 for the best experience.
-
-### Running the Game
-
-```bash
-polyclash-client
-```
-
-For more detailed instructions, see the [Installation Guide](docs/02_installation.md).
+For more deployment options, see the [Deployment Guide](docs/09_deployment.md).
 
 ## Game Rules
 

@@ -398,10 +398,11 @@ def on_ready(data):
 
 
 def main():
+    port = int(os.environ.get("PORT", 3302))
     logger.info(f"Secret: {secret_key}")
     logger.info(f"Token: {server_token}")
     socketio.run(
-        app, host="0.0.0.0", port=3302, allow_unsafe_werkzeug=True, debug=False
+        app, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True, debug=False
     )
 
 

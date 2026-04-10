@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: polyclash
+    runtime: docker
+    plan: free
+    envVars:
+      - key: POLYCLASH_NO_AUTH
+        value: "1"
+      - key: PORT
+        value: "3302"

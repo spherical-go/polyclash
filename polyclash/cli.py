@@ -24,7 +24,9 @@ def main() -> None:
     # --- polyclash serve ---
     serve_parser = sub.add_parser("serve", help="Start server for LAN/network play")
     serve_parser.add_argument("--host", default="0.0.0.0")
-    serve_parser.add_argument("--port", type=int, default=3302)
+    serve_parser.add_argument(
+        "--port", type=int, default=int(os.environ.get("PORT", 3302))
+    )
     serve_parser.add_argument(
         "--no-auth", action="store_true", help="Disable server token requirement"
     )

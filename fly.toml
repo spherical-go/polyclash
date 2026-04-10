@@ -1,0 +1,19 @@
+app = "polyclash"
+primary_region = "nrt"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  POLYCLASH_NO_AUTH = "1"
+  PORT = "3302"
+
+[http_service]
+  internal_port = 3302
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

@@ -10,6 +10,7 @@ RUN grep -vE "PyQt5|pyvista" requirements.txt > requirements-server.txt && \
 COPY . .
 RUN pip install --no-cache-dir -e . --no-deps
 
+ENV PORT=3302
 EXPOSE 3302
 
-CMD ["polyclash", "serve", "--host", "0.0.0.0", "--port", "3302"]
+CMD polyclash serve --no-auth --host 0.0.0.0 --port $PORT

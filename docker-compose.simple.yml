@@ -1,5 +1,6 @@
 version: "3.8"
 
+# For home/solo use, redis is not needed — the server falls back to in-memory storage.
 services:
   polyclash:
     build: .

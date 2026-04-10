@@ -2,9 +2,14 @@ import json
 import secrets
 from abc import ABC, abstractmethod
 
-import redis
-
 from polyclash.util.logging import logger
+
+try:
+    import redis
+
+    _HAS_REDIS = True
+except ImportError:
+    _HAS_REDIS = False
 
 USER_KEY_LENGTH = 16
 USER_TOKEN_LENGTH = 48
@@ -439,7 +444,12 @@ class RedisStorage(DataStorage):
                 self.close_room(game_id)
 
 
-def test_redis_connection(host="localhost", port=6379, db=0):
+def test_redis_connection(
+    host: str = "localhost", port: int = 6379, db: int = 0
+) -> bool:
+    if not _HAS_REDIS:
+        logger.info("redis package not installed. Using memory storage.")
+        return False
     try:
         redis.StrictRedis(host=host, port=port, db=db).ping()
         logger.info("Successfully connected to Redis. Using Redis as data storage.")

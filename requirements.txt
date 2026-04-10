@@ -18,4 +18,3 @@ flask-socketio==5.5.1
 
 # Utility packages
 loguru==0.7.3
-redis==6.4.0

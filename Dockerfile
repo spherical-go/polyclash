@@ -5,7 +5,7 @@ WORKDIR /app
 # Install only server dependencies (no Qt/VTK)
 COPY requirements.txt .
 RUN grep -vE "PyQt5|pyvista" requirements.txt > requirements-server.txt && \
-    pip install --no-cache-dir -r requirements-server.txt
+    pip install --no-cache-dir -r requirements-server.txt redis
 
 COPY . .
 RUN pip install --no-cache-dir -e . --no-deps

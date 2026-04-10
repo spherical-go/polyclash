@@ -1,0 +1,2 @@
+-r requirements.txt
+redis==6.4.0

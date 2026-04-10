@@ -1,6 +1,7 @@
 import os
 import secrets
 from threading import Thread
+from typing import Any
 
 from flask import Flask, jsonify, request, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
@@ -30,6 +31,16 @@ app.logger.addHandler(InterceptHandler())  # register loguru as handler
 socketio = SocketIO(app, cors_allowed_origins="*")
 storage = create_storage()
 boards: dict[str, Board] = {}
+
+# Try to load HRM AI engine at startup
+_hrm_player: Any = None
+try:
+    from hrm_polyclash.bridge import HRMPlayer
+
+    _hrm_player = HRMPlayer()
+    logger.info("Server: HRM AI engine loaded")
+except Exception as e:
+    logger.info(f"Server: HRM unavailable ({e}), using heuristic fallback")
 
 
 @app.route("/")
@@ -262,7 +273,18 @@ def state(game_id=None, role=None, token=None):
 def genmove(game_id=None, role=None, token=None):
     board = boards[game_id]
     player_color = BLACK if role == "black" else WHITE
-    point = board.genmove(player_color)
+
+    # Try HRM first, fall back to heuristic
+    point = None
+    if _hrm_player is not None:
+        try:
+            point = _hrm_player.genmove(board, player_color)
+        except Exception as e:
+            logger.warning(f"HRM genmove failed: {e}, falling back to heuristic")
+
+    if point is None:
+        point = board.genmove(player_color)
+
     board.play(point, player_color)
     board.switch_player()
     encoded = encoder[point]

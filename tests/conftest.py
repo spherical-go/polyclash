@@ -57,6 +57,7 @@ def socketio_client(test_client):
 def storage():
     """Fixture for storage with memory backend."""
     server.storage = create_storage(flag_redis=False)
+    server.boards = {}
     return server.storage
 
 

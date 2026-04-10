@@ -2,10 +2,11 @@ import os
 import secrets
 from threading import Thread
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
 
-from polyclash.data.data import decoder
+from polyclash.data.data import decoder, encoder
+from polyclash.game.board import BLACK, WHITE, Board
 from polyclash.util.logging import InterceptHandler, logger
 from polyclash.util.storage import create_storage
 
@@ -20,11 +21,19 @@ server_token = os.environ.get(
     "POLYCLASH_SERVER_TOKEN", secrets.token_hex(SERVER_TOKEN_LENGTH // 2)
 )
 
-app = Flask(__name__)
+WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "web")
+
+app = Flask(__name__, static_folder=WEB_DIR, static_url_path="/web")
 app.config["SECRET_KEY"] = secret_key
 app.logger.addHandler(InterceptHandler())  # register loguru as handler
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 storage = create_storage()
+boards: dict[str, Board] = {}
+
+
+@app.route("/")
+def serve_web_client():
+    return send_from_directory(WEB_DIR, "index.html")
 
 
 def player_join_room(game_id, role):
@@ -84,13 +93,9 @@ def api_call(func):
         try:
             data = request.get_json()
             token = data.get("token") or data.get("key")
-            if len(token) == SERVER_TOKEN_LENGTH:
-                if token != server_token:
-                    return jsonify({"message": "invalid token"}), 401
-            else:
-                if not storage.contains(token):
-                    return jsonify({"message": "invalid token"}), 401
-
+            if token == server_token:
+                pass  # server-level token, skip player auth
+            elif token and storage.contains(token):
                 game_id = storage.get_game_id(token)
                 if not storage.exists(game_id):
                     return jsonify({"message": "Game not found"}), 404
@@ -101,6 +106,8 @@ def api_call(func):
                 role = storage.get_role(token)
                 kwargs["game_id"] = game_id
                 kwargs["role"] = role
+            else:
+                return jsonify({"message": "invalid token"}), 401
 
             result, code = func(*args, **kwargs)
 
@@ -140,7 +147,11 @@ def list_games():
 @api_call
 def new():
     data = storage.create_room()
-    logger.info(f"game created... {data['game_id']}")
+    game_id = data["game_id"]
+    board = Board()
+    board.disable_notification()
+    boards[game_id] = board
+    logger.info(f"game created... {game_id}")
     return data, 200
 
 
@@ -223,8 +234,42 @@ def close(game_id=None, role=None, token=None):
     if token and storage.contains(token):
         logger.info(f"game closing... {game_id}")
         storage.close_room(game_id)
+        boards.pop(game_id, None)
     logger.info("game closed...")
     return {"message": "Game closed"}, 200
+
+
+@app.route("/sphgo/state", methods=["POST"])
+@api_call
+def state(game_id=None, role=None, token=None):
+    board = boards[game_id]
+    return {
+        "board": board.board.tolist(),
+        "score": board.score(),
+        "current_player": board.current_player,
+        "counter": board.counter,
+    }, 200
+
+
+@app.route("/sphgo/genmove", methods=["POST"])
+@api_call
+def genmove(game_id=None, role=None, token=None):
+    board = boards[game_id]
+    player_color = BLACK if role == "black" else WHITE
+    point = board.genmove(player_color)
+    board.play(point, player_color)
+    board.switch_player()
+    encoded = encoder[point]
+    storage.add_play(game_id, list(encoded))
+    plays = storage.get_plays(game_id)
+    steps = len(plays) - 1
+    score = board.score()
+    socketio.emit(
+        "played",
+        {"role": role, "steps": steps, "play": list(encoded), "score": score},
+        room=game_id,
+    )
+    return {"point": point, "play": list(encoded)}, 200
 
 
 @app.route("/sphgo/play", methods=["POST"])
@@ -253,8 +298,23 @@ def play(game_id=None, role=None, steps=None, play=None, token=None):
     if code not in valid_plays:
         return {"message": "Invalid play"}, 400
 
+    # Validate and execute move on the board
+    board = boards[game_id]
+    point = decoder[tuple(play)]
+    player_color = BLACK if role == "black" else WHITE
+    try:
+        board.play(point, player_color)
+        board.switch_player()
+    except ValueError as e:
+        return {"message": str(e)}, 400
+
     storage.add_play(game_id, play)
-    socketio.emit("played", {"role": role, "steps": steps, "play": play}, room=game_id)
+    score = board.score()
+    socketio.emit(
+        "played",
+        {"role": role, "steps": steps, "play": play, "score": score},
+        room=game_id,
+    )
 
     return {"message": "Play processed"}, 200
 

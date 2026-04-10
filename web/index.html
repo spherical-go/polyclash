@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PolyClash - Spherical Go</title>
+  <link rel="stylesheet" href="/web/css/style.css">
+</head>
+<body>
+  <div id="app">
+    <canvas id="board-canvas"></canvas>
+
+    <div id="ui-overlay">
+      <div id="score-panel">
+        <div class="score-row">
+          <span class="stone-dot black-dot"></span>
+          <span id="score-black">Black: 0%</span>
+        </div>
+        <div class="score-row">
+          <span class="stone-dot white-dot"></span>
+          <span id="score-white">White: 0%</span>
+        </div>
+        <div class="score-row">
+          <span class="stone-dot unclaimed-dot"></span>
+          <span id="score-unclaimed">Unclaimed: 100%</span>
+        </div>
+      </div>
+
+      <div id="turn-indicator">
+        <span class="turn-dot" id="turn-dot"></span>
+        <span id="turn-text">Black's turn</span>
+      </div>
+    </div>
+
+    <div id="status-bar">Welcome to PolyClash</div>
+
+    <div id="game-controls">
+      <button id="btn-new-local">New Local Game</button>
+      <button id="btn-pass">Pass</button>
+      <button id="btn-reset">Reset</button>
+    </div>
+
+    <div id="connection-panel">
+      <label for="server-url">Server URL</label>
+      <input type="text" id="server-url" value="http://localhost:3302" placeholder="http://localhost:3302">
+      <button id="btn-new-network">New Network Game</button>
+      <div class="join-row">
+        <input type="text" id="join-game-id" placeholder="Game ID">
+        <button id="btn-join-game">Join Game</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="/web/js/light-rules.js"></script>
+  <script src="/web/js/board-renderer.js"></script>
+  <script src="/web/js/game-client.js"></script>
+  <script src="/web/js/main.js"></script>
+</body>
+</html>

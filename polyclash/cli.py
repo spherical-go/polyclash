@@ -69,6 +69,42 @@ def main() -> None:
         "--token", default=None, help="Set server token (default: auto-generated)"
     )
 
+    # --- polyclash team (self-hosted team server) ---
+    team_parser = sub.add_parser(
+        "team", help="Self-hosted team server with user accounts"
+    )
+    team_parser.add_argument("--host", default="0.0.0.0")
+    team_parser.add_argument(
+        "--port", type=int, default=int(os.environ.get("PORT", 3302))
+    )
+    team_parser.add_argument(
+        "--rooms",
+        type=int,
+        default=int(os.environ.get("POLYCLASH_MAX_ROOMS", "8")),
+        help="Max simultaneous games (default: 8, env: POLYCLASH_MAX_ROOMS)",
+    )
+    team_parser.add_argument(
+        "--admin-user",
+        default=os.environ.get("POLYCLASH_ADMIN_USER", "admin"),
+        help="Admin username (default: admin, env: POLYCLASH_ADMIN_USER)",
+    )
+    team_parser.add_argument(
+        "--admin-pass",
+        default=os.environ.get("POLYCLASH_ADMIN_PASS"),
+        help="Admin password (auto-generated if omitted, env: POLYCLASH_ADMIN_PASS)",
+    )
+    team_parser.add_argument(
+        "--invites",
+        type=int,
+        default=int(os.environ.get("POLYCLASH_INVITES", "5")),
+        help="Initial invite codes to generate (default: 5, env: POLYCLASH_INVITES)",
+    )
+    team_parser.add_argument(
+        "--db",
+        default=os.environ.get("POLYCLASH_AUTH_DB"),
+        help="Path to SQLite user database (env: POLYCLASH_AUTH_DB)",
+    )
+
     args = parser.parse_args()
 
     if args.command == "solo":
@@ -77,6 +113,16 @@ def main() -> None:
         _run_family(args.port, args.black, args.white)
     elif args.command == "serve":
         _run_serve(args.host, args.port, args.no_auth, args.token)
+    elif args.command == "team":
+        _run_team(
+            args.host,
+            args.port,
+            args.rooms,
+            args.admin_user,
+            args.admin_pass,
+            args.invites,
+            args.db,
+        )
     else:
         parser.print_help()
 
@@ -149,6 +195,56 @@ def _run_family(port: int, black: str = "human", white: str = "human") -> None:
     )
 
 
+def _run_team(
+    host: str,
+    port: int,
+    rooms: int,
+    admin_user: str,
+    admin_pass: Optional[str],
+    invites: int,
+    db: Optional[str],
+) -> None:
+    """Start server in team mode with user accounts and room limits."""
+    os.environ["POLYCLASH_TEAM_MODE"] = "1"
+    os.environ["POLYCLASH_MAX_ROOMS"] = str(rooms)
+    # Team mode uses lobby auth, not server token
+    token = secrets.token_hex(16)
+    os.environ["POLYCLASH_SERVER_TOKEN"] = token
+    if db:
+        os.environ["POLYCLASH_AUTH_DB"] = db
+
+    from polyclash.util.auth import UserStore
+    from polyclash.util.logging import logger
+
+    user_store = UserStore(db_path=db)
+
+    # Ensure admin account
+    if not admin_pass:
+        admin_pass = secrets.token_urlsafe(12)
+    user_store.ensure_admin(admin_user, admin_pass)
+
+    # Generate initial invite codes
+    codes = [user_store.create_invite(created_by=admin_user) for _ in range(invites)]
+
+    import polyclash.server as server_module
+    from polyclash.server import app, restore_boards, socketio
+
+    server_module._user_store = user_store
+    server_module.MAX_ROOMS = rooms
+    restore_boards()
+
+    lan_ip = _get_lan_ip()
+    logger.info("PolyClash 星逐 — Team Server")
+    logger.info(f"  URL: http://{lan_ip}:{port}/")
+    logger.info(f"  Max rooms: {rooms}")
+    logger.info(f"  Admin: {admin_user} / {admin_pass}")
+    logger.info(f"  Invite codes ({len(codes)}):")
+    for code in codes:
+        logger.info(f"    {code}")
+
+    socketio.run(app, host=host, port=port, allow_unsafe_werkzeug=True, debug=False)
+
+
 def _run_serve(host: str, port: int, no_auth: bool, token: Optional[str]) -> None:
     """Start server for LAN/network play."""
     if no_auth:
@@ -160,7 +256,9 @@ def _run_serve(host: str, port: int, no_auth: bool, token: Optional[str]) -> Non
 
     logger.info(f"Serving on {host}:{port}")
 
-    from polyclash.server import app, server_token, socketio
+    from polyclash.server import app, restore_boards, server_token, socketio
+
+    restore_boards()
 
     if not no_auth:
         logger.info(f"Server token: {server_token}")

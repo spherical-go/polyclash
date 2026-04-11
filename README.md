@@ -61,7 +61,7 @@ Join a public server or ask a friend for their server URL. Just open the link in
 
 ### Host Your Own Server — One Click
 
-Deploy your own game server for your community in seconds:
+Deploy your own team server (8 rooms, invite-only registration) in seconds:
 
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/polyclash?referralCode=polyclash)
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/spherical-go/polyclash)
@@ -69,15 +69,17 @@ Deploy your own game server for your community in seconds:
 Or with Docker:
 
 ```bash
-docker run -p 3302:3302 ghcr.io/spherical-go/polyclash
+docker compose up -d        # Team server + Redis
 ```
 
 Or with pip:
 
 ```bash
 pip install polyclash
-polyclash play          # Solo: opens browser automatically
-polyclash serve         # LAN/Network: friends connect via your IP
+polyclash solo              # Solo: human vs AI, opens browser
+polyclash family            # Family: LAN game with invite URLs
+polyclash team              # Team server: user accounts, 8 rooms, lobby
+polyclash serve             # Deployment: configurable host server
 ```
 
 For more deployment options, see the [Deployment Guide](docs/09_deployment.md).

@@ -1,6 +1,6 @@
 # Deployment Guide
 
-PolyClash supports four deployment modes, from solo play to public internet hosting. Choose the mode that fits your needs.
+PolyClash supports five deployment modes, from solo play to public internet hosting. Choose the mode that fits your needs.
 
 ## Prerequisites
 
@@ -22,7 +22,7 @@ Play locally against AI or explore the board — no server needed.
 
 ```bash
 pip install polyclash
-polyclash play
+polyclash solo
 ```
 
 ---
@@ -54,38 +54,117 @@ Players connect to `http://<your-lan-ip>:3302`.
 
 ---
 
-## Mode 3: Team / LAN with Auth
+## Mode 3: Team Server (Recommended for Communities)
 
-Add a shared token so only authorized players can connect.
+A self-hosted game server with user accounts, invite-code registration, a web lobby, and a configurable room limit. Like running your own Minecraft server.
 
-### Native
-
-```bash
-polyclash serve --host 0.0.0.0 --port 3302 --token YOUR_SECRET_TOKEN
-```
-
-Players must provide the token when connecting.
-
-### Docker
+### Quick Start — Native
 
 ```bash
-POLYCLASH_SERVER_TOKEN=YOUR_SECRET_TOKEN docker compose up -d
+pip install polyclash
+polyclash team --rooms 8 --admin-pass YOUR_PASSWORD
 ```
 
-This starts both the PolyClash server and a Redis instance for persistent storage.
+The server will:
+1. Create an admin account (`admin` / your password)
+2. Generate 5 invite codes (printed to console)
+3. Start the web lobby at `http://<your-ip>:3302/`
+
+Share the invite codes with your friends. They register at the lobby, then create or join games.
+
+### Quick Start — Docker Compose
+
+```bash
+docker compose up -d
+```
+
+On first run, check the logs for the admin password and invite codes:
+
+```bash
+docker compose logs polyclash | head -20
+```
+
+### Configuration
+
+All settings can be set via CLI flags or environment variables:
+
+| Flag | Env Var | Default | Description |
+|------|---------|---------|-------------|
+| `--rooms` | `POLYCLASH_MAX_ROOMS` | `8` | Max simultaneous games |
+| `--admin-user` | `POLYCLASH_ADMIN_USER` | `admin` | Admin username |
+| `--admin-pass` | `POLYCLASH_ADMIN_PASS` | auto-generated | Admin password |
+| `--invites` | `POLYCLASH_INVITES` | `5` | Invite codes to generate on startup |
+| `--db` | `POLYCLASH_AUTH_DB` | `polyclash_users.db` | SQLite database path |
+| `--port` | `PORT` | `3302` | Server port |
+
+### Managing Users
+
+Log in as admin in the web lobby to:
+- Generate new invite codes
+- View all users and invite code usage
+
+### Board Persistence
+
+Game state is automatically persisted to storage. Games survive server restarts — boards are restored from snapshots when the server starts.
 
 ---
 
-## Mode 4: Public / Internet
+## Mode 4: One-Click Cloud Deployment
 
-For internet-facing deployments, use Docker Compose with an nginx reverse proxy and HTTPS.
+Deploy to Railway, Render, or Fly.io with a single click. The server runs in team mode with persistent storage.
+
+### Railway
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/polyclash?referralCode=polyclash)
+
+After deployment:
+1. Go to the Railway dashboard → Variables
+2. Set `POLYCLASH_ADMIN_PASS` to your chosen password
+3. Check deployment logs for the initial invite codes
+4. Add a volume mounted at `/data` for persistent user data
+
+### Render
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/spherical-go/polyclash)
+
+Render auto-configures:
+- A 1 GB persistent disk at `/data`
+- Auto-generated admin password (visible in dashboard → Environment)
+- Check deployment logs for invite codes
+
+### Fly.io
+
+```bash
+fly launch --copy-config
+fly volumes create polyclash_data --size 1 --region nrt
+fly secrets set POLYCLASH_ADMIN_PASS=your-password
+fly deploy
+```
+
+### Environment Variables for Cloud
+
+Set these in your cloud platform's dashboard:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `POLYCLASH_ADMIN_PASS` | Recommended | Admin password (auto-generated if unset) |
+| `POLYCLASH_MAX_ROOMS` | No | Room limit (default: 8) |
+| `POLYCLASH_INVITES` | No | Invite codes to generate (default: 5) |
+
+---
+
+## Mode 5: Public / Internet (Self-Hosted)
+
+For internet-facing deployments on your own server, use Docker Compose with an nginx reverse proxy and HTTPS.
 
 ### 1. Start the services
 
-Create a `.env` file:
+Create a `.env` file with team-mode variables:
 
 ```bash
-POLYCLASH_SERVER_TOKEN=your-secure-random-token
+POLYCLASH_ADMIN_PASS=your-secure-password
+POLYCLASH_MAX_ROOMS=16
+POLYCLASH_INVITES=10
 ```
 
 ```bash
@@ -165,16 +244,19 @@ sudo ufw allow 443/tcp
 
 | File | Purpose |
 |---|---|
-| `Dockerfile` | Builds the server image (no Qt/PyVista) |
-| `docker-compose.yml` | Full stack: PolyClash + Redis |
-| `docker-compose.simple.yml` | Minimal: PolyClash only, no auth |
+| `Dockerfile` | Builds the server image, default team mode |
+| `docker-compose.yml` | Team server + Redis, persistent storage |
+| `docker-compose.simple.yml` | Minimal: solo/LAN, no auth, no Redis |
+| `render.yaml` | Render.com deploy blueprint |
+| `railway.json` | Railway deploy config |
+| `fly.toml` | Fly.io deploy config |
 | `.dockerignore` | Excludes dev artifacts from the build context |
 
 ---
 
 ## Redis
 
-Redis is **optional**. When available, it provides persistent game storage across server restarts. Without Redis, the server uses in-memory storage (games are lost on restart).
+Redis is **optional**. Both MemoryStorage and RedisStorage support board persistence — game state is saved to storage after every move via `save_board()` and restored on server startup via `restore_boards()`. However, MemoryStorage lives in-process, so **games are lost if the server process exits**. RedisStorage persists data across server restarts, making it the recommended choice for production deployments.
 
 To use Redis with a native install:
 
@@ -230,6 +312,9 @@ cp /var/lib/redis/dump.rdb /backup/redis-$(date +%Y%m%d).rdb
 | Server won't start | Port 3302 in use? Redis running (if expected)? |
 | Clients can't connect | Firewall rules? Correct host/port? |
 | WebSocket fails | nginx `Upgrade` headers configured? |
-| Games lost on restart | Redis not running — data was in-memory only |
+| Games lost on restart | Board persistence requires storage; check `/data` volume is mounted |
+| Can't find admin password | Check server logs; set `POLYCLASH_ADMIN_PASS` env var |
+| Invite codes not showing | Check server startup logs; set `POLYCLASH_INVITES` > 0 |
+| Lobby shows "Team mode not enabled" | Server not started with `polyclash team` |
 
 For more help, see [GitHub Issues](https://github.com/spherical-go/polyclash/issues).

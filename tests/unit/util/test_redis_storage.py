@@ -222,7 +222,8 @@ class TestRedisStorageCloseRoom:
         # Second exists call for games:{game_id}:viewer → True
         # Third exists call for games:{game_id}:viewer (second check) → True
         # Fourth exists call for games:{game_id}:plays → True
-        mock_redis_client.exists.side_effect = [True, True, True, True]
+        # Fifth exists call for games:{game_id}:board → True
+        mock_redis_client.exists.side_effect = [True, True, True, True, True]
 
         mock_redis_client.hget.side_effect = [
             b"black_key",  # keys:black
@@ -247,17 +248,19 @@ class TestRedisStorageCloseRoom:
         mock_redis_client.lrem.assert_called_once_with("games", 1, game_id)
         mock_redis_client.delete.assert_any_call(f"games:{game_id}:viewer")
         mock_redis_client.delete.assert_any_call(f"games:{game_id}:plays")
+        mock_redis_client.delete.assert_any_call(f"games:{game_id}:board")
 
     def test_close_room_no_game_hash(
         self, storage: RedisStorage, mock_redis_client: MagicMock
     ) -> None:
         game_id = "game_gone"
-        # close_room has 4 exists calls:
+        # close_room has 5 exists calls:
         # 1. games:{game_id} → False (skip key/player hdel)
         # 2. games:{game_id}:viewer → False (skip viewer cleanup)
         # 3. games:{game_id}:viewer → False (skip delete viewer)
         # 4. games:{game_id}:plays → False (skip delete plays)
-        mock_redis_client.exists.side_effect = [False, False, False, False]
+        # 5. games:{game_id}:board → False (skip delete board)
+        mock_redis_client.exists.side_effect = [False, False, False, False, False]
 
         storage.close_room(game_id)
 
@@ -541,11 +544,12 @@ class TestRedisStorageReaper:
             True,  # "games" key exists (list_rooms check)
             True,  # games:game1 exists → still active
             False,  # games:game2 does not exist → should be reaped
-            # close_room("game2") has 4 exists calls:
+            # close_room("game2") has 5 exists calls:
             False,  # games:game2 (already gone)
             False,  # games:game2:viewer (viewer list check)
             False,  # games:game2:viewer (delete check)
             False,  # games:game2:plays
+            False,  # games:game2:board
         ]
         mock_redis_client.lrange.return_value = [b"game1", b"game2"]
 

@@ -285,6 +285,40 @@ class Board:
             return True
         return len(self.get_empties(self.current_player)) == 0
 
+    def to_dict(self) -> dict:
+        """Serialize board state to a JSON-compatible dict."""
+        return {
+            "board": self.board.tolist(),
+            "current_player": self.current_player,
+            "latest_player": self.latest_player,
+            "latest_removes": self.latest_removes,
+            "black_suicides": sorted(self.black_suicides),
+            "white_suicides": sorted(self.white_suicides),
+            "turns": {str(k): list(v) for k, v in self.turns.items()},
+            "zobrist_hash": self.zobrist_hash,
+            "history_hashes": sorted(self.history_hashes),
+            "komi": self.komi,
+            "consecutive_passes": self.consecutive_passes,
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "Board":
+        """Restore a Board from a serialized dict."""
+        board = cls()
+        board.board = np.array(data["board"])
+        board.current_player = data["current_player"]
+        board.latest_player = data["latest_player"]
+        board.latest_removes = data["latest_removes"]
+        board.black_suicides = set(data["black_suicides"])
+        board.white_suicides = set(data["white_suicides"])
+        board.turns = OrderedDict((int(k), tuple(v)) for k, v in data["turns"].items())
+        board.zobrist_hash = data["zobrist_hash"]
+        board.history_hashes = set(data["history_hashes"])
+        board.komi = data["komi"]
+        board.consecutive_passes = data["consecutive_passes"]
+        board.disable_notification()
+        return board
+
     def result(self):
         return {}
 

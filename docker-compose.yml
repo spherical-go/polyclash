@@ -4,15 +4,23 @@ services:
   polyclash:
     build: .
     ports:
-      - "3302:3302"
+      - "${PORT:-3302}:${PORT:-3302}"
     environment:
-      - POLYCLASH_SERVER_TOKEN=${POLYCLASH_SERVER_TOKEN:-}
+      - PORT=${PORT:-3302}
+      - POLYCLASH_AUTH_DB=/data/polyclash_users.db
+      - POLYCLASH_MAX_ROOMS=${POLYCLASH_MAX_ROOMS:-8}
+      - POLYCLASH_ADMIN_USER=${POLYCLASH_ADMIN_USER:-admin}
+      - POLYCLASH_ADMIN_PASS=${POLYCLASH_ADMIN_PASS:-}
+      - POLYCLASH_INVITES=${POLYCLASH_INVITES:-5}
+    volumes:
+      - polyclash-data:/data
     depends_on:
       - redis
     restart: unless-stopped
 
   redis:
     image: redis:7-alpine
-    ports:
-      - "6379:6379"
     restart: unless-stopped
+
+volumes:
+  polyclash-data:

@@ -11,3 +11,8 @@ htmlcov
 .benchmarks
 .idea
 model3d
+tests
+plans
+docs
+*.db
+polyclash_users.db

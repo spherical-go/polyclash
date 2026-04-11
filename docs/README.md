@@ -22,8 +22,8 @@ If you're new to PolyClash, we recommend starting with the [Overview](01_overvie
 
 If you're a developer interested in understanding or contributing to PolyClash, the [Architecture](04_architecture.md) document provides a comprehensive overview of the system design. You can then dive deeper into the specific implementation details:
 
-- [Client Implementation](05_client_implementation.md) for the GUI and game logic
-- [Server Implementation](06_server_implementation.md) for the network server
+- [Client Implementation](05_client_implementation.md) for the web client (Three.js)
+- [Server Implementation](06_server_implementation.md) for the Flask + Socket.IO server
 - [AI Implementation](07_ai_implementation.md) for the AI opponent
 
 ## For System Administrators

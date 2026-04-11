@@ -4,122 +4,161 @@ This document provides details about the network play functionality in PolyClash
 
 ## Overview
 
-PolyClash supports network play, allowing players to play against each other over a local network or the internet. The network play functionality is implemented using a client-server architecture with HTTP and WebSocket communication.
+PolyClash supports network play, allowing players to play against each other over a local network or the internet. The network play functionality is implemented using a client-server architecture with HTTP and WebSocket communication. Players connect via a **web browser** — no desktop client is needed.
+
+PolyClash offers three network play modes:
+
+| Mode | Command | Use Case |
+|------|---------|----------|
+| **Family** | `polyclash family` | Quick LAN game — server prints URLs, players open them in a browser |
+| **Team** | `polyclash team` | Community server — users register with invite codes, create/join games from a web lobby |
+| **Serve** | `polyclash serve` | Deployment mode — general-purpose server with token-based game creation |
 
 ## Prerequisites
 
 To play PolyClash over a network, you need:
 
 1. A PolyClash server running on a computer that is accessible to all players
-2. PolyClash clients installed on each player's computer
-3. Network connectivity between the server and clients
+2. A modern web browser on each player's device
+3. Network connectivity between the server and players
 
-## Server Setup
+## Mode 1: Family Mode (LAN)
 
-### Local Network
-
-For playing on a local network, you can run the server on one of the player's computers:
+Family mode is the simplest way to play. The server pre-creates a game room and prints invite URLs for each player.
 
 ```bash
-polyclash-server
+polyclash family --black human --white human
 ```
 
-This will start the server on port 3302. Make note of the server's IP address, which you'll need to connect the clients.
+The server will print URLs like:
 
-### Internet
+```
+PolyClash 星逐 — Family Game
+  Black (Human): http://192.168.1.42:3302/?key=abc123
+  White (Human): http://192.168.1.42:3302/?key=def456
+  Watch: http://192.168.1.42:3302/?key=ghi789
+```
 
-For playing over the internet, you need to:
+Players open their URL in a browser. They are automatically joined and readied — the game starts as soon as both players connect.
 
-1. Set up a server with a public IP address or domain name
-2. Configure your firewall to allow connections to port 3302 (or the port you've configured)
-3. Run the server with uWSGI or a similar tool (see [Deployment Guide](09_deployment.md))
+### AI Players
 
-## Client Setup
+You can set either side to be played by AI:
 
-### Connecting to a Server
+```bash
+polyclash family --black human --white ai
+```
 
-1. Start the PolyClash client:
-   ```bash
-   polyclash-client
-   ```
+When a side is set to `ai`, its URL includes `&ai=1`. The browser client automatically plays moves via the server's `/sphgo/genmove` endpoint.
 
-2. Select "Network Mode" > "New" from the menu to create a new game, or "Network Mode" > "Join" to join an existing game
+## Mode 2: Team Mode (Lobby-Based)
 
-3. Enter the server address:
-   - For a local server: `http://192.168.1.x:3302` (replace with your server's IP)
-   - For an internet server: `http://your-domain.com` or `http://your-public-ip:3302`
+Team mode provides a self-hosted game server with user accounts, invite-code registration, and a web lobby.
 
-### Creating a Game
+### Starting the Server
 
-To create a new game:
+```bash
+polyclash team --rooms 8 --admin-pass YOUR_PASSWORD
+```
 
-1. Select "Network Mode" > "New" from the menu
-2. Enter the server address and token (if required)
-3. Click "Connect"
-4. The server will generate keys for Black, White, and Viewer roles
-5. Share the appropriate keys with the other players
+The server will:
+1. Create an admin account (`admin` / your password)
+2. Generate 5 invite codes (printed to console)
+3. Start the web lobby at `http://<your-ip>:3302/`
 
-### Joining a Game
+### Player Flow
 
-To join an existing game:
+1. The admin shares invite codes with players
+2. Players visit the server URL and register with their invite code
+3. Players log in to the web lobby
+4. From the lobby, players can **create** a new game or **join** an existing one (as Black, White, or Viewer)
+5. Joining redirects the player to the game page with their key (`/?key=...`)
+6. Players are automatically readied upon joining
+7. When both players are ready, the game starts
 
-1. Select "Network Mode" > "Join" from the menu
-2. Enter the server address
-3. Select your role (Black, White, or Viewer)
-4. Enter the key you received from the game creator
-5. Click "Join"
-6. Once joined, click "Ready" to indicate you're ready to start
+### Authentication
 
-### Spectating a Game
+Team mode uses user accounts stored in a SQLite database:
 
-To spectate a game:
+- **Registration** requires an invite code (`POST /sphgo/auth/register`)
+- **Login** returns a session token (`POST /sphgo/auth/login`)
+- **Admin** users can generate new invite codes and view all users
+- Lobby API endpoints (`/sphgo/lobby/*`) require a valid session token
 
-1. Select "Network Mode" > "Join" from the menu
-2. Enter the server address
-3. Select the "Viewer" role
-4. Enter the viewer key you received from the game creator
-5. Click "Join"
+## Mode 3: Serve Mode (Deployment)
+
+Serve mode starts a general-purpose server for LAN or internet deployment.
+
+```bash
+polyclash serve --token your-secret-token
+```
+
+Players create games using the server token via the `/sphgo/new` API, then share keys with opponents.
+
+For no-auth LAN play:
+
+```bash
+polyclash serve --no-auth --host 0.0.0.0 --port 3302
+```
 
 ## Game Flow
 
-1. The game creator creates a new game and receives keys for Black, White, and Viewer roles
-2. The game creator shares the keys with the other players
-3. Players join the game using their respective keys
-4. Players click "Ready" to indicate they're ready to start
-5. When all players are ready, the game starts automatically
-6. Players take turns making moves
+1. A game room is created (automatically in family mode, via lobby in team mode, or via API in serve mode)
+2. Each room has three keys: `black_key`, `white_key`, and `viewer_key`
+3. Players open their URL or join from the lobby — each receives a player token
+4. Players are marked as ready (automatically in family/team mode)
+5. When both players are ready, the game starts
+6. Players take turns making moves by clicking on the board
 7. The game ends when both players pass consecutively, one player resigns, or no legal moves remain
+8. A `game_over` event is broadcast with the winner and final score
 
 ## Communication Protocol
 
 ### REST API
 
-The client communicates with the server using HTTP requests to the following endpoints:
+The client communicates with the server using HTTP POST requests to the following endpoints:
 
-- `/sphgo/new`: Create a new game
-- `/sphgo/join`: Join an existing game
-- `/sphgo/ready`: Mark a player as ready
-- `/sphgo/play`: Make a move
-- `/sphgo/close`: End a game
+| Endpoint | Purpose |
+|----------|---------|
+| `/sphgo/new` | Create a new game (requires server token) |
+| `/sphgo/join` | Join a game with a key and role |
+| `/sphgo/whoami` | Discover the role for a given key |
+| `/sphgo/ready` | Mark a player as ready |
+| `/sphgo/play` | Make a move (sends `steps` and encoded `play`) |
+| `/sphgo/state` | Fetch full board state, score, and game-over status |
+| `/sphgo/genmove` | Request an AI-generated move |
+| `/sphgo/resign` | Resign the game |
+| `/sphgo/record` | Download the game record |
+| `/sphgo/close` | Close/end a game |
+
+Team mode adds lobby and auth endpoints:
+
+| Endpoint | Purpose |
+|----------|---------|
+| `/sphgo/auth/login` | Log in with username/password |
+| `/sphgo/auth/register` | Register with username/password/invite code |
+| `/sphgo/auth/logout` | Log out |
+| `/sphgo/auth/me` | Get current user info (including admin status) |
+| `/sphgo/auth/invite` | Generate a new invite code (admin only) |
+| `/sphgo/auth/invites` | List all invite codes (admin only) |
+| `/sphgo/lobby` | List active game rooms |
+| `/sphgo/lobby/create` | Create a new game room from the lobby |
+| `/sphgo/lobby/join` | Join a game room from the lobby |
 
 ### Socket.IO
 
-The client also connects to the server using Socket.IO for real-time updates:
+The client connects via Socket.IO for real-time updates:
 
-- `join` event: Player joining a game
-- `ready` event: Player ready to start
-- `start` event: Game has started
-- `played` event: Player made a move
-- `error` event: An error occurred
-
-## Authentication
-
-The network play functionality uses token-based authentication:
-
-1. The server generates a server token when it starts
-2. When a game is created, the server generates keys for Black, White, and Viewer roles
-3. When a player joins a game, the server generates a player token
-4. All subsequent requests include the player token for authentication
+| Event | Direction | Data | Description |
+|-------|-----------|------|-------------|
+| `join` | Client → Server | `{key}` | Join a game room |
+| `joined` | Server → Client | `{role, token, plays}` | Confirmation of join |
+| `ready` | Server → Client | `{role}` | A player is ready |
+| `start` | Server → Client | — | Game has started |
+| `played` | Server → Client | `{role, steps, play, score}` | A move was made |
+| `passed` | Server → Client | `{role}` | A player passed |
+| `game_over` | Server → Client | `{reason, winner, score}` | Game ended |
+| `error` | Server → Client | `{message}` | An error occurred |
 
 ## Security Considerations
 
@@ -146,7 +185,7 @@ If you're having trouble connecting to the server:
 If you're having trouble with the game:
 
 1. Check that all players have joined the game
-2. Ensure that all players have clicked "Ready"
+2. Verify that both players are ready (check the status bar)
 3. Verify that it's your turn before trying to make a move
 4. Check the status bar for error messages
 
@@ -154,69 +193,71 @@ If you're having trouble with the game:
 
 ### Client-Side
 
-The client-side network play functionality is implemented in:
+The client is a web application served by the PolyClash server:
 
-- `polyclash/util/api.py`: Functions for communicating with the server's REST API
-- `polyclash/workers/network.py`: Background thread for Socket.IO communication
-- `polyclash/game/controller.py`: Game controller with network mode support
-- `polyclash/gui/dialogs.py`: Dialogs for network game setup
+- `web/js/game-client.js`: Game state manager and server communication (REST + Socket.IO)
+- `web/js/lobby.js`: Lobby UI — login, registration, game room management (team mode)
+- `web/js/board-renderer.js`: 3D board rendering
+- `web/js/light-rules.js`: Client-side move legality checks
 
 ### Server-Side
 
 The server-side network play functionality is implemented in:
 
 - `polyclash/server.py`: Flask application with REST API endpoints and Socket.IO event handlers
-- `polyclash/util/storage.py`: Data storage for game state
+- `polyclash/util/storage.py`: Data storage for game state (MemoryStorage or RedisStorage)
+- `polyclash/util/auth.py`: User accounts and invite codes (team mode)
+- `polyclash/cli.py`: CLI entry points for solo, family, team, and serve modes
 
 ## Network Diagram
 
 ```mermaid
 sequenceDiagram
-    participant Client1 as Client (Black)
+    participant Black as Browser (Black)
     participant Server
-    participant Client2 as Client (White)
+    participant White as Browser (White)
 
-    Client1->>Server: POST /sphgo/new
-    Server-->>Client1: {black_key, white_key, viewer_key}
+    Note over Black, White: Game created (family CLI / lobby / API)
 
-    Note over Client1, Client2: Share keys
+    Black->>Server: POST /sphgo/join (black_key)
+    Server-->>Black: {token}
+    White->>Server: POST /sphgo/join (white_key)
+    Server-->>White: {token}
 
-    Client1->>Server: POST /sphgo/join (black_key)
-    Server-->>Client1: {status}
-    Client2->>Server: POST /sphgo/join (white_key)
-    Server-->>Client2: {status}
+    Black->>Server: Socket.IO connect
+    Black->>Server: Socket.IO join {key}
+    Server-->>Black: Socket.IO joined {role, token, plays}
 
-    Client1->>Server: Socket.IO connect
-    Client1->>Server: Socket.IO join {key}
-    Server-->>Client1: Socket.IO joined {role, token, plays}
+    White->>Server: Socket.IO connect
+    White->>Server: Socket.IO join {key}
+    Server-->>White: Socket.IO joined {role, token, plays}
 
-    Client2->>Server: Socket.IO connect
-    Client2->>Server: Socket.IO join {key}
-    Server-->>Client2: Socket.IO joined {role, token, plays}
+    Black->>Server: POST /sphgo/ready
+    Server-->>White: Socket.IO ready {role: "black"}
 
-    Client1->>Server: POST /sphgo/ready
-    Server-->>Client1: {status}
-    Server-->>Client2: Socket.IO ready {role}
+    White->>Server: POST /sphgo/ready
+    Server-->>Black: Socket.IO ready {role: "white"}
 
-    Client2->>Server: POST /sphgo/ready
-    Server-->>Client2: {status}
-    Server-->>Client1: Socket.IO ready {role}
+    Server-->>Black: Socket.IO start
+    Server-->>White: Socket.IO start
 
-    Server-->>Client1: Socket.IO start
-    Server-->>Client2: Socket.IO start
+    Black->>Server: POST /sphgo/play {steps, play}
+    Server-->>Black: {message}
+    Server-->>White: Socket.IO played {role, steps, play, score}
 
-    Client1->>Server: POST /sphgo/play {steps, play}
-    Server-->>Client1: {message}
-    Server-->>Client2: Socket.IO played {role, steps, play}
+    White->>Server: POST /sphgo/play {steps, play}
+    Server-->>White: {message}
+    Server-->>Black: Socket.IO played {role, steps, play, score}
 
-    Client2->>Server: POST /sphgo/play {steps, play}
-    Server-->>Client2: {message}
-    Server-->>Client1: Socket.IO played {role, steps, play}
+    Note over Black, White: Players can fetch state at any time
 
-    Note over Client1, Client2: Game continues...
+    Black->>Server: POST /sphgo/state
+    Server-->>Black: {board, score, current_player, counter, game_over?}
 
-    Client1->>Server: POST /sphgo/close
-    Server-->>Client1: {message}
+    Note over Black, White: Game continues...
+
+    Server-->>Black: Socket.IO game_over {reason, winner, score}
+    Server-->>White: Socket.IO game_over {reason, winner, score}
 ```
 
 ## Performance Considerations

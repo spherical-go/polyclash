@@ -101,6 +101,14 @@ class DataStorage(ABC):
     def add_play(self, game_id, play):
         pass
 
+    @abstractmethod
+    def save_board(self, game_id: str, board_dict: dict) -> None:
+        pass
+
+    @abstractmethod
+    def load_board(self, game_id: str) -> dict | None:
+        pass
+
 
 class MemoryStorage(DataStorage):
     def __init__(self):
@@ -256,6 +264,13 @@ class MemoryStorage(DataStorage):
     def add_play(self, game_id, play):
         return self.games[game_id]["plays"].append(play)
 
+    def save_board(self, game_id: str, board_dict: dict) -> None:
+        self.games[game_id]["board_snapshot"] = board_dict
+
+    def load_board(self, game_id: str) -> dict | None:
+        result: dict | None = self.games[game_id].get("board_snapshot")
+        return result
+
 
 class RedisStorage(DataStorage):
     def __init__(self, host="localhost", port=6379, db=0):
@@ -351,6 +366,8 @@ class RedisStorage(DataStorage):
             self.redis.delete(f"games:{game_id}:viewer")
         if self.redis.exists(f"games:{game_id}:plays"):
             self.redis.delete(f"games:{game_id}:plays")
+        if self.redis.exists(f"games:{game_id}:board"):
+            self.redis.delete(f"games:{game_id}:board")
 
     def exists(self, game_id):
         return game_id in list(
@@ -437,6 +454,18 @@ class RedisStorage(DataStorage):
     def add_play(self, game_id, play):
         self.redis.rpush(f"games:{game_id}:plays", json.dumps(play))
         self.redis.expire(f"games:{game_id}:plays", 3600 * 24 * 3)
+
+    def save_board(self, game_id: str, board_dict: dict) -> None:
+        self.redis.set(
+            f"games:{game_id}:board", json.dumps(board_dict), ex=3600 * 24 * 3
+        )
+
+    def load_board(self, game_id: str) -> dict | None:
+        raw = self.redis.get(f"games:{game_id}:board")
+        if raw:
+            result: dict = json.loads(raw.decode("utf-8"))
+            return result
+        return None
 
     def reaper(self):
         for game_id in self.list_rooms():

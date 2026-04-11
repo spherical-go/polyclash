@@ -4,7 +4,7 @@ scipy==1.16.2
 
 # Network packages
 requests==2.33.0
-python-socketio[client]==5.13.0
+python-socketio[client]==5.14.0
 
 # Server packages
 flask>=3.0,<3.1

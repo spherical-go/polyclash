@@ -94,6 +94,7 @@ class Board:
         self.zobrist_hash: int = 0
         self.history_hashes: set[int] = set()
         self.komi: float = 3.75
+        self.consecutive_passes: int = 0
 
     @property
     def counter(self):
@@ -166,6 +167,7 @@ class Board:
         self.turns = OrderedDict()
         self.zobrist_hash = 0
         self.history_hashes = set()
+        self.consecutive_passes = 0
         self.notify_observers("reset", **{})
 
     def switch_player(self):
@@ -270,7 +272,9 @@ class Board:
         black_ratio, white_ratio, _ = self.score()
         return black_ratio, white_ratio + self.komi / total_area
 
-    def is_game_over(self):
+    def is_game_over(self) -> bool:
+        if self.consecutive_passes >= 2:
+            return True
         return len(self.get_empties(self.current_player)) == 0
 
     def result(self):

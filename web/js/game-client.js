@@ -487,6 +487,13 @@ class GameClient {
             };
             this.counter = data.counter;
             this.updateBoardState(data.board, score, data.current_player);
+
+            // Detect game over from state
+            if (data.game_over && !this.gameOver) {
+                this.gameOver = true;
+                this.renderer.highlightLegalMoves([]);
+                this.showStatus(i18n.t('status_game_over'));
+            }
         } catch (err) {
             console.error('fetchState error:', err);
             this.showStatus('Error fetching state: ' + err.message);

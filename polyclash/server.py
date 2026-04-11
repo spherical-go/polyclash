@@ -289,12 +289,17 @@ def close(game_id=None, role=None, token=None):
 @api_call
 def state(game_id=None, role=None, token=None):
     board = boards[game_id]
-    return {
+    result: dict = {
         "board": board.board.tolist(),
         "score": board.score(),
         "current_player": board.current_player,
         "counter": board.counter,
-    }, 200
+    }
+    if board.is_game_over():
+        final = board.final_score()
+        winner = "black" if final[0] > final[1] else "white"
+        result["game_over"] = {"winner": winner, "score": final}
+    return result, 200
 
 
 @app.route("/sphgo/genmove", methods=["POST"])
@@ -315,8 +320,17 @@ def genmove(game_id=None, role=None, token=None):
         point = board.genmove(player_color)
 
     if point is None:
+        board.consecutive_passes += 1
         board.switch_player()
         socketio.emit("passed", {"role": role}, room=game_id)
+        if board.is_game_over():
+            final = board.final_score()
+            winner = "black" if final[0] > final[1] else "white"
+            socketio.emit(
+                "game_over",
+                {"reason": "complete", "winner": winner, "score": final},
+                room=game_id,
+            )
         return {"message": "pass", "point": None, "play": None}, 200
 
     try:
@@ -324,10 +338,20 @@ def genmove(game_id=None, role=None, token=None):
     except ValueError:
         # AI's chosen move is illegal on the real board; pass instead
         logger.warning(f"AI move {point} illegal, passing")
+        board.consecutive_passes += 1
         board.switch_player()
         socketio.emit("passed", {"role": role}, room=game_id)
+        if board.is_game_over():
+            final = board.final_score()
+            winner = "black" if final[0] > final[1] else "white"
+            socketio.emit(
+                "game_over",
+                {"reason": "complete", "winner": winner, "score": final},
+                room=game_id,
+            )
         return {"message": "pass", "point": None, "play": None}, 200
 
+    board.consecutive_passes = 0
     board.switch_player()
     encoded = encoder[point]
     storage.add_play(game_id, list(encoded))
@@ -384,6 +408,7 @@ def play(game_id=None, role=None, steps=None, play=None, token=None):
     player_color = BLACK if role == "black" else WHITE
     try:
         board.play(point, player_color)
+        board.consecutive_passes = 0
         board.switch_player()
     except ValueError as e:
         return {"message": str(e)}, 400

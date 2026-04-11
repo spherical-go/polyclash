@@ -93,7 +93,7 @@ class Board:
 
         self.zobrist_hash: int = 0
         self.history_hashes: set[int] = set()
-        self.komi: float = 3.75
+        self.komi: float = 0.025
         self.consecutive_passes: int = 0
 
     @property
@@ -268,9 +268,12 @@ class Board:
         )
 
     def final_score(self) -> tuple[float, float]:
-        """Return (black_score, white_score) with komi applied to white."""
+        """Return (black_score, white_score) with komi applied to white.
+
+        ``komi`` is a fraction of total area (e.g. 0.025 = 2.5%).
+        """
         black_ratio, white_ratio, _ = self.score()
-        return black_ratio, white_ratio + self.komi / total_area
+        return black_ratio, white_ratio + self.komi
 
     def is_game_over(self) -> bool:
         if self.consecutive_passes >= 2:

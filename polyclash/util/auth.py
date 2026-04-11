@@ -39,8 +39,7 @@ class UserStore:
 
     def _init_db(self) -> None:
         conn = self._get_conn()
-        conn.executescript(
-            """
+        conn.executescript("""
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
@@ -62,8 +61,7 @@ class UserStore:
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (username) REFERENCES users(username)
             );
-            """
-        )
+            """)
         conn.commit()
         conn.close()
 

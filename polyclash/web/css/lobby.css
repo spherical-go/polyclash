@@ -40,6 +40,44 @@ h1 {
   color: var(--accent);
 }
 
+/* ── Recent games ────────────────────────── */
+
+#recent-panel {
+  margin-bottom: 24px;
+}
+
+#recent-panel h2 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: var(--accent);
+}
+
+#recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.recent-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.recent-info {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.recent-card button {
+  padding: 5px 12px;
+  font-size: 12px;
+}
+
 /* ── Auth forms ──────────────────────────── */
 
 .auth-form {

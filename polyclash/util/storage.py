@@ -132,6 +132,11 @@ class DataStorage(ABC):
     def is_completed(self, game_id: str) -> bool:
         pass
 
+    @abstractmethod
+    def recent_completed(self, limit: int = 3) -> list[dict]:
+        """Return the most recently completed games (room_number, game_id, viewer_key, plays count)."""
+        pass
+
 
 class MemoryStorage(DataStorage):
     def __init__(self):
@@ -332,6 +337,23 @@ class MemoryStorage(DataStorage):
 
     def is_completed(self, game_id: str) -> bool:
         return self.games[game_id].get("completed_at") is not None
+
+    def recent_completed(self, limit: int = 3) -> list[dict]:
+        completed = [
+            g for g in self.games.values() if g.get("completed_at") is not None
+        ]
+        completed.sort(key=lambda g: g["completed_at"], reverse=True)
+        result: list[dict] = []
+        for g in completed[:limit]:
+            result.append(
+                {
+                    "game_id": g["id"],
+                    "room_number": g["room_number"],
+                    "viewer_key": g["keys"]["viewer"],
+                    "plays_count": len(g["plays"]),
+                }
+            )
+        return result
 
 
 class RedisStorage(DataStorage):
@@ -543,6 +565,9 @@ class RedisStorage(DataStorage):
 
     def is_completed(self, game_id: str) -> bool:
         raise NotImplementedError("RedisStorage does not support is_completed")
+
+    def recent_completed(self, limit: int = 3) -> list[dict]:
+        raise NotImplementedError("RedisStorage does not support recent_completed")
 
     def reaper(self):
         for game_id in self.list_rooms():
@@ -958,6 +983,30 @@ class SqliteStorage(DataStorage):
         ).fetchone()
         conn.close()
         return row is not None and row["completed_at"] is not None
+
+    def recent_completed(self, limit: int = 3) -> list[dict]:
+        conn = self._get_conn()
+        rows = conn.execute(
+            "SELECT g.game_id, g.room_number, g.viewer_key, "
+            "  (SELECT COUNT(*) FROM game_plays p WHERE p.game_id = g.game_id) "
+            "    AS plays_count "
+            "FROM games g "
+            "WHERE g.completed_at IS NOT NULL "
+            "ORDER BY g.completed_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        conn.close()
+        result: list[dict] = []
+        for r in rows:
+            result.append(
+                {
+                    "game_id": r["game_id"],
+                    "room_number": int(r["room_number"]),
+                    "viewer_key": str(r["viewer_key"]),
+                    "plays_count": int(r["plays_count"]),
+                }
+            )
+        return result
 
 
 def test_redis_connection(

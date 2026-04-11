@@ -333,6 +333,53 @@
         }
     }
 
+    // ── Recent games (public) ────────────────────────
+
+    async function loadRecentGames() {
+        try {
+            var res = await fetch(serverUrl + '/sphgo/lobby/recent');
+            if (!res.ok) return;
+            var data = await res.json();
+            var games = data.games || [];
+            if (games.length === 0) return;
+
+            $('recent-panel').classList.remove('hidden');
+            var list = $('recent-list');
+            list.innerHTML = '';
+
+            for (var i = 0; i < games.length; i++) {
+                var game = games[i];
+                var card = document.createElement('div');
+                card.className = 'recent-card';
+
+                var info = document.createElement('span');
+                info.className = 'recent-info';
+                var label = '#' + game.room_number + '  ·  ' + game.plays_count + ' moves';
+                if (game.result) {
+                    var winner = game.result.winner === 'black' ? '⚫' : '⚪';
+                    var bPct = (game.result.score[0] * 100).toFixed(1);
+                    var wPct = (game.result.score[1] * 100).toFixed(1);
+                    label += '  ·  ' + winner + ' wins (' + bPct + '% – ' + wPct + '%)';
+                }
+                info.textContent = label;
+
+                var btn = document.createElement('button');
+                btn.textContent = '▶ Replay';
+                btn.setAttribute('data-key', game.viewer_key);
+                btn.addEventListener('click', function (e) {
+                    var key = e.target.getAttribute('data-key');
+                    window.location.href = '/?key=' + key;
+                });
+
+                card.appendChild(info);
+                card.appendChild(btn);
+                list.appendChild(card);
+            }
+        } catch (err) {
+            // ignore – public feature, no error shown
+        }
+    }
+
     // ── Init ──────────────────────────────────────────
 
     document.addEventListener('DOMContentLoaded', function () {
@@ -359,6 +406,9 @@
 
         // Admin
         $('btn-gen-invite').addEventListener('click', generateInvite);
+
+        // Load recent games (public, shown before login)
+        loadRecentGames();
 
         // Auto-restore session
         var session = loadSession();

@@ -299,6 +299,23 @@ def lobby_join():
     return jsonify({"key": key, "game_id": game_id, "role": role}), 200
 
 
+@app.route("/sphgo/lobby/recent", methods=["GET"])
+def lobby_recent():
+    """Public endpoint: return the last 3 completed games for showcase."""
+    recent = storage.recent_completed(3)
+    # Enrich with game result from board state
+    for game in recent:
+        game_id = game["game_id"]
+        board = boards.get(game_id)
+        if board is not None and board.is_game_over():
+            final = board.final_score()
+            winner = "black" if final[0] > final[1] else "white"
+            game["result"] = {"winner": winner, "score": final}
+        else:
+            game["result"] = None
+    return jsonify({"games": recent}), 200
+
+
 def player_join_room(game_id, role):
     key = storage.get_key(game_id, role)
     token = storage.create_player(key, role)

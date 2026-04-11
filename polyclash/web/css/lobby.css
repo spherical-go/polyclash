@@ -223,6 +223,19 @@ button:hover {
   font-size: 12px;
 }
 
+.ai-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.ai-checkbox {
+  cursor: pointer;
+}
+
 .room-completed {
   opacity: 0.6;
 }

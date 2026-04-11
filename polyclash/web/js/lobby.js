@@ -216,6 +216,17 @@
                     btnWhite.addEventListener('click', joinRoomHandler);
                     actions.appendChild(btnWhite);
                 }
+                if (!room.joined.black || !room.joined.white) {
+                    var aiLabel = document.createElement('label');
+                    aiLabel.className = 'ai-toggle';
+                    var aiCheck = document.createElement('input');
+                    aiCheck.type = 'checkbox';
+                    aiCheck.className = 'ai-checkbox';
+                    aiCheck.setAttribute('data-game-id', room.game_id);
+                    aiLabel.appendChild(aiCheck);
+                    aiLabel.appendChild(document.createTextNode(' AI'));
+                    actions.appendChild(aiLabel);
+                }
             }
 
             var btnWatch = document.createElement('button');
@@ -256,6 +267,13 @@
 
         if (!currentSession) return;
 
+        // Check if AI checkbox is ticked for this room
+        var aiChecked = false;
+        var aiBox = document.querySelector('.ai-checkbox[data-game-id="' + gameId + '"]');
+        if (aiBox) {
+            aiChecked = aiBox.checked;
+        }
+
         try {
             // Get the key for this role from the lobby create data
             // We need to use the server token to get the key, then join
@@ -271,7 +289,11 @@
             }
             var data = await res.json();
             // Redirect to game with the key
-            window.location.href = '/?key=' + data.key;
+            var url = '/?key=' + data.key;
+            if (aiChecked) {
+                url += '&ai=1';
+            }
+            window.location.href = url;
         } catch (err) {
             $('lobby-status').textContent = 'Error joining game.';
         }

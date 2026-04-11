@@ -347,8 +347,8 @@ class GameClient {
         try {
             var res = await this._post('/sphgo/genmove', { token: this.token });
             if (!res.ok) {
-                var errData = await res.json();
-                this.showStatus('AI move failed: ' + errData.message);
+                // Not our turn or other error — wait for next event
+                await this.fetchState();
                 return;
             }
             var data = await res.json();

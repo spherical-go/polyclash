@@ -580,6 +580,12 @@ def genmove(game_id=None, role=None, token=None):
     board = boards[game_id]
     player_color = BLACK if role == "black" else WHITE
 
+    # Validate turn: black plays on even steps, white on odd
+    plays = storage.get_plays(game_id)
+    steps = len(plays)
+    if (steps % 2 == 0 and role != "black") or (steps % 2 == 1 and role != "white"):
+        return {"message": "Not your turn"}, 400
+
     # Try HRM first, fall back to heuristic
     point = None
     if _hrm_player is not None:

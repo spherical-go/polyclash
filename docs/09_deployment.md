@@ -103,32 +103,29 @@ Log in as admin in the web lobby to:
 - Generate new invite codes
 - View all users and invite code usage
 
-### Board Persistence
+### State and Restarts
 
-Game state is automatically persisted to storage. Games survive server restarts — boards are restored from snapshots when the server starts.
+All game state (rooms, boards, users) lives in memory. A server restart resets everything — admin credentials and invite codes are regenerated and printed to the logs. This is by design for a small team server: simple, no external storage needed.
 
 ---
 
 ## Mode 4: One-Click Cloud Deployment
 
-Deploy to Railway, Render, or Fly.io with a single click. The server runs in team mode with persistent storage.
+Deploy to Railway, Render, or Fly.io. The server runs in team mode. State resets on each deploy — check logs for new admin credentials and invite codes.
 
 ### Railway
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/polyclash?referralCode=polyclash)
+Deploy from the Railway dashboard: **New Project → Deploy from GitHub repo → `spherical-go/polyclash`**.
 
 After deployment:
-1. Go to the Railway dashboard → Variables
-2. Set `POLYCLASH_ADMIN_PASS` to your chosen password
-3. Check deployment logs for the initial invite codes
-4. Add a volume mounted at `/data` for persistent user data
+1. Optionally set `POLYCLASH_ADMIN_PASS` in Variables (otherwise auto-generated)
+2. Check deployment logs for admin credentials and invite codes
 
 ### Render
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/spherical-go/polyclash)
 
 Render auto-configures:
-- A 1 GB persistent disk at `/data`
 - Auto-generated admin password (visible in dashboard → Environment)
 - Check deployment logs for invite codes
 
@@ -136,7 +133,6 @@ Render auto-configures:
 
 ```bash
 fly launch --copy-config
-fly volumes create polyclash_data --size 1 --region nrt
 fly secrets set POLYCLASH_ADMIN_PASS=your-password
 fly deploy
 ```
@@ -245,7 +241,7 @@ sudo ufw allow 443/tcp
 | File | Purpose |
 |---|---|
 | `Dockerfile` | Builds the server image, default team mode |
-| `docker-compose.yml` | Team server + Redis, persistent storage |
+| `docker-compose.yml` | Team server (no Redis, in-memory state) |
 | `docker-compose.simple.yml` | Minimal: solo/LAN, no auth, no Redis |
 | `render.yaml` | Render.com deploy blueprint |
 | `railway.json` | Railway deploy config |
@@ -256,7 +252,7 @@ sudo ufw allow 443/tcp
 
 ## Redis
 
-Redis is **optional**. Both MemoryStorage and RedisStorage support board persistence — game state is saved to storage after every move via `save_board()` and restored on server startup via `restore_boards()`. However, MemoryStorage lives in-process, so **games are lost if the server process exits**. RedisStorage persists data across server restarts, making it the recommended choice for production deployments.
+Redis is **optional**. Without Redis, the server uses in-memory storage — all state (games, boards, users) resets on restart. With Redis, game and board state persists across restarts via `save_board()` / `restore_boards()`. For a small team server with 8 rooms, in-memory mode is sufficient.
 
 To use Redis with a native install:
 
@@ -312,7 +308,7 @@ cp /var/lib/redis/dump.rdb /backup/redis-$(date +%Y%m%d).rdb
 | Server won't start | Port 3302 in use? Redis running (if expected)? |
 | Clients can't connect | Firewall rules? Correct host/port? |
 | WebSocket fails | nginx `Upgrade` headers configured? |
-| Games lost on restart | Board persistence requires storage; check `/data` volume is mounted |
+| Games lost on restart | By design — in-memory state resets on restart; use Redis for persistence |
 | Can't find admin password | Check server logs; set `POLYCLASH_ADMIN_PASS` env var |
 | Invite codes not showing | Check server startup logs; set `POLYCLASH_INVITES` > 0 |
 | Lobby shows "Team mode not enabled" | Server not started with `polyclash team` |

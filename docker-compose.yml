@@ -7,20 +7,8 @@ services:
       - "${PORT:-3302}:${PORT:-3302}"
     environment:
       - PORT=${PORT:-3302}
-      - POLYCLASH_AUTH_DB=/data/polyclash_users.db
       - POLYCLASH_MAX_ROOMS=${POLYCLASH_MAX_ROOMS:-8}
       - POLYCLASH_ADMIN_USER=${POLYCLASH_ADMIN_USER:-admin}
       - POLYCLASH_ADMIN_PASS=${POLYCLASH_ADMIN_PASS:-}
       - POLYCLASH_INVITES=${POLYCLASH_INVITES:-5}
-    volumes:
-      - polyclash-data:/data
-    depends_on:
-      - redis
     restart: unless-stopped
-
-  redis:
-    image: redis:7-alpine
-    restart: unless-stopped
-
-volumes:
-  polyclash-data:

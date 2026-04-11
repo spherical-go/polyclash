@@ -5,10 +5,17 @@ services:
     build: .
     ports:
       - "${PORT:-3302}:${PORT:-3302}"
+    volumes:
+      - polyclash_data:/data
     environment:
       - PORT=${PORT:-3302}
       - POLYCLASH_MAX_ROOMS=${POLYCLASH_MAX_ROOMS:-8}
       - POLYCLASH_ADMIN_USER=${POLYCLASH_ADMIN_USER:-admin}
       - POLYCLASH_ADMIN_PASS=${POLYCLASH_ADMIN_PASS:-}
       - POLYCLASH_INVITES=${POLYCLASH_INVITES:-5}
+      - POLYCLASH_STORAGE_DB=/data/polyclash_games.db
+      - POLYCLASH_AUTH_DB=/data/polyclash_users.db
     restart: unless-stopped
+
+volumes:
+  polyclash_data:

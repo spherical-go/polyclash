@@ -12,3 +12,11 @@ services:
         value: "5"
       - key: POLYCLASH_ADMIN_PASS
         generateValue: true
+      - key: POLYCLASH_STORAGE_DB
+        value: "/data/polyclash_games.db"
+      - key: POLYCLASH_AUTH_DB
+        value: "/data/polyclash_users.db"
+    disk:
+      name: polyclash-data
+      mountPath: /data
+      sizeGB: 1

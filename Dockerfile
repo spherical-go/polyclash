@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY . .
 RUN pip install --no-cache-dir -e ".[redis]"
+RUN mkdir -p /data
 
 ENV PORT=3302
 ENV POLYCLASH_MAX_ROOMS=8

@@ -6,6 +6,13 @@ services:
     build: .
     ports:
       - "3302:3302"
+    volumes:
+      - polyclash_data:/data
     environment:
       - POLYCLASH_NO_AUTH=1
+      - POLYCLASH_STORAGE_DB=/data/polyclash_games.db
+      - POLYCLASH_AUTH_DB=/data/polyclash_users.db
     restart: unless-stopped
+
+volumes:
+  polyclash_data:

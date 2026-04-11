@@ -383,8 +383,7 @@ class TestMemoryStorageComplete:
         game_id = room_fixture["game_id"]
 
         # Initially not started
-        with pytest.raises(KeyError):
-            storage.is_started(game_id)
+        assert not storage.is_started(game_id)
 
         # Start game
         storage.start_game(game_id)

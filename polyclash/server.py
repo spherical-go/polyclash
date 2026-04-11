@@ -36,7 +36,7 @@ boards: dict[str, Board] = {}
 
 # Team mode: user auth store and room limit
 _user_store: Optional[Any] = None
-MAX_ROOMS: int = int(os.environ.get("POLYCLASH_MAX_ROOMS", "0"))  # 0 = unlimited
+MAX_ROOMS: int = int(os.environ.get("POLYCLASH_MAX_ROOMS", "8"))  # 0 = unlimited
 
 
 def _persist_board(game_id: str) -> None:
@@ -210,20 +210,41 @@ def lobby_list():
         if not username:
             return jsonify({"message": "Login required"}), 401
 
+    storage.cleanup_expired(7)
+
     rooms = []
     for game_id in storage.list_rooms():
+        joined = storage.joined_status(game_id)
+        ready = storage.ready_status(game_id)
+        started = storage.is_started(game_id)
+
+        if not all(joined.values()):
+            status = "waiting"
+        elif not started:
+            status = "ready"
+        elif game_id in boards and boards[game_id].is_game_over():
+            status = "completed"
+        else:
+            status = "playing"
+
         info: dict = {
             "game_id": game_id,
-            "joined": storage.joined_status(game_id),
-            "ready": storage.ready_status(game_id),
+            "room_number": storage.get_room_number(game_id),
+            "joined": joined,
+            "ready": ready,
+            "status": status,
         }
         rooms.append(info)
+
+    users: list = _user_store.list_users() if _user_store else []
+
     return (
         jsonify(
             {
                 "rooms": rooms,
                 "max_rooms": MAX_ROOMS,
-                "count": len(rooms),
+                "active_count": storage.active_room_count(),
+                "users": users,
             }
         ),
         200,
@@ -241,7 +262,7 @@ def lobby_create():
             return jsonify({"message": "Login required"}), 401
 
     # Enforce room limit
-    if MAX_ROOMS > 0 and len(storage.list_rooms()) >= MAX_ROOMS:
+    if MAX_ROOMS > 0 and storage.active_room_count() >= MAX_ROOMS:
         return jsonify({"message": f"Room limit reached ({MAX_ROOMS})"}), 400
 
     room_data = storage.create_room()
@@ -561,6 +582,7 @@ def genmove(game_id=None, role=None, token=None):
                 {"reason": "complete", "winner": winner, "score": final},
                 room=game_id,
             )
+            storage.complete_room(game_id)
         return {"message": "pass", "point": None, "play": None}, 200
 
     try:
@@ -590,6 +612,7 @@ def genmove(game_id=None, role=None, token=None):
                     {"reason": "complete", "winner": winner, "score": final},
                     room=game_id,
                 )
+                storage.complete_room(game_id)
             return {"message": "pass", "point": None, "play": None}, 200
 
     board.consecutive_passes = 0
@@ -614,6 +637,7 @@ def genmove(game_id=None, role=None, token=None):
             {"reason": "complete", "winner": winner, "score": final},
             room=game_id,
         )
+        storage.complete_room(game_id)
 
     return {"point": point, "play": list(encoded)}, 200
 
@@ -672,6 +696,7 @@ def play(game_id=None, role=None, steps=None, play=None, token=None):
             {"reason": "complete", "winner": winner, "score": final},
             room=game_id,
         )
+        storage.complete_room(game_id)
 
     return {"message": "Play processed"}, 200
 
@@ -690,6 +715,7 @@ def resign(game_id=None, role=None, token=None):
         {"reason": "resign", "winner": winner, "score": final},
         room=game_id,
     )
+    storage.complete_room(game_id)
     return {"winner": winner, "score": final}, 200
 
 

@@ -3,6 +3,7 @@ import os
 import secrets
 import sqlite3
 from abc import ABC, abstractmethod
+from datetime import datetime, timedelta
 
 from polyclash.util.logging import logger
 
@@ -40,7 +41,7 @@ class DataStorage(ABC):
         pass
 
     @abstractmethod
-    def list_rooms(self):
+    def list_rooms(self, active_only: bool = False) -> list[str]:
         pass
 
     @abstractmethod
@@ -111,6 +112,22 @@ class DataStorage(ABC):
     def load_board(self, game_id: str) -> dict | None:
         pass
 
+    @abstractmethod
+    def active_room_count(self) -> int:
+        pass
+
+    @abstractmethod
+    def complete_room(self, game_id: str) -> None:
+        pass
+
+    @abstractmethod
+    def cleanup_expired(self, days: int = 7) -> int:
+        pass
+
+    @abstractmethod
+    def get_room_number(self, game_id: str) -> int:
+        pass
+
 
 class MemoryStorage(DataStorage):
     def __init__(self):
@@ -123,6 +140,9 @@ class MemoryStorage(DataStorage):
         white_key = secrets.token_hex(USER_KEY_LENGTH // 2)
         viewer_key = secrets.token_hex(USER_KEY_LENGTH // 2)
 
+        existing = [g["room_number"] for g in self.games.values() if "room_number" in g]
+        room_number = max(existing) + 1 if existing else 1
+
         self.games[game_id] = {
             "id": game_id,
             "keys": {"black": black_key, "white": white_key, "viewer": viewer_key},
@@ -131,6 +151,9 @@ class MemoryStorage(DataStorage):
             "plays": [],
             "joined": {"black": False, "white": False},
             "ready": {"black": False, "white": False},
+            "started": False,
+            "room_number": room_number,
+            "completed_at": None,
         }
         self.rooms[black_key] = game_id
         self.rooms[white_key] = game_id
@@ -141,6 +164,7 @@ class MemoryStorage(DataStorage):
             black_key=black_key,
             white_key=white_key,
             viewer_key=viewer_key,
+            room_number=room_number,
         )
 
     def contains(self, key_or_token):
@@ -155,8 +179,10 @@ class MemoryStorage(DataStorage):
     def get_plays(self, game_id):
         return self.games[game_id]["plays"]
 
-    def list_rooms(self):
-        return list([key for key in self.games.keys()])
+    def list_rooms(self, active_only: bool = False) -> list[str]:
+        if active_only:
+            return [k for k, v in self.games.items() if v.get("completed_at") is None]
+        return list(self.games.keys())
 
     def close_room(self, game_id):
         game = self.games[game_id]
@@ -273,6 +299,33 @@ class MemoryStorage(DataStorage):
         result: dict | None = self.games[game_id].get("board_snapshot")
         return result
 
+    def active_room_count(self) -> int:
+        return sum(1 for g in self.games.values() if g.get("completed_at") is None)
+
+    def complete_room(self, game_id: str) -> None:
+        self.games[game_id]["completed_at"] = datetime.now().isoformat()
+
+    def cleanup_expired(self, days: int = 7) -> int:
+        cutoff = datetime.now() - timedelta(days=days)
+        to_delete: list[str] = []
+        for gid, game in self.games.items():
+            completed = game.get("completed_at")
+            if completed is not None and datetime.fromisoformat(completed) < cutoff:
+                to_delete.append(gid)
+        for gid in to_delete:
+            game = self.games[gid]
+            for key in game["keys"].values():
+                self.rooms.pop(key, None)
+            for token in game.get("players", {}).values():
+                self.rooms.pop(token, None)
+            for token in game.get("viewers", []):
+                self.rooms.pop(token, None)
+            del self.games[gid]
+        return len(to_delete)
+
+    def get_room_number(self, game_id: str) -> int:
+        return int(self.games[game_id]["room_number"])
+
 
 class RedisStorage(DataStorage):
     def __init__(self, host="localhost", port=6379, db=0):
@@ -339,7 +392,7 @@ class RedisStorage(DataStorage):
         else:
             return []
 
-    def list_rooms(self):
+    def list_rooms(self, active_only: bool = False) -> list[str]:
         if not self.redis.exists("games"):
             return []
         return list(
@@ -469,6 +522,18 @@ class RedisStorage(DataStorage):
             return result
         return None
 
+    def active_room_count(self) -> int:
+        raise NotImplementedError("RedisStorage does not support active_room_count")
+
+    def complete_room(self, game_id: str) -> None:
+        raise NotImplementedError("RedisStorage does not support complete_room")
+
+    def cleanup_expired(self, days: int = 7) -> int:
+        raise NotImplementedError("RedisStorage does not support cleanup_expired")
+
+    def get_room_number(self, game_id: str) -> int:
+        raise NotImplementedError("RedisStorage does not support get_room_number")
+
     def reaper(self):
         for game_id in self.list_rooms():
             # if game_id is not represented in the key of games:{game_id}
@@ -503,6 +568,7 @@ class SqliteStorage(DataStorage):
         conn.executescript("""
             CREATE TABLE IF NOT EXISTS games (
                 game_id TEXT PRIMARY KEY,
+                room_number INTEGER NOT NULL DEFAULT 0,
                 black_key TEXT NOT NULL,
                 white_key TEXT NOT NULL,
                 viewer_key TEXT NOT NULL,
@@ -514,7 +580,8 @@ class SqliteStorage(DataStorage):
                 ready_white INTEGER NOT NULL DEFAULT 0,
                 started INTEGER NOT NULL DEFAULT 0,
                 board_snapshot TEXT,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                completed_at TIMESTAMP DEFAULT NULL
             );
 
             CREATE TABLE IF NOT EXISTS rooms (
@@ -543,10 +610,14 @@ class SqliteStorage(DataStorage):
         viewer_key = secrets.token_hex(USER_KEY_LENGTH // 2)
 
         conn = self._get_conn()
+        row = conn.execute(
+            "SELECT COALESCE(MAX(room_number), 0) + 1 AS next_num FROM games"
+        ).fetchone()
+        room_number: int = int(row["next_num"])
         conn.execute(
-            "INSERT INTO games (game_id, black_key, white_key, viewer_key) "
-            "VALUES (?, ?, ?, ?)",
-            (game_id, black_key, white_key, viewer_key),
+            "INSERT INTO games (game_id, room_number, black_key, white_key, viewer_key) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (game_id, room_number, black_key, white_key, viewer_key),
         )
         for key in (black_key, white_key, viewer_key):
             conn.execute(
@@ -558,6 +629,7 @@ class SqliteStorage(DataStorage):
 
         return dict(
             game_id=game_id,
+            room_number=room_number,
             black_key=black_key,
             white_key=white_key,
             viewer_key=viewer_key,
@@ -597,9 +669,14 @@ class SqliteStorage(DataStorage):
         conn.close()
         return [json.loads(r["play_data"]) for r in rows]
 
-    def list_rooms(self) -> list[str]:
+    def list_rooms(self, active_only: bool = False) -> list[str]:
         conn = self._get_conn()
-        rows = conn.execute("SELECT game_id FROM games").fetchall()
+        if active_only:
+            rows = conn.execute(
+                "SELECT game_id FROM games WHERE completed_at IS NULL"
+            ).fetchall()
+        else:
+            rows = conn.execute("SELECT game_id FROM games").fetchall()
         conn.close()
         return [r["game_id"] for r in rows]
 
@@ -820,6 +897,49 @@ class SqliteStorage(DataStorage):
             result: dict = json.loads(row["board_snapshot"])
             return result
         return None
+
+    def active_room_count(self) -> int:
+        conn = self._get_conn()
+        row = conn.execute(
+            "SELECT COUNT(*) AS cnt FROM games WHERE completed_at IS NULL"
+        ).fetchone()
+        conn.close()
+        return int(row["cnt"])
+
+    def complete_room(self, game_id: str) -> None:
+        conn = self._get_conn()
+        conn.execute(
+            "UPDATE games SET completed_at = CURRENT_TIMESTAMP WHERE game_id = ?",
+            (game_id,),
+        )
+        conn.commit()
+        conn.close()
+
+    def cleanup_expired(self, days: int = 7) -> int:
+        conn = self._get_conn()
+        cutoff = (datetime.utcnow() - timedelta(days=days)).isoformat()
+        cur = conn.execute(
+            "SELECT game_id FROM games WHERE completed_at IS NOT NULL "
+            "AND completed_at < ?",
+            (cutoff,),
+        )
+        expired_ids = [r["game_id"] for r in cur.fetchall()]
+        for gid in expired_ids:
+            conn.execute("DELETE FROM rooms WHERE game_id = ?", (gid,))
+            conn.execute("DELETE FROM game_viewers WHERE game_id = ?", (gid,))
+            conn.execute("DELETE FROM game_plays WHERE game_id = ?", (gid,))
+            conn.execute("DELETE FROM games WHERE game_id = ?", (gid,))
+        conn.commit()
+        conn.close()
+        return len(expired_ids)
+
+    def get_room_number(self, game_id: str) -> int:
+        conn = self._get_conn()
+        row = conn.execute(
+            "SELECT room_number FROM games WHERE game_id = ?", (game_id,)
+        ).fetchone()
+        conn.close()
+        return int(row["room_number"]) if row and row["room_number"] else 0
 
 
 def test_redis_connection(

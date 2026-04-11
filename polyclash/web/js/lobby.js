@@ -153,14 +153,22 @@
                 return;
             }
             var data = await res.json();
-            renderRooms(data.rooms, data.max_rooms, data.count);
+            renderRooms(data.rooms, data.max_rooms, data.active_count);
+            renderUsers(data.users || []);
         } catch (err) {
             $('lobby-status').textContent = 'Error loading rooms.';
         }
     }
 
-    function renderRooms(rooms, maxRooms, count) {
-        var limitText = maxRooms > 0 ? count + ' / ' + maxRooms : count + ' active';
+    var STATUS_LABELS = {
+        waiting: '⏳ Waiting',
+        ready: '✅ Ready',
+        playing: '🎮 Playing',
+        completed: '🏁 Finished',
+    };
+
+    function renderRooms(rooms, maxRooms, activeCount) {
+        var limitText = maxRooms > 0 ? activeCount + ' / ' + maxRooms : activeCount + ' active';
         $('rooms-count').textContent = limitText;
 
         var list = $('rooms-list');
@@ -175,39 +183,43 @@
             var room = rooms[i];
             var card = document.createElement('div');
             card.className = 'room-card';
+            if (room.status === 'completed') {
+                card.classList.add('room-completed');
+            }
 
             var idSpan = document.createElement('span');
             idSpan.className = 'room-id';
-            idSpan.textContent = 'Room #' + (i + 1);
+            idSpan.textContent = '#' + room.room_number;
 
             var statusSpan = document.createElement('span');
             statusSpan.className = 'room-status';
-            var blackStatus = room.joined.black ? '⚫ joined' : '⚫ open';
-            var whiteStatus = room.joined.white ? '⚪ joined' : '⚪ open';
-            statusSpan.innerHTML = '<span>' + blackStatus + '</span><span>' + whiteStatus + '</span>';
+            var label = STATUS_LABELS[room.status] || room.status;
+            statusSpan.textContent = label;
 
             var actions = document.createElement('span');
             actions.className = 'room-actions';
 
-            if (!room.joined.black) {
-                var btnBlack = document.createElement('button');
-                btnBlack.textContent = 'Join Black';
-                btnBlack.setAttribute('data-game-id', room.game_id);
-                btnBlack.setAttribute('data-role', 'black');
-                btnBlack.addEventListener('click', joinRoomHandler);
-                actions.appendChild(btnBlack);
-            }
-            if (!room.joined.white) {
-                var btnWhite = document.createElement('button');
-                btnWhite.textContent = 'Join White';
-                btnWhite.setAttribute('data-game-id', room.game_id);
-                btnWhite.setAttribute('data-role', 'white');
-                btnWhite.addEventListener('click', joinRoomHandler);
-                actions.appendChild(btnWhite);
+            if (room.status !== 'completed') {
+                if (!room.joined.black) {
+                    var btnBlack = document.createElement('button');
+                    btnBlack.textContent = 'Join Black';
+                    btnBlack.setAttribute('data-game-id', room.game_id);
+                    btnBlack.setAttribute('data-role', 'black');
+                    btnBlack.addEventListener('click', joinRoomHandler);
+                    actions.appendChild(btnBlack);
+                }
+                if (!room.joined.white) {
+                    var btnWhite = document.createElement('button');
+                    btnWhite.textContent = 'Join White';
+                    btnWhite.setAttribute('data-game-id', room.game_id);
+                    btnWhite.setAttribute('data-role', 'white');
+                    btnWhite.addEventListener('click', joinRoomHandler);
+                    actions.appendChild(btnWhite);
+                }
             }
 
             var btnWatch = document.createElement('button');
-            btnWatch.textContent = 'Watch';
+            btnWatch.textContent = room.status === 'completed' ? 'Review' : 'Watch';
             btnWatch.setAttribute('data-game-id', room.game_id);
             btnWatch.setAttribute('data-role', 'viewer');
             btnWatch.addEventListener('click', joinRoomHandler);
@@ -217,6 +229,23 @@
             card.appendChild(statusSpan);
             card.appendChild(actions);
             list.appendChild(card);
+        }
+    }
+
+    function renderUsers(users) {
+        var list = $('users-list');
+        if (!list) return;
+        list.innerHTML = '';
+        if (users.length === 0) {
+            list.innerHTML = '<p style="color:var(--text-muted);">No registered users.</p>';
+            return;
+        }
+        for (var i = 0; i < users.length; i++) {
+            var user = users[i];
+            var row = document.createElement('div');
+            row.className = 'user-row';
+            row.textContent = user.username + (user.is_admin ? ' (admin)' : '');
+            list.appendChild(row);
         }
     }
 

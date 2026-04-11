@@ -560,14 +560,19 @@ def plays(game_id=None, role=None, token=None):
 @app.route("/sphgo/state", methods=["POST"])
 @api_call
 def state(game_id=None, role=None, token=None):
-    board = boards[game_id]
+    board = boards.get(game_id)
+    if board is None:
+        # Board not in memory — check if game is completed in storage
+        if storage.is_completed(game_id):
+            return {"completed": True}, 200
+        return {"message": "Game not found"}, 404
     result: dict = {
         "board": board.board.tolist(),
         "score": board.score(),
         "current_player": board.current_player,
         "counter": board.counter,
     }
-    if board.is_game_over():
+    if board.is_game_over() or storage.is_completed(game_id):
         final = board.final_score()
         winner = "black" if final[0] > final[1] else "white"
         result["game_over"] = {"winner": winner, "score": final}

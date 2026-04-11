@@ -195,16 +195,17 @@ class GameClient {
             await this._socketReady;
 
             // Check if game is already over — enter replay mode for viewers
-            var stateRes = await this._post('/sphgo/state', { token: this.token });
-            if (stateRes.ok) {
-                var stateData = await stateRes.json();
-                if (stateData.game_over && role === 'viewer') {
-                    // Fetch plays for replay
-                    var playsRes = await this._post('/sphgo/plays', { token: this.token });
-                    if (playsRes.ok) {
-                        var playsData = await playsRes.json();
-                        this.enterReplay(playsData.plays);
-                        return;
+            if (role === 'viewer') {
+                var stateRes = await this._post('/sphgo/state', { token: this.token });
+                if (stateRes.ok) {
+                    var stateData = await stateRes.json();
+                    if (stateData.game_over || stateData.completed) {
+                        var playsRes = await this._post('/sphgo/plays', { token: this.token });
+                        if (playsRes.ok) {
+                            var playsData = await playsRes.json();
+                            this.enterReplay(playsData.plays);
+                            return;
+                        }
                     }
                 }
             }

@@ -243,10 +243,10 @@ class TestServerCoverageGaps:
     # -- Lines 147-149: exception handler → 500 --
     def test_api_call_exception(self) -> None:
         game = _setup_game(self.client, self.storage)
-        # Don't add a board → accessing boards[game_id] raises KeyError
+        # Don't add a board → state returns 404 for non-completed game
         server.boards.pop(game["game_id"], None)
         resp = self.client.post("/sphgo/state", json={"token": game["black_token"]})
-        assert resp.status_code == 500
+        assert resp.status_code == 404
 
     # -- Lines 51-54: solo mode redirect --
     def test_solo_mode_redirect(self) -> None:

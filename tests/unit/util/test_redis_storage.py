@@ -3,9 +3,14 @@ from typing import Any, Dict
 from unittest.mock import MagicMock, patch
 
 import pytest
-import redis
 
-from polyclash.util.storage import RedisStorage, create_storage, test_redis_connection
+redis = pytest.importorskip("redis")
+
+from polyclash.util.storage import (  # noqa: E402
+    RedisStorage,
+    create_storage,
+    test_redis_connection,
+)
 
 
 class TestRedisStorageInit:

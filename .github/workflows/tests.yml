@@ -58,7 +58,7 @@ jobs:
     - name: Install dependencies
       run: |
         uv venv
-        uv pip install -e ".[dev]"
+        uv pip install -e ".[dev,redis]"
 
     - name: Run tests
       run: |
@@ -89,7 +89,7 @@ jobs:
     - name: Install dependencies
       run: |
         uv venv
-        uv pip install -e ".[dev]"
+        uv pip install -e ".[dev,redis]"
 
     - name: Run performance tests
       run: |

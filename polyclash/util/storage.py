@@ -704,9 +704,10 @@ class SqliteStorage(DataStorage):
         conn.close()
         result = [json.loads(r["play_data"]) for r in rows]
         if rows:
+            raw_sample = [r["play_data"] for r in rows[:5]]
             logger.info(
                 f"SqliteStorage.get_plays: {len(rows)} rows, "
-                f"first_raw={rows[0]['play_data']}, first_parsed={result[0]}"
+                f"raw_first5={raw_sample}, parsed_first5={result[:5]}"
             )
         return result
 

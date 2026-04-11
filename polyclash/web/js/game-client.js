@@ -651,13 +651,18 @@ class GameClient {
         this.replayStep = 0;
         this.gameOver = true;
 
-        // Build decoder: encoded tuple → point index
+        // Build decoder: encoded play → point index
         var decoder = {};
         var enc = this.renderer.boardData.encoder;
         for (var i = 0; i < enc.length; i++) {
-            decoder[enc[i].toString()] = i;
+            decoder[String(enc[i])] = i;
         }
         this._replayDecoder = decoder;
+        console.log('Replay decoder sample:', String(enc[0]), '->', decoder[String(enc[0])]);
+        if (this.replayPlays.length > 0) {
+            var samplePlay = this.replayPlays[0];
+            console.log('First play:', samplePlay, 'key:', String(samplePlay), 'decoded:', decoder[String(samplePlay)]);
+        }
 
         // Show replay controls
         var controls = document.getElementById('replay-controls');
@@ -683,8 +688,11 @@ class GameClient {
 
         for (var i = 0; i < step; i++) {
             var encoded = this.replayPlays[i];
-            var key = encoded.toString();
+            var key = String(encoded);
             var point = this._replayDecoder[key];
+            if (i < 3) {
+                console.log('Replay step', i, ': encoded=', encoded, 'key=', key, 'point=', point);
+            }
             if (point === undefined) {
                 // pass move
                 currentPlayer = -currentPlayer;

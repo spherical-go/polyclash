@@ -115,11 +115,11 @@ Deploy to Railway, Render, or Fly.io. The server runs in team mode. State resets
 
 ### Railway
 
-Deploy from the Railway dashboard: **New Project → Deploy from GitHub repo → `spherical-go/polyclash`**.
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.com/deploy/_6HDwH)
 
 After deployment:
-1. Optionally set `POLYCLASH_ADMIN_PASS` in Variables (otherwise auto-generated)
-2. Check deployment logs for admin credentials and invite codes
+1. Check deployment logs for admin credentials (`admin` / auto-generated password) and invite codes
+2. Optionally set `POLYCLASH_ADMIN_PASS` in Variables to use a fixed password
 
 ### Render
 

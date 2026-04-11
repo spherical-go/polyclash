@@ -1,6 +1,5 @@
 import os
 import secrets
-from random import shuffle
 from threading import Thread
 from typing import Any
 
@@ -318,7 +317,8 @@ def genmove(game_id=None, role=None, token=None):
             logger.warning(f"HRM genmove failed: {e}, falling back to heuristic")
 
     if point is None:
-        point = board.genmove(player_color)
+        ranked = board.rank_moves(player_color)
+        point = ranked[0] if ranked else None
 
     if point is None:
         board.consecutive_passes += 1
@@ -337,12 +337,10 @@ def genmove(game_id=None, role=None, token=None):
     try:
         board.play(point, player_color)
     except ValueError:
-        # AI's chosen move is illegal; try remaining legal moves
+        # AI's chosen move is illegal; try next-best moves from ranking
         logger.warning(f"AI move {point} illegal, trying alternatives")
         point = None
-        candidates = board.get_empties(player_color)
-        shuffle(candidates)
-        for candidate in candidates:
+        for candidate in ranked[1:]:
             try:
                 board.play(candidate, player_color)
                 point = candidate

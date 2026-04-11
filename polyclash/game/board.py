@@ -294,6 +294,13 @@ class Board:
         self.simulator.redirect(self)
         return self.simulator.genmove(player)
 
+    def rank_moves(self, player: int) -> list[int]:
+        """Return all candidate moves sorted by score (best first)."""
+        if self.simulator is None:
+            self.simulator = SimulatedBoard()
+        self.simulator.redirect(self)
+        return self.simulator.rank_moves(player)
+
 
 class SimulatedBoard(Board):
     def __init__(self):
@@ -311,24 +318,23 @@ class SimulatedBoard(Board):
         self.history_hashes = set()  # don't enforce superko in simulation
 
     def genmove(self, player):
-        best_score = -math.inf
-        best_potential = math.inf
-        best_move = None
+        ranked = self.rank_moves(player)
+        return ranked[0] if ranked else None
+
+    def rank_moves(self, player: int) -> list[int]:
+        """Return all candidate moves sorted by heuristic score (best first)."""
+        scored: list[tuple[float, float, int]] = []
 
         for point in self.get_empties(player):
             simulated_score, gain = self.simulate_score(0, point, player)
             simulated_score = simulated_score + 2 * gain
-            if simulated_score > best_score:
-                best_score = simulated_score
-                best_potential = calculate_potential(self.board, point, self.counter)
-                best_move = point
-            elif simulated_score == best_score:
-                potential = calculate_potential(self.board, point, self.counter)
-                if potential < best_potential:
-                    best_potential = potential
-                    best_move = point
+            potential = calculate_potential(self.board, point, self.counter)
+            # Sort key: higher score first, then lower potential
+            scored.append((simulated_score, potential, point))
 
-        return best_move
+        # Sort by score descending, then potential ascending
+        scored.sort(key=lambda x: (-x[0], x[1]))
+        return [point for _, _, point in scored]
 
     def simulate_score(self, depth, point, player):
         if depth == 1:

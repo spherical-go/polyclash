@@ -342,7 +342,7 @@ class TestServerCoverageGaps:
         original_hrm = server._hrm_player
         server._hrm_player = None
         try:
-            with patch.object(board, "genmove", return_value=None):
+            with patch.object(board, "rank_moves", return_value=[]):
                 resp = self.client.post(
                     "/sphgo/genmove", json={"token": game["black_token"]}
                 )
@@ -352,7 +352,7 @@ class TestServerCoverageGaps:
         finally:
             server._hrm_player = original_hrm
 
-    # -- Lines 322-325: genmove AI move illegal → pass --
+    # -- genmove AI move illegal, fallback exhausted → pass --
     def test_genmove_illegal_move(self) -> None:
         game = _setup_game(self.client, self.storage)
         board = Board()
@@ -362,7 +362,7 @@ class TestServerCoverageGaps:
         original_hrm = server._hrm_player
         server._hrm_player = None
         try:
-            with patch.object(board, "genmove", return_value=5):
+            with patch.object(board, "rank_moves", return_value=[5]):
                 with patch.object(board, "play", side_effect=ValueError("illegal")):
                     resp = self.client.post(
                         "/sphgo/genmove", json={"token": game["black_token"]}
@@ -372,7 +372,7 @@ class TestServerCoverageGaps:
         finally:
             server._hrm_player = original_hrm
 
-    # -- Lines 311-312: HRM genmove exception fallback --
+    # -- HRM genmove exception fallback --
     def test_genmove_hrm_exception_fallback(self) -> None:
         game = _setup_game(self.client, self.storage)
         board = Board()
@@ -384,8 +384,7 @@ class TestServerCoverageGaps:
         original_hrm = server._hrm_player
         server._hrm_player = mock_hrm
         try:
-            # board.genmove should be called as fallback; mock it to return None
-            with patch.object(board, "genmove", return_value=None):
+            with patch.object(board, "rank_moves", return_value=[]):
                 resp = self.client.post(
                     "/sphgo/genmove", json={"token": game["black_token"]}
                 )
@@ -394,7 +393,7 @@ class TestServerCoverageGaps:
         finally:
             server._hrm_player = original_hrm
 
-    # -- Lines 340-342: genmove game_over after AI move --
+    # -- genmove game_over after AI move --
     def test_genmove_game_over(self) -> None:
         game = _setup_game(self.client, self.storage)
         board = Board()
@@ -404,7 +403,7 @@ class TestServerCoverageGaps:
         original_hrm = server._hrm_player
         server._hrm_player = None
         try:
-            with patch.object(board, "genmove", return_value=0):
+            with patch.object(board, "rank_moves", return_value=[0]):
                 with patch.object(board, "is_game_over", return_value=True):
                     resp = self.client.post(
                         "/sphgo/genmove", json={"token": game["black_token"]}

@@ -16,34 +16,29 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Redis
-      uses: shogo82148/actions-setup-redis@v1
-      with:
-        version: 'latest'
-
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
 
+    - name: Install uv
+      run: pip install uv
+
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
-        pip install -e .
+        uv venv
+        uv pip install -e ".[dev]"
 
-    - name: Run unit tests
+    - name: Run linters
       run: |
-        pytest tests/unit --cov=polyclash --cov-report=xml
+        .venv/bin/ruff check polyclash
+        .venv/bin/black --check polyclash tests
+        .venv/bin/isort --check --profile black polyclash tests
+        .venv/bin/mypy polyclash
 
-    - name: Run integration tests
+    - name: Run tests
       run: |
-        CI=true pytest tests/integration
-
-    - name: Run functional tests
-      run: |
-        pytest tests/functional
+        .venv/bin/pytest tests/ --cov=polyclash --cov-report=xml -q
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -58,23 +53,19 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Set up Redis
-      uses: shogo82148/actions-setup-redis@v1
-      with:
-        version: 'latest'
-
     - name: Set up Python 3.13
       uses: actions/setup-python@v4
       with:
         python-version: '3.13'
 
+    - name: Install uv
+      run: pip install uv
+
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install -r requirements-dev.txt
-        pip install -e .
+        uv venv
+        uv pip install -e ".[dev]"
 
     - name: Run performance tests
       run: |
-        pytest tests/performance
+        .venv/bin/pytest tests/performance

@@ -1020,7 +1020,7 @@ def test_redis_connection(
         logger.info("Successfully connected to Redis. Using Redis as data storage.")
         return True
     except redis.ConnectionError:
-        logger.info("Failed to connect to Redis. Using memory dict as data storage.")
+        logger.info("Failed to connect to Redis. Using SQLite as data storage.")
         return False
 
 

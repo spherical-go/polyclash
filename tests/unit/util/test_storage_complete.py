@@ -494,5 +494,5 @@ class TestRedisStorageMock:
 
                 assert result is False
                 mock_logger.assert_called_with(
-                    "Failed to connect to Redis. Using memory dict as data storage."
+                    "Failed to connect to Redis. Using SQLite as data storage."
                 )

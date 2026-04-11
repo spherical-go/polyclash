@@ -1,0 +1,25 @@
+app = "polyclash"
+primary_region = "nrt"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "3302"
+  POLYCLASH_AUTH_DB = "/data/polyclash_users.db"
+  POLYCLASH_MAX_ROOMS = "8"
+  POLYCLASH_INVITES = "5"
+
+[mounts]
+  source = "polyclash_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 3302
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

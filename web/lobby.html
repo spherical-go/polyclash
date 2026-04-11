@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PolyClash — Lobby</title>
+  <link rel="stylesheet" href="/web/css/lobby.css">
+</head>
+<body>
+  <div id="lobby-app">
+    <h1 id="lobby-title">PolyClash 星逐</h1>
+
+    <!-- Auth panel (login / register) -->
+    <div id="auth-panel">
+      <div id="login-form" class="auth-form">
+        <h2 id="login-heading">Login</h2>
+        <input type="text" id="login-username" placeholder="Username" autocomplete="username">
+        <input type="password" id="login-password" placeholder="Password" autocomplete="current-password">
+        <button id="btn-login">Login</button>
+        <p class="toggle-link">
+          <span id="show-register">No account? Register →</span>
+        </p>
+        <p id="login-error" class="error-msg"></p>
+      </div>
+
+      <div id="register-form" class="auth-form hidden">
+        <h2 id="register-heading">Register</h2>
+        <input type="text" id="reg-username" placeholder="Username" autocomplete="username">
+        <input type="password" id="reg-password" placeholder="Password" autocomplete="new-password">
+        <input type="text" id="reg-invite" placeholder="Invite Code">
+        <button id="btn-register">Register</button>
+        <p class="toggle-link">
+          <span id="show-login">Have an account? Login →</span>
+        </p>
+        <p id="register-error" class="error-msg"></p>
+      </div>
+    </div>
+
+    <!-- Lobby panel (after login) -->
+    <div id="lobby-panel" class="hidden">
+      <div id="user-bar">
+        <span id="user-greeting">Welcome</span>
+        <button id="btn-logout">Logout</button>
+      </div>
+
+      <div id="rooms-header">
+        <h2 id="rooms-title">Game Rooms</h2>
+        <span id="rooms-count"></span>
+      </div>
+
+      <div id="rooms-list"></div>
+
+      <div id="lobby-actions">
+        <button id="btn-create-game">Create Game</button>
+        <button id="btn-refresh">Refresh</button>
+      </div>
+
+      <!-- Admin panel -->
+      <div id="admin-panel" class="hidden">
+        <h3>Admin</h3>
+        <div class="admin-row">
+          <button id="btn-gen-invite">Generate Invite Code</button>
+          <span id="invite-result"></span>
+        </div>
+        <div id="invite-list"></div>
+      </div>
+    </div>
+
+    <p id="lobby-status"></p>
+  </div>
+
+  <script src="/web/js/lobby.js"></script>
+</body>
+</html>

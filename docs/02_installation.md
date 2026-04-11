@@ -7,7 +7,7 @@ This guide will walk you through the process of installing and setting up PolyCl
 Before installing PolyClash, ensure you have the following prerequisites:
 
 - Python 3.10 or higher
-- pip (Python package installer)
+- pip or [uv](https://docs.astral.sh/uv/) (Python package installer)
 - Git (optional, for development)
 
 ## Installation Methods
@@ -32,66 +32,90 @@ For development or to get the latest features, you can install PolyClash from so
    cd polyclash
    ```
 
-2. Install the package in development mode:
+2. Create a virtual environment and install (using `uv`):
    ```bash
-   pip install -e .
+   uv venv && source .venv/bin/activate
+   uv pip install -e .
    ```
 
 3. Install development dependencies (optional):
    ```bash
-   pip install -r requirements-dev.txt
+   uv pip install -e ".[dev]"
    ```
 
 ## Dependencies
 
 PolyClash depends on the following Python packages, which will be automatically installed:
 
-- numpy (1.26.4)
-- scipy (1.13.0)
-- PyQt5 (5.15.10)
-- pyvista (0.43.7)
-- pyvistaqt (0.11.0)
-- requests (2.32.0)
-- python-socketio[client] (5.11.2)
-- flask (3.0.3)
-- flask-socketio (5.3.6)
-- loguru (0.7.2)
-- redis (5.0.4) (optional, for production server)
+- numpy (2.3.3)
+- scipy (1.16.2)
+- requests (2.33.0)
+- python-socketio[client] (5.13.0)
+- flask (>=3.0,<3.1)
+- flask-socketio (5.5.1)
+- loguru (0.7.3)
+- redis (6.4.0) (optional, for production server)
 
 ## Running PolyClash
 
-### Running the Client
+PolyClash provides a single `polyclash` command with several subcommands:
 
-After installation, you can start the PolyClash client by running:
+### Solo Mode (vs AI)
 
-```bash
-polyclash-client
-```
-
-This will launch the graphical user interface where you can play the game.
-
-### Running the Server (Optional)
-
-If you want to play over a network, you can start the PolyClash server:
+Play against the AI locally. This starts a local server and opens your browser:
 
 ```bash
-polyclash-server
+polyclash solo
+polyclash solo --side white    # play as white
 ```
 
-The server will start on port 3302 by default.
+### Family Mode (LAN)
+
+Start a game on your local network so two players can play from different devices:
+
+```bash
+polyclash family
+polyclash family --white ai    # white is controlled by AI
+```
+
+The command prints URLs for both players and a viewer link.
+
+### Team Mode (Self-Hosted Server)
+
+Run a multi-room server with user accounts, invite codes, and a lobby:
+
+```bash
+polyclash team
+polyclash team --rooms 4 --invites 10
+```
+
+Options include `--admin-user`, `--admin-pass`, `--db` (SQLite path), and `--rooms` (max simultaneous games).
+
+### Serve Mode (Deployment)
+
+Start a server for production or network deployment:
+
+```bash
+polyclash serve
+polyclash serve --host 0.0.0.0 --port 3302
+```
+
+Use `--no-auth` to disable token authentication, or `--token <value>` to set a specific server token.
 
 ## Configuration
 
-### Client Configuration
-
-The client stores its configuration in the user's home directory:
-
-- Windows: `%USERPROFILE%\.polyclash\`
-- macOS/Linux: `~/.polyclash/`
-
 ### Server Configuration
 
-For production deployment, see the [Deployment Guide](08_deployment.md).
+The server can be configured via command-line arguments and environment variables:
+
+- `PORT`: Default port (default: 3302)
+- `POLYCLASH_SERVER_TOKEN`: Server authentication token
+- `POLYCLASH_MAX_ROOMS`: Maximum simultaneous games for team mode
+- `POLYCLASH_ADMIN_USER` / `POLYCLASH_ADMIN_PASS`: Admin credentials for team mode
+- `POLYCLASH_AUTH_DB`: Path to SQLite database for team mode user accounts
+- `POLYCLASH_INVITES`: Number of initial invite codes for team mode
+
+For production deployment, see the [Deployment Guide](09_deployment.md).
 
 ## Troubleshooting
 
@@ -103,11 +127,14 @@ For production deployment, see the [Deployment Guide](08_deployment.md).
    pip install --force-reinstall polyclash
    ```
 
-2. **PyQt5 Installation Issues**:
-   On some systems, PyQt5 might require additional system packages. Refer to the PyQt5 documentation for your specific operating system.
+2. **Port Already in Use**:
+   If port 3302 is taken, specify a different port:
+   ```bash
+   polyclash solo --port 3303
+   ```
 
-3. **3D Visualization Issues**:
-   If you encounter problems with the 3D visualization, ensure your system has proper OpenGL support and updated graphics drivers.
+3. **Browser Not Opening**:
+   If the browser does not open automatically, navigate to the URL printed in the terminal.
 
 ### Getting Help
 

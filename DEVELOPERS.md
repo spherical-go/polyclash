@@ -61,9 +61,8 @@ pytest -q
   pytest -q
   ```
 - Coverage target: total coverage ≥ 80%. New features/changes must include tests and must not reduce coverage materially.
-- Qt/PyVista tests:
-  - Avoid real rendering; use mocks or CI headless env: `QT_QPA_PLATFORM=offscreen`, `PYVISTA_OFF_SCREEN=true`.
-  - Prefer verifying UI logic via signals/slots/state updates over real 3D rendering.
+- Server/network tests: use Flask/Socket.IO test clients and mocks; avoid real network dependencies.
+- Web client: the Three.js client (`web/js/`) has no automated tests; verify manually in the browser.
 
 ## Git/PR Workflow
 
@@ -86,7 +85,7 @@ pytest -q
 
 - Workflow: `.github/workflows/ci.yml`
   - Uses uv to install deps, runs pre-commit (ruff/black/isort/mypy) and pytest
-  - Configures headless Qt/PyVista to prevent crashes in CI
+  - Runs on Python 3.10+
 - In GitHub Settings, enable Branch protection / Rulesets:
   - Require status checks to pass before merging (select the CI checks)
   - Require a pull request before merging (recommend ≥ 1 reviewer)
@@ -97,11 +96,12 @@ pytest -q
 - Game logic (`polyclash/game`)
   - `board.py` is core and non-trivial; future work plans to split into smaller modules (state/rules/scoring) per roadmap 1.2.
   - Any rule change requires comprehensive unit/integration tests.
-- GUI (`polyclash/gui`)
-  - Avoid real rendering in tests; rely on signals/slots and state assertions.
-  - Large UI logic should be abstracted/isolated to improve testability.
-- Network/Server (`polyclash/server.py`, `util/api.py`, `workers/network.py`)
-  - Maintain robust error handling and consistent error messages.
+- Web client (`web/js/`)
+  - Vanilla JS, no build step. Three.js for 3D rendering.
+  - i18n in `i18n.js` — all user-visible strings must be translatable.
+- Server (`polyclash/server.py`, `util/auth.py`, `util/storage.py`)
+  - `api_call` decorator handles auth; maintain consistent error semantics.
+  - Board persistence: `_persist_board()` after every state change.
   - Avoid real network calls in tests; use Flask/Socket.IO test clients or mocks.
 - Scripts (`scripts/*.py`)
   - Provide type annotations and minimal verification.

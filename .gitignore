@@ -160,3 +160,6 @@ cython_debug/
 .idea/
 
 .py/
+
+# PolyClash user database (team mode)
+polyclash_users.db

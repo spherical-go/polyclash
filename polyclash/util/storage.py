@@ -2,9 +2,14 @@ import json
 import secrets
 from abc import ABC, abstractmethod
 
-import redis
-
 from polyclash.util.logging import logger
+
+try:
+    import redis
+
+    _HAS_REDIS = True
+except ImportError:
+    _HAS_REDIS = False
 
 USER_KEY_LENGTH = 16
 USER_TOKEN_LENGTH = 48
@@ -94,6 +99,14 @@ class DataStorage(ABC):
 
     @abstractmethod
     def add_play(self, game_id, play):
+        pass
+
+    @abstractmethod
+    def save_board(self, game_id: str, board_dict: dict) -> None:
+        pass
+
+    @abstractmethod
+    def load_board(self, game_id: str) -> dict | None:
         pass
 
 
@@ -198,6 +211,7 @@ class MemoryStorage(DataStorage):
         token = secrets.token_hex(USER_TOKEN_LENGTH // 2)
         self.rooms[token] = game["id"]
         game["viewers"].append(token)
+        return token
 
     def get_role(self, key_or_token):
         if key_or_token in self.rooms:
@@ -249,6 +263,13 @@ class MemoryStorage(DataStorage):
 
     def add_play(self, game_id, play):
         return self.games[game_id]["plays"].append(play)
+
+    def save_board(self, game_id: str, board_dict: dict) -> None:
+        self.games[game_id]["board_snapshot"] = board_dict
+
+    def load_board(self, game_id: str) -> dict | None:
+        result: dict | None = self.games[game_id].get("board_snapshot")
+        return result
 
 
 class RedisStorage(DataStorage):
@@ -345,6 +366,8 @@ class RedisStorage(DataStorage):
             self.redis.delete(f"games:{game_id}:viewer")
         if self.redis.exists(f"games:{game_id}:plays"):
             self.redis.delete(f"games:{game_id}:plays")
+        if self.redis.exists(f"games:{game_id}:board"):
+            self.redis.delete(f"games:{game_id}:board")
 
     def exists(self, game_id):
         return game_id in list(
@@ -390,6 +413,7 @@ class RedisStorage(DataStorage):
         self.redis.hset("rooms", token, game_id)
         self.redis.rpush(f"games:{game_id}:viewer", token)
         self.redis.expire(f"games:{game_id}:viewer", 3600 * 24 * 3)
+        return token
 
     def get_role(self, key_or_token):
         game_id = self.get_game_id(key_or_token)
@@ -431,6 +455,18 @@ class RedisStorage(DataStorage):
         self.redis.rpush(f"games:{game_id}:plays", json.dumps(play))
         self.redis.expire(f"games:{game_id}:plays", 3600 * 24 * 3)
 
+    def save_board(self, game_id: str, board_dict: dict) -> None:
+        self.redis.set(
+            f"games:{game_id}:board", json.dumps(board_dict), ex=3600 * 24 * 3
+        )
+
+    def load_board(self, game_id: str) -> dict | None:
+        raw = self.redis.get(f"games:{game_id}:board")
+        if raw:
+            result: dict = json.loads(raw.decode("utf-8"))
+            return result
+        return None
+
     def reaper(self):
         for game_id in self.list_rooms():
             # if game_id is not represented in the key of games:{game_id}
@@ -439,7 +475,12 @@ class RedisStorage(DataStorage):
                 self.close_room(game_id)
 
 
-def test_redis_connection(host="localhost", port=6379, db=0):
+def test_redis_connection(
+    host: str = "localhost", port: int = 6379, db: int = 0
+) -> bool:
+    if not _HAS_REDIS:
+        logger.info("redis package not installed. Using memory storage.")
+        return False
     try:
         redis.StrictRedis(host=host, port=port, db=db).ping()
         logger.info("Successfully connected to Redis. Using Redis as data storage.")

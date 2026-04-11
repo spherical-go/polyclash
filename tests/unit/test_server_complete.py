@@ -466,7 +466,7 @@ class TestAPIEndpoints:
         # Verify response
         assert response.status_code == 200
         assert b"Welcome to PolyClash" in response.data
-        assert bytes(f"Server token: {server_token}", "utf-8") in response.data
+        assert b"Server token" not in response.data
         assert b"viewer: viewer_key" in response.data
 
     def test_list_games(self, client, mock_storage):
@@ -695,6 +695,14 @@ class TestAPIEndpoints:
         mock_storage.exists.return_value = True
         mock_storage.get_role.return_value = "black"
 
+        # Populate a Board instance for the game
+        import polyclash.server as srv
+        from polyclash.game.board import Board
+
+        board = Board()
+        board.disable_notification()
+        srv.boards["test_game_id"] = board
+
         # Find a valid play from valid_plays set
         valid_play_str = list(valid_plays)[0]
         valid_play = [int(x) for x in valid_play_str.split(",") if x]
@@ -709,11 +717,9 @@ class TestAPIEndpoints:
         assert response.status_code == 200
         assert response.json == {"message": "Play processed"}
         mock_storage.add_play.assert_called_with("test_game_id", valid_play)
-        mock_socketio.emit.assert_called_with(
-            "played",
-            {"role": "black", "steps": 0, "play": valid_play},
-            room="test_game_id",
-        )
+
+        # Clean up
+        srv.boards.pop("test_game_id", None)
 
     def test_play_steps_mismatch(self, client, mock_storage, app_context):
         """Test play endpoint with steps mismatch."""

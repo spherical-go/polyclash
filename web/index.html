@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PolyClash - Spherical Go</title>
+  <link rel="stylesheet" href="/web/css/style.css">
+</head>
+<body>
+  <div id="app">
+    <canvas id="board-canvas"></canvas>
+
+    <div id="ui-overlay">
+      <div id="score-panel">
+        <div class="score-row">
+          <span class="stone-dot black-dot"></span>
+          <span id="score-black">Black: 0%</span>
+        </div>
+        <div class="score-row">
+          <span class="stone-dot white-dot"></span>
+          <span id="score-white">White: 0%</span>
+        </div>
+        <div class="score-row">
+          <span class="stone-dot unclaimed-dot"></span>
+          <span id="score-unclaimed">Unclaimed: 100%</span>
+        </div>
+      </div>
+
+      <div id="turn-indicator">
+        <span class="turn-dot" id="turn-dot"></span>
+        <span id="turn-text">Black's turn</span>
+        <span id="move-counter">Move: 0</span>
+      </div>
+
+      <div id="game-result" class="hidden"></div>
+
+    </div>
+
+    <div id="view-map">
+      <div class="view-map-grid" id="view-map-grid">
+        <!-- populated by main.js with i18n names -->
+      </div>
+    </div>
+
+    <div id="status-bar">Welcome to PolyClash</div>
+
+    <div id="game-controls">
+      <button id="btn-pass">Pass</button>
+      <button id="btn-resign">Resign</button>
+      <button id="btn-save-record">Save Record</button>
+      <button id="btn-reset">Reset</button>
+    </div>
+
+    <div id="lang-selector">
+      <select id="lang-select">
+        <option value="en">English</option>
+        <option value="zh-Hans">简体中文</option>
+        <option value="zh-Hant">繁體中文</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+      </select>
+    </div>
+  </div>
+
+  <script src="/web/vendor/three.min.js"></script>
+  <script src="/web/vendor/socket.io.min.js"></script>
+  <script src="/web/vendor/OrbitControls.js"></script>
+  <script src="/web/js/i18n.js"></script>
+  <script src="/web/js/light-rules.js"></script>
+  <script src="/web/js/board-renderer.js"></script>
+  <script src="/web/js/game-client.js"></script>
+  <script>
+    // Detect mode from URL parameters and set body attribute for CSS
+    (function () {
+      var params = new URLSearchParams(window.location.search);
+      var token = params.get('token');
+      var key = params.get('key');
+      if (token) {
+        window._serverToken = token;
+        document.body.setAttribute('data-mode', 'solo');
+      } else if (key) {
+        document.body.setAttribute('data-mode', 'family');
+      }
+    })();
+  </script>
+  <script src="/web/js/main.js"></script>
+</body>
+</html>

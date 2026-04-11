@@ -1,435 +1,320 @@
 # Deployment Guide
 
-This document provides instructions for deploying PolyClash in a production environment, including server setup, configuration, and maintenance.
-
-## Overview
-
-PolyClash can be deployed in various environments, from a simple local setup to a full production server accessible over the internet. This guide focuses on setting up a production server for hosting network games.
+PolyClash supports five deployment modes, from solo play to public internet hosting. Choose the mode that fits your needs.
 
 ## Prerequisites
 
-Before deploying PolyClash, ensure you have:
-
-1. A server with Python 3.10 or higher installed
-2. A domain name (optional, but recommended for internet-facing servers)
-3. Basic knowledge of server administration and networking
+- Python 3.10+ (for native installs)
+- Docker and Docker Compose (for containerized deploys)
 
 ## Server Requirements
 
-The server requirements depend on the expected number of concurrent games:
+| Scenario | CPU | RAM | Disk |
+|---|---|---|---|
+| Solo / Home LAN | 1 core | 512 MB | 100 MB |
+| Public / multiple games | 2+ cores | 1 GB+ | 200 MB |
 
-- **CPU**: 1+ cores (2+ recommended for multiple concurrent games)
-- **RAM**: 512MB+ (1GB+ recommended for multiple concurrent games)
-- **Disk**: 100MB+ for the application and logs
-- **Network**: Stable internet connection with open ports for HTTP/WebSocket traffic
+---
 
-## Installation
+## Mode 1: Solo Play
 
-### Install PolyClash
-
-Install PolyClash on the server:
+Play locally against AI or explore the board — no server needed.
 
 ```bash
 pip install polyclash
+polyclash solo
 ```
 
-### Install Production Dependencies
+---
 
-Install additional dependencies for production:
+## Mode 2: Home / LAN (No Auth)
+
+Run a server on your local network so friends can connect. No authentication, no Redis — uses in-memory storage.
+
+### Native
 
 ```bash
-pip install uwsgi gevent redis
+pip install polyclash
+polyclash serve --no-auth
 ```
 
-## Configuration
-
-### Server Configuration
-
-Create a configuration directory:
+The server listens on `http://localhost:3302` by default. To allow LAN connections:
 
 ```bash
-mkdir -p ~/.polyclash
+polyclash serve --no-auth --host 0.0.0.0 --port 3302
 ```
 
-Create a configuration file (`~/.polyclash/config.ini`):
-
-```ini
-[server]
-host = 0.0.0.0
-port = 7763
-debug = false
-
-[storage]
-type = redis
-host = localhost
-port = 6379
-db = 0
-
-[logging]
-level = INFO
-file = ~/.polyclash/server.log
-```
-
-### Redis Setup
-
-If you're using Redis for storage (recommended for production):
-
-1. Install Redis:
-   ```bash
-   # Ubuntu/Debian
-   sudo apt-get install redis-server
-
-   # CentOS/RHEL
-   sudo yum install redis
-
-   # macOS
-   brew install redis
-   ```
-
-2. Start Redis:
-   ```bash
-   # Ubuntu/Debian/CentOS/RHEL
-   sudo systemctl start redis
-
-   # macOS
-   brew services start redis
-   ```
-
-3. Configure Redis to start on boot:
-   ```bash
-   # Ubuntu/Debian/CentOS/RHEL
-   sudo systemctl enable redis
-
-   # macOS
-   brew services start redis
-   ```
-
-## Running the Server
-
-### Development Mode
-
-For testing, you can run the server directly:
+### Docker
 
 ```bash
-polyclash-server
+docker compose -f docker-compose.simple.yml up -d
 ```
 
-### Production Mode with uWSGI
+Players connect to `http://<your-lan-ip>:3302`.
 
-For production, use uWSGI to run the server:
+---
+
+## Mode 3: Team Server (Recommended for Communities)
+
+A self-hosted game server with user accounts, invite-code registration, a web lobby, and a configurable room limit. Like running your own Minecraft server.
+
+### Quick Start — Native
 
 ```bash
-uwsgi --http :7763 --gevent 100 --http-websockets --master --wsgi polyclash.server:app --logto ~/.polyclash/uwsgi.log
+pip install polyclash
+polyclash team --rooms 8 --admin-pass YOUR_PASSWORD
 ```
 
-Create a uWSGI configuration file (`~/.polyclash/uwsgi.ini`):
+The server will:
+1. Create an admin account (`admin` / your password)
+2. Generate 5 invite codes (printed to console)
+3. Start the web lobby at `http://<your-ip>:3302/`
 
-```ini
-[uwsgi]
-http = :7763
-gevent = 100
-http-websockets = true
-master = true
-wsgi-file = /path/to/polyclash/server.py
-callable = app
-processes = 1
-threads = 2
-logto = ~/.polyclash/uwsgi.log
-```
+Share the invite codes with your friends. They register at the lobby, then create or join games.
 
-Then run:
+### Quick Start — Docker Compose
 
 ```bash
-uwsgi --ini ~/.polyclash/uwsgi.ini
+docker compose up -d
 ```
 
-### Systemd Service
-
-For systems using systemd, create a service file (`/etc/systemd/system/polyclash.service`):
-
-```ini
-[Unit]
-Description=PolyClash Server
-After=network.target
-
-[Service]
-User=your_username
-Group=your_group
-WorkingDirectory=/home/your_username
-ExecStart=/usr/local/bin/uwsgi --ini /home/your_username/.polyclash/uwsgi.ini
-Restart=always
-RestartSec=5
-Environment=PYTHONPATH=/home/your_username
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Enable and start the service:
+On first run, check the logs for the admin password and invite codes:
 
 ```bash
-sudo systemctl enable polyclash
-sudo systemctl start polyclash
+docker compose logs polyclash | head -20
 ```
 
-## Nginx Configuration
+### Configuration
 
-For production deployments, it's recommended to use Nginx as a reverse proxy in front of the uWSGI server:
+All settings can be set via CLI flags or environment variables:
 
-1. Install Nginx:
-   ```bash
-   # Ubuntu/Debian
-   sudo apt-get install nginx
+| Flag | Env Var | Default | Description |
+|------|---------|---------|-------------|
+| `--rooms` | `POLYCLASH_MAX_ROOMS` | `8` | Max simultaneous games |
+| `--admin-user` | `POLYCLASH_ADMIN_USER` | `admin` | Admin username |
+| `--admin-pass` | `POLYCLASH_ADMIN_PASS` | auto-generated | Admin password |
+| `--invites` | `POLYCLASH_INVITES` | `5` | Invite codes to generate on startup |
+| `--db` | `POLYCLASH_AUTH_DB` | `polyclash_users.db` | SQLite database path |
+| `--port` | `PORT` | `3302` | Server port |
 
-   # CentOS/RHEL
-   sudo yum install nginx
+### Managing Users
 
-   # macOS
-   brew install nginx
-   ```
+Log in as admin in the web lobby to:
+- Generate new invite codes
+- View all users and invite code usage
 
-2. Create a Nginx configuration file (`/etc/nginx/sites-available/polyclash`):
-   ```nginx
-   server {
-       listen 80;
-       server_name polyclash.example.com;
+### Board Persistence
 
-       location /sphgo {
-           proxy_pass http://127.0.0.1:7763;
-           proxy_set_header Host $host;
-           proxy_set_header X-Real-IP $remote_addr;
-           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-           proxy_set_header X-Forwarded-Proto $scheme;
-       }
+Game state is automatically persisted to storage. Games survive server restarts — boards are restored from snapshots when the server starts.
 
-       location /socket.io {
-           proxy_redirect off;
-           proxy_buffering off;
+---
 
-           proxy_set_header Host $host;
-           proxy_set_header X-Real-IP $remote_addr;
-           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+## Mode 4: One-Click Cloud Deployment
 
-           proxy_http_version 1.1;
-           proxy_set_header Upgrade $http_upgrade;
-           proxy_set_header Connection "Upgrade";
+Deploy to Railway, Render, or Fly.io with a single click. The server runs in team mode with persistent storage.
 
-           proxy_pass http://127.0.0.1:7763/socket.io;
-       }
-   }
-   ```
+### Railway
 
-3. Enable the site:
-   ```bash
-   sudo ln -s /etc/nginx/sites-available/polyclash /etc/nginx/sites-enabled/
-   sudo nginx -t
-   sudo systemctl restart nginx
-   ```
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/polyclash?referralCode=polyclash)
 
-## SSL/TLS Configuration
+After deployment:
+1. Go to the Railway dashboard → Variables
+2. Set `POLYCLASH_ADMIN_PASS` to your chosen password
+3. Check deployment logs for the initial invite codes
+4. Add a volume mounted at `/data` for persistent user data
 
-For secure communication, configure SSL/TLS with Let's Encrypt:
+### Render
 
-1. Install Certbot:
-   ```bash
-   # Ubuntu/Debian
-   sudo apt-get install certbot python3-certbot-nginx
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/spherical-go/polyclash)
 
-   # CentOS/RHEL
-   sudo yum install certbot python3-certbot-nginx
-   ```
+Render auto-configures:
+- A 1 GB persistent disk at `/data`
+- Auto-generated admin password (visible in dashboard → Environment)
+- Check deployment logs for invite codes
 
-2. Obtain a certificate:
-   ```bash
-   sudo certbot --nginx -d polyclash.example.com
-   ```
-
-3. Certbot will automatically update your Nginx configuration to use HTTPS.
-
-4. Set up automatic renewal:
-   ```bash
-   sudo systemctl enable certbot.timer
-   sudo systemctl start certbot.timer
-   ```
-
-## Firewall Configuration
-
-Configure your firewall to allow the necessary traffic:
+### Fly.io
 
 ```bash
-# Ubuntu/Debian with UFW
+fly launch --copy-config
+fly volumes create polyclash_data --size 1 --region nrt
+fly secrets set POLYCLASH_ADMIN_PASS=your-password
+fly deploy
+```
+
+### Environment Variables for Cloud
+
+Set these in your cloud platform's dashboard:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `POLYCLASH_ADMIN_PASS` | Recommended | Admin password (auto-generated if unset) |
+| `POLYCLASH_MAX_ROOMS` | No | Room limit (default: 8) |
+| `POLYCLASH_INVITES` | No | Invite codes to generate (default: 5) |
+
+---
+
+## Mode 5: Public / Internet (Self-Hosted)
+
+For internet-facing deployments on your own server, use Docker Compose with an nginx reverse proxy and HTTPS.
+
+### 1. Start the services
+
+Create a `.env` file with team-mode variables:
+
+```bash
+POLYCLASH_ADMIN_PASS=your-secure-password
+POLYCLASH_MAX_ROOMS=16
+POLYCLASH_INVITES=10
+```
+
+```bash
+docker compose up -d
+```
+
+This starts:
+- **polyclash** on port 3302 (internal)
+- **redis** on port 6379 (internal)
+
+### 2. Configure nginx reverse proxy
+
+Install nginx and create `/etc/nginx/sites-available/polyclash`:
+
+```nginx
+server {
+    listen 80;
+    server_name polyclash.example.com;
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    server_name polyclash.example.com;
+
+    ssl_certificate     /etc/letsencrypt/live/polyclash.example.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/polyclash.example.com/privkey.pem;
+
+    location / {
+        proxy_pass http://127.0.0.1:3302;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    location /socket.io {
+        proxy_pass http://127.0.0.1:3302/socket.io;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "Upgrade";
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_redirect off;
+        proxy_buffering off;
+    }
+}
+```
+
+Enable and reload:
+
+```bash
+sudo ln -s /etc/nginx/sites-available/polyclash /etc/nginx/sites-enabled/
+sudo nginx -t
+sudo systemctl reload nginx
+```
+
+### 3. Obtain an SSL certificate
+
+```bash
+sudo apt install certbot python3-certbot-nginx
+sudo certbot --nginx -d polyclash.example.com
+sudo systemctl enable certbot.timer
+```
+
+### 4. Firewall
+
+```bash
 sudo ufw allow 80/tcp
 sudo ufw allow 443/tcp
-
-# CentOS/RHEL with firewalld
-sudo firewall-cmd --permanent --add-service=http
-sudo firewall-cmd --permanent --add-service=https
-sudo firewall-cmd --reload
 ```
+
+---
+
+## Docker Files Reference
+
+| File | Purpose |
+|---|---|
+| `Dockerfile` | Builds the server image, default team mode |
+| `docker-compose.yml` | Team server + Redis, persistent storage |
+| `docker-compose.simple.yml` | Minimal: solo/LAN, no auth, no Redis |
+| `render.yaml` | Render.com deploy blueprint |
+| `railway.json` | Railway deploy config |
+| `fly.toml` | Fly.io deploy config |
+| `.dockerignore` | Excludes dev artifacts from the build context |
+
+---
+
+## Redis
+
+Redis is **optional**. Both MemoryStorage and RedisStorage support board persistence — game state is saved to storage after every move via `save_board()` and restored on server startup via `restore_boards()`. However, MemoryStorage lives in-process, so **games are lost if the server process exits**. RedisStorage persists data across server restarts, making it the recommended choice for production deployments.
+
+To use Redis with a native install:
+
+```bash
+# Install Redis
+sudo apt install redis-server   # Debian/Ubuntu
+brew install redis               # macOS
+
+# Start Redis
+sudo systemctl start redis
+```
+
+The server auto-detects Redis on `localhost:6379`.
+
+---
 
 ## Monitoring and Maintenance
 
-### Logging
-
-PolyClash logs are stored in:
-- `~/.polyclash/server.log`: Server logs
-- `~/.polyclash/uwsgi.log`: uWSGI logs
-
-Monitor these logs for errors and issues.
-
-### Backup
-
-Regularly backup your Redis data:
+### Logs
 
 ```bash
-# Create a Redis backup
-redis-cli save
+# Docker
+docker compose logs -f polyclash
 
-# Copy the dump.rdb file to a backup location
-cp /var/lib/redis/dump.rdb /backup/redis-backup-$(date +%Y%m%d).rdb
+# Native
+# Logs go to stdout via loguru
 ```
-
-### Monitoring
-
-Monitor your server's health using tools like:
-- Prometheus
-- Grafana
-- Nagios
-- Zabbix
-
-Set up alerts for:
-- High CPU usage
-- High memory usage
-- Disk space running low
-- Server unreachable
 
 ### Updating
 
-To update PolyClash:
+```bash
+# Docker
+docker compose pull
+docker compose up -d --build
+
+# Native
+pip install --upgrade polyclash
+```
+
+### Redis Backup
 
 ```bash
-pip install --upgrade polyclash
-sudo systemctl restart polyclash
+redis-cli save
+cp /var/lib/redis/dump.rdb /backup/redis-$(date +%Y%m%d).rdb
 ```
 
-## Scaling
-
-### Horizontal Scaling
-
-For high-traffic deployments, you can scale horizontally:
-
-1. Set up multiple PolyClash servers
-2. Configure a load balancer (like HAProxy or Nginx) in front of them
-3. Use a shared Redis instance for storage
-
-Example HAProxy configuration:
-
-```
-frontend polyclash_frontend
-    bind *:80
-    mode http
-    default_backend polyclash_backend
-
-backend polyclash_backend
-    mode http
-    balance roundrobin
-    option httpchk GET /sphgo/
-    server server1 192.168.1.1:7763 check
-    server server2 192.168.1.2:7763 check
-```
-
-### Vertical Scaling
-
-You can also scale vertically by:
-- Increasing the number of uWSGI processes and threads
-- Allocating more CPU and RAM to the server
-- Optimizing Redis configuration
+---
 
 ## Troubleshooting
 
-### Common Issues
+| Problem | Check |
+|---|---|
+| Server won't start | Port 3302 in use? Redis running (if expected)? |
+| Clients can't connect | Firewall rules? Correct host/port? |
+| WebSocket fails | nginx `Upgrade` headers configured? |
+| Games lost on restart | Board persistence requires storage; check `/data` volume is mounted |
+| Can't find admin password | Check server logs; set `POLYCLASH_ADMIN_PASS` env var |
+| Invite codes not showing | Check server startup logs; set `POLYCLASH_INVITES` > 0 |
+| Lobby shows "Team mode not enabled" | Server not started with `polyclash team` |
 
-1. **Server won't start**:
-   - Check the logs for errors
-   - Verify that the required ports are not in use
-   - Ensure that Redis is running (if using Redis storage)
-
-2. **Clients can't connect**:
-   - Check that the server is running
-   - Verify that the firewall allows connections
-   - Ensure that the domain name resolves to the correct IP address
-
-3. **WebSocket connection fails**:
-   - Check the Nginx configuration for WebSocket support
-   - Verify that the proxy headers are set correctly
-   - Ensure that the client is using the correct URL
-
-### Getting Help
-
-If you encounter issues not covered here:
-1. Check the [GitHub Issues](https://github.com/spherical-go/polyclash/issues) for similar problems
-2. Open a new issue if your problem hasn't been reported
-
-## Security Considerations
-
-### Server Hardening
-
-1. Keep the server updated with security patches
-2. Use a firewall to restrict access
-3. Implement fail2ban to prevent brute force attacks
-4. Use strong passwords and key-based authentication
-5. Disable unnecessary services
-
-### Application Security
-
-1. Keep PolyClash and its dependencies updated
-2. Use HTTPS for all communication
-3. Implement rate limiting to prevent abuse
-4. Monitor logs for suspicious activity
-5. Regularly backup data
-
-## Performance Tuning
-
-### uWSGI Tuning
-
-Optimize uWSGI configuration for better performance:
-
-```ini
-[uwsgi]
-http = :7763
-gevent = 100
-http-websockets = true
-master = true
-wsgi-file = /path/to/polyclash/server.py
-callable = app
-processes = 2
-threads = 4
-listen = 1024
-max-requests = 5000
-harakiri = 30
-logto = ~/.polyclash/uwsgi.log
-```
-
-### Redis Tuning
-
-Optimize Redis configuration for better performance:
-
-```
-maxmemory 256mb
-maxmemory-policy allkeys-lru
-```
-
-### Nginx Tuning
-
-Optimize Nginx configuration for better performance:
-
-```nginx
-worker_processes auto;
-worker_connections 1024;
-keepalive_timeout 65;
-gzip on;
-```
-
-## Conclusion
-
-By following this guide, you should have a robust, secure, and performant PolyClash server deployment. Remember to monitor your server regularly and keep all software updated to ensure the best experience for your players.
+For more help, see [GitHub Issues](https://github.com/spherical-go/polyclash/issues).

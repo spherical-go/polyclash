@@ -1,11 +1,14 @@
 import os
 import secrets
 from threading import Thread
+from typing import Any, Optional
 
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, redirect, request, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
 
-from polyclash.data.data import decoder
+from polyclash.data.data import decoder, encoder
+from polyclash.game.board import BLACK, WHITE, Board
+from polyclash.game.record import GameRecord
 from polyclash.util.logging import InterceptHandler, logger
 from polyclash.util.storage import create_storage
 
@@ -20,11 +23,259 @@ server_token = os.environ.get(
     "POLYCLASH_SERVER_TOKEN", secrets.token_hex(SERVER_TOKEN_LENGTH // 2)
 )
 
-app = Flask(__name__)
+WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "web")
+
+app = Flask(__name__, static_folder=WEB_DIR, static_url_path="/web")
 app.config["SECRET_KEY"] = secret_key
 app.logger.addHandler(InterceptHandler())  # register loguru as handler
-socketio = SocketIO(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 storage = create_storage()
+# TODO: boards are in-memory only; game state is lost on restart or with
+# multiple workers.  Consider persisting to Redis/DB for production use.
+boards: dict[str, Board] = {}
+
+# Team mode: user auth store and room limit
+_user_store: Optional[Any] = None
+MAX_ROOMS: int = int(os.environ.get("POLYCLASH_MAX_ROOMS", "0"))  # 0 = unlimited
+
+
+def _persist_board(game_id: str) -> None:
+    """Save the board snapshot to storage (if game exists)."""
+    board = boards.get(game_id)
+    if board is not None:
+        storage.save_board(game_id, board.to_dict())
+
+
+def restore_boards() -> None:
+    """Rebuild in-memory boards dict from persisted snapshots in storage."""
+    restored = 0
+    for game_id in storage.list_rooms():
+        if game_id in boards:
+            continue
+        board_data = storage.load_board(game_id)
+        if board_data is not None:
+            boards[game_id] = Board.from_dict(board_data)
+            restored += 1
+        else:
+            # No snapshot — create a fresh board for this room
+            board = Board()
+            board.disable_notification()
+            boards[game_id] = board
+    if restored:
+        logger.info(f"Restored {restored} board(s) from storage")
+
+
+# Try to load HRM AI engine at startup
+_hrm_player: Any = None
+try:
+    from hrm_polyclash.bridge import HRMPlayer
+
+    _hrm_player = HRMPlayer()
+    logger.info("Server: HRM AI engine loaded")
+except Exception as e:
+    logger.info(f"Server: HRM unavailable ({e}), using heuristic fallback")
+
+
+@app.route("/")
+def serve_web_client():
+    # Solo mode: redirect to auto-start URL if params are missing
+    if os.environ.get("POLYCLASH_SOLO_MODE") and "token" not in request.args:
+        side = os.environ.get("POLYCLASH_SIDE", "black")
+        return redirect(f"/?token={server_token}&side={side}")
+    # Team mode: if no key/token in URL, show lobby
+    if os.environ.get("POLYCLASH_TEAM_MODE"):
+        if "key" not in request.args and "token" not in request.args:
+            return send_from_directory(WEB_DIR, "lobby.html")
+    return send_from_directory(WEB_DIR, "index.html")
+
+
+# ── Team-mode auth endpoints ──────────────────────────────
+
+
+@app.route("/sphgo/auth/register", methods=["POST"])
+def auth_register():
+    """Register a new user with an invite code."""
+    if not _user_store:
+        return jsonify({"message": "Team mode not enabled"}), 400
+    data = request.get_json()
+    try:
+        token = _user_store.register(
+            data.get("username", ""),
+            data.get("password", ""),
+            data.get("invite_code", ""),
+        )
+        return jsonify({"token": token, "username": data["username"]}), 200
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 400
+
+
+@app.route("/sphgo/auth/login", methods=["POST"])
+def auth_login():
+    """Log in and receive a session token."""
+    if not _user_store:
+        return jsonify({"message": "Team mode not enabled"}), 400
+    data = request.get_json()
+    try:
+        token = _user_store.login(
+            data.get("username", ""),
+            data.get("password", ""),
+        )
+        return jsonify({"token": token, "username": data["username"]}), 200
+    except ValueError as e:
+        return jsonify({"message": str(e)}), 401
+
+
+@app.route("/sphgo/auth/logout", methods=["POST"])
+def auth_logout():
+    """Invalidate a session token."""
+    if not _user_store:
+        return jsonify({"message": "Team mode not enabled"}), 400
+    data = request.get_json()
+    token = data.get("token", "")
+    _user_store.logout(token)
+    return jsonify({"message": "Logged out"}), 200
+
+
+@app.route("/sphgo/auth/me", methods=["POST"])
+def auth_me():
+    """Return current user info from session token."""
+    if not _user_store:
+        return jsonify({"message": "Team mode not enabled"}), 400
+    data = request.get_json()
+    token = data.get("token", "")
+    username = _user_store.validate_session(token)
+    if not username:
+        return jsonify({"message": "Invalid session"}), 401
+    return (
+        jsonify(
+            {
+                "username": username,
+                "is_admin": _user_store.is_admin(username),
+            }
+        ),
+        200,
+    )
+
+
+@app.route("/sphgo/auth/invite", methods=["POST"])
+def auth_invite():
+    """Admin: create a new invite code."""
+    if not _user_store:
+        return jsonify({"message": "Team mode not enabled"}), 400
+    data = request.get_json()
+    token = data.get("token", "")
+    username = _user_store.validate_session(token)
+    if not username or not _user_store.is_admin(username):
+        return jsonify({"message": "Admin access required"}), 403
+    code = _user_store.create_invite(created_by=username)
+    return jsonify({"invite_code": code}), 200
+
+
+@app.route("/sphgo/auth/invites", methods=["POST"])
+def auth_list_invites():
+    """Admin: list all invite codes."""
+    if not _user_store:
+        return jsonify({"message": "Team mode not enabled"}), 400
+    data = request.get_json()
+    token = data.get("token", "")
+    username = _user_store.validate_session(token)
+    if not username or not _user_store.is_admin(username):
+        return jsonify({"message": "Admin access required"}), 403
+    return jsonify({"invites": _user_store.list_invites()}), 200
+
+
+@app.route("/sphgo/auth/users", methods=["POST"])
+def auth_list_users():
+    """Admin: list all registered users."""
+    if not _user_store:
+        return jsonify({"message": "Team mode not enabled"}), 400
+    data = request.get_json()
+    token = data.get("token", "")
+    username = _user_store.validate_session(token)
+    if not username or not _user_store.is_admin(username):
+        return jsonify({"message": "Admin access required"}), 403
+    return jsonify({"users": _user_store.list_users()}), 200
+
+
+# ── Team-mode lobby endpoints ─────────────────────────────
+
+
+@app.route("/sphgo/lobby", methods=["POST"])
+def lobby_list():
+    """List active games with status info (requires auth in team mode)."""
+    if _user_store:
+        data = request.get_json()
+        token = data.get("token", "")
+        username = _user_store.validate_session(token)
+        if not username:
+            return jsonify({"message": "Login required"}), 401
+
+    rooms = []
+    for game_id in storage.list_rooms():
+        info: dict = {
+            "game_id": game_id,
+            "joined": storage.joined_status(game_id),
+            "ready": storage.ready_status(game_id),
+        }
+        rooms.append(info)
+    return (
+        jsonify(
+            {
+                "rooms": rooms,
+                "max_rooms": MAX_ROOMS,
+                "count": len(rooms),
+            }
+        ),
+        200,
+    )
+
+
+@app.route("/sphgo/lobby/create", methods=["POST"])
+def lobby_create():
+    """Create a new game from the lobby (respects room limit)."""
+    if _user_store:
+        data = request.get_json()
+        token = data.get("token", "")
+        username = _user_store.validate_session(token)
+        if not username:
+            return jsonify({"message": "Login required"}), 401
+
+    # Enforce room limit
+    if MAX_ROOMS > 0 and len(storage.list_rooms()) >= MAX_ROOMS:
+        return jsonify({"message": f"Room limit reached ({MAX_ROOMS})"}), 400
+
+    room_data = storage.create_room()
+    game_id = room_data["game_id"]
+    board = Board()
+    board.disable_notification()
+    boards[game_id] = board
+    _persist_board(game_id)
+    logger.info(f"lobby: game created... {game_id}")
+    return jsonify(room_data), 200
+
+
+@app.route("/sphgo/lobby/join", methods=["POST"])
+def lobby_join():
+    """Join a game from the lobby — returns the game key for the requested role."""
+    data = request.get_json()
+
+    if _user_store:
+        token = data.get("token", "")
+        username = _user_store.validate_session(token)
+        if not username:
+            return jsonify({"message": "Login required"}), 401
+
+    game_id = data.get("game_id")
+    role = data.get("role")
+
+    if not game_id or not storage.exists(game_id):
+        return jsonify({"message": "Game not found"}), 404
+
+    if role not in ["black", "white", "viewer"]:
+        return jsonify({"message": "Invalid role"}), 400
+
+    key = storage.get_key(game_id, role)
+    return jsonify({"key": key, "game_id": game_id, "role": role}), 200
 
 
 def player_join_room(game_id, role):
@@ -84,13 +335,23 @@ def api_call(func):
         try:
             data = request.get_json()
             token = data.get("token") or data.get("key")
-            if len(token) == SERVER_TOKEN_LENGTH:
-                if token != server_token:
-                    return jsonify({"message": "invalid token"}), 401
-            else:
-                if not storage.contains(token):
-                    return jsonify({"message": "invalid token"}), 401
-
+            skip_auth = os.environ.get("POLYCLASH_NO_AUTH") or os.environ.get(
+                "POLYCLASH_SOLO_MODE"
+            )
+            if skip_auth:
+                # In no-auth mode, still resolve player context if possible
+                if token and storage.contains(token):
+                    game_id = storage.get_game_id(token)
+                    if not storage.exists(game_id):
+                        return jsonify({"message": "Game not found"}), 404
+                    for key, value in data.items():
+                        kwargs[key] = value
+                    role = storage.get_role(token)
+                    kwargs["game_id"] = game_id
+                    kwargs["role"] = role
+            elif token == server_token:
+                pass  # server-level token, skip player auth
+            elif token and storage.contains(token):
                 game_id = storage.get_game_id(token)
                 if not storage.exists(game_id):
                     return jsonify({"message": "Game not found"}), 404
@@ -101,6 +362,8 @@ def api_call(func):
                 role = storage.get_role(token)
                 kwargs["game_id"] = game_id
                 kwargs["role"] = role
+            else:
+                return jsonify({"message": "invalid token"}), 401
 
             result, code = func(*args, **kwargs)
 
@@ -121,7 +384,6 @@ def index():
         table_of_games += f"<li>viewer: {key}</li>"
     html = f"""
     <h1>Welcome to PolyClash</h1>
-    <p>Server token: {server_token}</p>
     <h2>List of games</h2>
     <ul>
     {table_of_games}
@@ -136,11 +398,34 @@ def list_games():
     return jsonify({"rooms": storage.list_rooms()}), 200
 
 
+@app.route("/sphgo/whoami", methods=["POST"])
+def whoami():
+    """Return the role associated with a game key (no auth required)."""
+    data = request.get_json()
+    key = data.get("key")
+    if not key or not storage.contains(key):
+        return jsonify({"message": "Invalid key"}), 401
+    try:
+        role = storage.get_role(key)
+        game_id = storage.get_game_id(key)
+        return jsonify({"role": role, "game_id": game_id}), 200
+    except Exception:
+        return jsonify({"message": "Invalid key"}), 401
+
+
 @app.route("/sphgo/new", methods=["POST"])
 @api_call
 def new():
+    # Enforce room limit
+    if MAX_ROOMS > 0 and len(storage.list_rooms()) >= MAX_ROOMS:
+        return {"message": f"Room limit reached ({MAX_ROOMS})"}, 400
     data = storage.create_room()
-    logger.info(f"game created... {data['game_id']}")
+    game_id = data["game_id"]
+    board = Board()
+    board.disable_notification()
+    boards[game_id] = board
+    _persist_board(game_id)
+    logger.info(f"game created... {game_id}")
     return data, 200
 
 
@@ -223,8 +508,114 @@ def close(game_id=None, role=None, token=None):
     if token and storage.contains(token):
         logger.info(f"game closing... {game_id}")
         storage.close_room(game_id)
+        boards.pop(game_id, None)
     logger.info("game closed...")
     return {"message": "Game closed"}, 200
+
+
+@app.route("/sphgo/state", methods=["POST"])
+@api_call
+def state(game_id=None, role=None, token=None):
+    board = boards[game_id]
+    result: dict = {
+        "board": board.board.tolist(),
+        "score": board.score(),
+        "current_player": board.current_player,
+        "counter": board.counter,
+    }
+    if board.is_game_over():
+        final = board.final_score()
+        winner = "black" if final[0] > final[1] else "white"
+        result["game_over"] = {"winner": winner, "score": final}
+    return result, 200
+
+
+@app.route("/sphgo/genmove", methods=["POST"])
+@api_call
+def genmove(game_id=None, role=None, token=None):
+    board = boards[game_id]
+    player_color = BLACK if role == "black" else WHITE
+
+    # Try HRM first, fall back to heuristic
+    point = None
+    if _hrm_player is not None:
+        try:
+            point = _hrm_player.genmove(board, player_color)
+        except Exception as e:
+            logger.warning(f"HRM genmove failed: {e}, falling back to heuristic")
+
+    if point is None:
+        ranked = board.rank_moves(player_color)
+        point = ranked[0] if ranked else None
+
+    if point is None:
+        board.consecutive_passes += 1
+        board.switch_player()
+        _persist_board(game_id)
+        socketio.emit("passed", {"role": role}, room=game_id)
+        if board.is_game_over():
+            final = board.final_score()
+            winner = "black" if final[0] > final[1] else "white"
+            socketio.emit(
+                "game_over",
+                {"reason": "complete", "winner": winner, "score": final},
+                room=game_id,
+            )
+        return {"message": "pass", "point": None, "play": None}, 200
+
+    try:
+        board.play(point, player_color)
+    except ValueError:
+        # AI's chosen move is illegal; try next-best moves from ranking
+        logger.warning(f"AI move {point} illegal, trying alternatives")
+        point = None
+        for candidate in ranked[1:]:
+            try:
+                board.play(candidate, player_color)
+                point = candidate
+                break
+            except ValueError:
+                continue
+        if point is None:
+            # Truly no legal move — pass
+            board.consecutive_passes += 1
+            board.switch_player()
+            _persist_board(game_id)
+            socketio.emit("passed", {"role": role}, room=game_id)
+            if board.is_game_over():
+                final = board.final_score()
+                winner = "black" if final[0] > final[1] else "white"
+                socketio.emit(
+                    "game_over",
+                    {"reason": "complete", "winner": winner, "score": final},
+                    room=game_id,
+                )
+            return {"message": "pass", "point": None, "play": None}, 200
+
+    board.consecutive_passes = 0
+    board.switch_player()
+    _persist_board(game_id)
+    encoded = encoder[point]
+    storage.add_play(game_id, list(encoded))
+    plays = storage.get_plays(game_id)
+    steps = len(plays) - 1
+    score = board.score()
+    socketio.emit(
+        "played",
+        {"role": role, "steps": steps, "play": list(encoded), "score": score},
+        room=game_id,
+    )
+
+    if board.is_game_over():
+        final = board.final_score()
+        winner = "black" if final[0] > final[1] else "white"
+        socketio.emit(
+            "game_over",
+            {"reason": "complete", "winner": winner, "score": final},
+            room=game_id,
+        )
+
+    return {"point": point, "play": list(encoded)}, 200
 
 
 @app.route("/sphgo/play", methods=["POST"])
@@ -253,10 +644,61 @@ def play(game_id=None, role=None, steps=None, play=None, token=None):
     if code not in valid_plays:
         return {"message": "Invalid play"}, 400
 
+    # Validate and execute move on the board
+    board = boards[game_id]
+    point = decoder[tuple(play)]
+    player_color = BLACK if role == "black" else WHITE
+    try:
+        board.play(point, player_color)
+        board.consecutive_passes = 0
+        board.switch_player()
+    except ValueError as e:
+        return {"message": str(e)}, 400
+
+    _persist_board(game_id)
     storage.add_play(game_id, play)
-    socketio.emit("played", {"role": role, "steps": steps, "play": play}, room=game_id)
+    score = board.score()
+    socketio.emit(
+        "played",
+        {"role": role, "steps": steps, "play": play, "score": score},
+        room=game_id,
+    )
+
+    if board.is_game_over():
+        final = board.final_score()
+        winner = "black" if final[0] > final[1] else "white"
+        socketio.emit(
+            "game_over",
+            {"reason": "complete", "winner": winner, "score": final},
+            room=game_id,
+        )
 
     return {"message": "Play processed"}, 200
+
+
+@app.route("/sphgo/resign", methods=["POST"])
+@api_call
+def resign(game_id=None, role=None, token=None):
+    logger.info(f"player {role} resigning... {game_id}")
+    if role not in ["black", "white"]:
+        return {"message": "Invalid role"}, 400
+    board = boards[game_id]
+    winner = "white" if role == "black" else "black"
+    final = board.final_score()
+    socketio.emit(
+        "game_over",
+        {"reason": "resign", "winner": winner, "score": final},
+        room=game_id,
+    )
+    return {"winner": winner, "score": final}, 200
+
+
+@app.route("/sphgo/record", methods=["POST"])
+@api_call
+def record(game_id=None, role=None, token=None):
+    board = boards[game_id]
+    game_record = GameRecord.from_board(board)
+    return game_record.to_dict(), 200
 
 
 @socketio.on("join")
@@ -302,10 +744,12 @@ def on_ready(data):
 
 
 def main():
+    restore_boards()
+    port = int(os.environ.get("PORT", 3302))
     logger.info(f"Secret: {secret_key}")
     logger.info(f"Token: {server_token}")
     socketio.run(
-        app, host="0.0.0.0", port=3302, allow_unsafe_werkzeug=True, debug=False
+        app, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True, debug=False
     )
 
 

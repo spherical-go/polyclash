@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: polyclash
+    runtime: docker
+    plan: free
+    disk:
+      name: polyclash-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: PORT
+        value: "3302"
+      - key: POLYCLASH_AUTH_DB
+        value: "/data/polyclash_users.db"
+      - key: POLYCLASH_MAX_ROOMS
+        value: "8"
+      - key: POLYCLASH_INVITES
+        value: "5"
+      - key: POLYCLASH_ADMIN_PASS
+        generateValue: true

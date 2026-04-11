@@ -70,7 +70,7 @@ class TestMain:
 
             main()
 
-        mock_run_family.assert_called_once_with(3302)
+        mock_run_family.assert_called_once_with(3302, "human", "human")
 
     @patch("polyclash.cli._run_family")
     def test_family_custom_port(self, mock_run_family: MagicMock) -> None:
@@ -79,7 +79,19 @@ class TestMain:
 
             main()
 
-        mock_run_family.assert_called_once_with(5000)
+        mock_run_family.assert_called_once_with(5000, "human", "human")
+
+    @patch("polyclash.cli._run_family")
+    def test_family_ai_args(self, mock_run_family: MagicMock) -> None:
+        with patch(
+            "sys.argv",
+            ["polyclash", "family", "--black", "human", "--white", "ai"],
+        ):
+            from polyclash.cli import main
+
+            main()
+
+        mock_run_family.assert_called_once_with(3302, "human", "ai")
 
     @patch("polyclash.cli._run_serve")
     def test_serve_default_args(self, mock_run_serve: MagicMock) -> None:

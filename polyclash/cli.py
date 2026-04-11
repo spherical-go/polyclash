@@ -43,6 +43,18 @@ def main() -> None:
     # --- polyclash family ---
     family_parser = sub.add_parser("family", help="Family game on LAN")
     family_parser.add_argument("--port", type=int, default=3302)
+    family_parser.add_argument(
+        "--black",
+        choices=["human", "ai"],
+        default="human",
+        help="Who controls black (default: human)",
+    )
+    family_parser.add_argument(
+        "--white",
+        choices=["human", "ai"],
+        default="human",
+        help="Who controls white (default: human)",
+    )
 
     # --- polyclash serve (deployment) ---
     serve_parser = sub.add_parser("serve", help="Start server for deployment")
@@ -62,7 +74,7 @@ def main() -> None:
     if args.command == "solo":
         _run_solo(args.port, args.side)
     elif args.command == "family":
-        _run_family(args.port)
+        _run_family(args.port, args.black, args.white)
     elif args.command == "serve":
         _run_serve(args.host, args.port, args.no_auth, args.token)
     else:
@@ -90,7 +102,7 @@ def _run_solo(port: int, side: str = "black") -> None:
     )
 
 
-def _run_family(port: int) -> None:
+def _run_family(port: int, black: str = "human", white: str = "human") -> None:
     """Start server in family mode: create a game and print invite URLs."""
     token = secrets.token_hex(16)
     os.environ["POLYCLASH_SERVER_TOKEN"] = token
@@ -109,12 +121,28 @@ def _run_family(port: int) -> None:
     lan_ip = _get_lan_ip()
     base = f"http://{lan_ip}:{port}"
 
-    logger.info("PolyClash 星逐 — Family Game")
-    logger.info(f"  Black: {base}/?key={data['black_key']}")
-    logger.info(f"  White: {base}/?key={data['white_key']}")
-    logger.info(f"  Watch: {base}/?key={data['viewer_key']}")
+    black_ai = "&ai=1" if black == "ai" else ""
+    white_ai = "&ai=1" if white == "ai" else ""
+    black_url = f"{base}/?key={data['black_key']}{black_ai}"
+    white_url = f"{base}/?key={data['white_key']}{white_ai}"
+    viewer_url = f"{base}/?key={data['viewer_key']}"
 
-    Timer(1.5, lambda: webbrowser.open(f"{base}/?key={data['black_key']}")).start()
+    black_label = "AI" if black == "ai" else "Human"
+    white_label = "AI" if white == "ai" else "Human"
+
+    logger.info("PolyClash 星逐 — Family Game")
+    logger.info(f"  Black ({black_label}): {black_url}")
+    logger.info(f"  White ({white_label}): {white_url}")
+    logger.info(f"  Watch: {viewer_url}")
+
+    # Auto-open the first human side, or black if both are AI
+    if black == "human":
+        auto_url = black_url
+    elif white == "human":
+        auto_url = white_url
+    else:
+        auto_url = black_url
+    Timer(1.5, lambda: webbrowser.open(auto_url)).start()
 
     socketio.run(
         app, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True, debug=False

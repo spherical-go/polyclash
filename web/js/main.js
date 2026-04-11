@@ -98,13 +98,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     var urlKey = params.get('key');
     var urlSide = params.get('side') || 'black';
 
+    var urlAI = params.get('ai') === '1';
+
     if (urlKey) {
         // Family / network mode: auto-join with key (role inferred from server)
         var statusBar = document.getElementById('status-bar');
         statusBar.textContent = i18n.t('status_starting');
         var serverUrl = window.location.origin;
         setTimeout(function () {
-            client.joinWithKey(serverUrl, urlKey);
+            client.joinWithKey(serverUrl, urlKey, urlAI);
         }, 500);
     } else if (window._serverToken) {
         // Solo mode: start local game with chosen side

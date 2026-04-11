@@ -26,6 +26,7 @@ class GameClient {
         this.gameId = null;
         this.keys = null;        // { black_key, white_key, viewer_key }
         this.gameOver = false;
+        this.aiMode = false;   // true when this client auto-plays via genmove
     }
 
     // ---------------------------------------------------------------
@@ -150,7 +151,7 @@ class GameClient {
         }
     }
 
-    async joinWithKey(serverUrl, key) {
+    async joinWithKey(serverUrl, key, aiMode) {
         this.serverUrl = serverUrl.replace(/\/+$/, '');
 
         try {
@@ -164,6 +165,7 @@ class GameClient {
             var role = whoami.role;
             this.mode = 'network';
             this.playerKey = key;
+            this.aiMode = !!aiMode;
 
             // Join with discovered role
             var res = await this._post('/sphgo/join', { token: key, role: role });
@@ -177,6 +179,8 @@ class GameClient {
 
             if (role === 'viewer') {
                 this.showStatus(i18n.t('status_watching'));
+            } else if (this.aiMode) {
+                this.showStatus(i18n.t('status_ai_mode') + ' (' + role + ')');
             } else {
                 this.showStatus(i18n.t('status_you_' + role) + ' ' + i18n.t('status_waiting'));
             }
@@ -190,6 +194,9 @@ class GameClient {
             }
 
             await this.fetchState();
+
+            // If AI mode, start auto-playing if it is our turn
+            this.autoPlayIfAI();
         } catch (err) {
             console.error('joinWithKey error:', err);
             this.showStatus('Error joining game: ' + err.message);
@@ -253,13 +260,17 @@ class GameClient {
         this.socket.on('start', function (data) {
             console.log('Socket start:', data);
             self.showStatus('Game started!');
-            self.fetchState();
+            self.fetchState().then(function () {
+                self.autoPlayIfAI();
+            });
         });
 
         this.socket.on('played', function (data) {
             console.log('Socket played:', data);
             // Refresh full state from server to stay in sync
-            self.fetchState();
+            self.fetchState().then(function () {
+                self.autoPlayIfAI();
+            });
         });
 
         this.socket.on('game_over', function (data) {
@@ -290,6 +301,46 @@ class GameClient {
     // ---------------------------------------------------------------
     // Game actions
     // ---------------------------------------------------------------
+
+    autoPlayIfAI() {
+        if (!this.aiMode || this.gameOver || !this.token) return;
+        if (this.currentPlayer !== this.side) return;
+
+        var self = this;
+        // Small delay so the UI updates and avoids hammering the server
+        setTimeout(function () {
+            self._doAIMove();
+        }, 500);
+    }
+
+    async _doAIMove() {
+        if (this.gameOver) return;
+        if (this.currentPlayer !== this.side) return;
+
+        this.showStatus(i18n.t('status_ai_thinking'));
+        try {
+            var res = await this._post('/sphgo/genmove', { token: this.token });
+            if (!res.ok) {
+                var errData = await res.json();
+                this.showStatus('AI move failed: ' + errData.message);
+                return;
+            }
+            var data = await res.json();
+            if (data.point === null) {
+                console.log('AI passed');
+                this.showStatus(i18n.t('status_ai_passed'));
+                await this.fetchState();
+                return;
+            }
+            console.log('AI played at point', data.point);
+            this.counter++;
+            this.renderer.markLastMove(data.point);
+            await this.fetchState();
+        } catch (err) {
+            console.error('_doAIMove error:', err);
+            this.showStatus('Error in AI move: ' + err.message);
+        }
+    }
 
     async resign() {
         if (!this.token || !this.serverUrl) {
@@ -511,6 +562,7 @@ class GameClient {
         this.counter = 0;
         this.mode = 'local';
         this.gameOver = false;
+        this.aiMode = false;
 
         // Clear renderer
         for (var i = 0; i < 302; i++) {

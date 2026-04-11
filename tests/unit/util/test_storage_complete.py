@@ -448,25 +448,30 @@ class TestRedisStorageMock:
         """Test create_storage function without Redis available."""
         with patch("polyclash.util.storage.test_redis_connection", return_value=False):
             with patch(
-                "polyclash.util.storage.MemoryStorage", return_value="memory_storage"
-            ) as memory_mock:
+                "polyclash.util.storage.SqliteStorage", return_value="sqlite_storage"
+            ) as sqlite_mock:
                 result = create_storage()
 
-                # Should return Memory storage
-                assert result == "memory_storage"
-                memory_mock.assert_called_once()
+                # Should return SQLite storage
+                assert result == "sqlite_storage"
+                sqlite_mock.assert_called_once()
 
     def test_create_storage_explicit_flag(self):
         """Test create_storage function with explicit flag."""
         with patch("polyclash.util.storage.RedisStorage", return_value="redis_storage"):
             with patch(
-                "polyclash.util.storage.MemoryStorage", return_value="memory_storage"
+                "polyclash.util.storage.SqliteStorage", return_value="sqlite_storage"
             ):
                 # Explicitly request Redis
                 assert create_storage(True) == "redis_storage"
 
-                # Explicitly request Memory
-                assert create_storage(False) == "memory_storage"
+                # Explicitly request SQLite (no Redis)
+                assert create_storage(False) == "sqlite_storage"
+
+    def test_create_storage_explicit_memory(self):
+        """Test create_storage function with memory=True."""
+        result = create_storage(memory=True)
+        assert isinstance(result, MemoryStorage)
 
     def test_test_redis_connection_success(self, mock_redis):
         """Test Redis connection check when successful."""

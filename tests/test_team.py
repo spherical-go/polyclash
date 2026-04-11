@@ -30,7 +30,7 @@ def team_env():
 
     server._user_store = user_store
     server.MAX_ROOMS = 8
-    server.storage = create_storage(flag_redis=False)
+    server.storage = create_storage(memory=True)
     server.boards = {}
     server.server_token = TEST_TOKEN
 

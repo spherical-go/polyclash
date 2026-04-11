@@ -163,3 +163,4 @@ cython_debug/
 
 # PolyClash user database (team mode)
 polyclash_users.db
+polyclash_games.db

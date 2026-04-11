@@ -629,19 +629,25 @@ class TestCreateStorage:
         assert isinstance(result, RedisStorage)
 
     @patch("polyclash.util.storage.test_redis_connection", return_value=False)
-    def test_create_storage_memory(self, mock_test_conn: MagicMock) -> None:
-        from polyclash.util.storage import MemoryStorage
+    def test_create_storage_sqlite(self, mock_test_conn: MagicMock) -> None:
+        from polyclash.util.storage import SqliteStorage
 
         result = create_storage()
-        assert isinstance(result, MemoryStorage)
+        assert isinstance(result, SqliteStorage)
 
     @patch("polyclash.util.storage.redis.StrictRedis")
     def test_create_storage_explicit_redis(self, mock_strict_redis: MagicMock) -> None:
         result = create_storage(flag_redis=True)
         assert isinstance(result, RedisStorage)
 
+    def test_create_storage_explicit_sqlite(self) -> None:
+        from polyclash.util.storage import SqliteStorage
+
+        result = create_storage(flag_redis=False)
+        assert isinstance(result, SqliteStorage)
+
     def test_create_storage_explicit_memory(self) -> None:
         from polyclash.util.storage import MemoryStorage
 
-        result = create_storage(flag_redis=False)
+        result = create_storage(memory=True)
         assert isinstance(result, MemoryStorage)

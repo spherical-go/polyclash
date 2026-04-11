@@ -155,7 +155,7 @@ class TestServerBoardRestore:
         old_boards = server.boards
         old_token = server.server_token
 
-        server.storage = create_storage(flag_redis=False)
+        server.storage = create_storage(memory=True)
         server.boards = {}
         server.server_token = TEST_TOKEN
 

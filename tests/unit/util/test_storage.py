@@ -78,5 +78,5 @@ class TestMemoryStorage:
 class TestStorageFactory:
     def test_create_storage(self):
         # Test creating a MemoryStorage
-        storage = create_storage(flag_redis=False)
+        storage = create_storage(memory=True)
         assert isinstance(storage, MemoryStorage)

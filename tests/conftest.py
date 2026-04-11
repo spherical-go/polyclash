@@ -36,7 +36,7 @@ def socketio_client(test_client):
 @pytest.fixture
 def storage():
     """Fixture for storage with memory backend."""
-    server.storage = create_storage(flag_redis=False)
+    server.storage = create_storage(memory=True)
     server.boards = {}
     return server.storage
 

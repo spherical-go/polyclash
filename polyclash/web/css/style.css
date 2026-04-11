@@ -137,8 +137,8 @@ html, body {
   color: #e8a735;
 }
 
-#game-result.hidden {
-  display: none;
+.hidden {
+  display: none !important;
 }
 
 /* ── View map (top-right) ──────────────────────────── */

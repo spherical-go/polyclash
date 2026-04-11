@@ -336,20 +336,30 @@ def genmove(game_id=None, role=None, token=None):
     try:
         board.play(point, player_color)
     except ValueError:
-        # AI's chosen move is illegal on the real board; pass instead
-        logger.warning(f"AI move {point} illegal, passing")
-        board.consecutive_passes += 1
-        board.switch_player()
-        socketio.emit("passed", {"role": role}, room=game_id)
-        if board.is_game_over():
-            final = board.final_score()
-            winner = "black" if final[0] > final[1] else "white"
-            socketio.emit(
-                "game_over",
-                {"reason": "complete", "winner": winner, "score": final},
-                room=game_id,
-            )
-        return {"message": "pass", "point": None, "play": None}, 200
+        # AI's chosen move is illegal; try remaining legal moves
+        logger.warning(f"AI move {point} illegal, trying alternatives")
+        point = None
+        for candidate in board.get_empties(player_color):
+            try:
+                board.play(candidate, player_color)
+                point = candidate
+                break
+            except ValueError:
+                continue
+        if point is None:
+            # Truly no legal move — pass
+            board.consecutive_passes += 1
+            board.switch_player()
+            socketio.emit("passed", {"role": role}, room=game_id)
+            if board.is_game_over():
+                final = board.final_score()
+                winner = "black" if final[0] > final[1] else "white"
+                socketio.emit(
+                    "game_over",
+                    {"reason": "complete", "winner": winner, "score": final},
+                    room=game_id,
+                )
+            return {"message": "pass", "point": None, "play": None}, 200
 
     board.consecutive_passes = 0
     board.switch_player()

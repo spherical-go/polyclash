@@ -284,18 +284,7 @@ class GameClient {
             console.log('Socket game_over:', data);
             self.gameOver = true;
             self.renderer.highlightLegalMoves([]);
-            if (data.reason === 'resign') {
-                var winnerSide = data.winner === 'black' ? 1 : -1;
-                if (self.side === winnerSide) {
-                    self.showStatus(i18n.t('status_you_win'));
-                } else if (self.side === -winnerSide) {
-                    self.showStatus(i18n.t('status_you_lose'));
-                } else {
-                    self.showStatus(i18n.t('status_game_over'));
-                }
-            } else {
-                self.showStatus(i18n.t('status_game_over'));
-            }
+            self.showGameResult(data);
         });
 
         this.socket.on('error', function (data) {
@@ -492,7 +481,7 @@ class GameClient {
             if (data.game_over && !this.gameOver) {
                 this.gameOver = true;
                 this.renderer.highlightLegalMoves([]);
-                this.showStatus(i18n.t('status_game_over'));
+                this.showGameResult(data.game_over);
             }
         } catch (err) {
             console.error('fetchState error:', err);
@@ -583,6 +572,11 @@ class GameClient {
             this.renderer.setStone(i, 0);
         }
         this.renderer.highlightLegalMoves([]);
+        var resultEl = document.getElementById('game-result');
+        if (resultEl) {
+            resultEl.textContent = '';
+            resultEl.className = 'hidden';
+        }
         this.updateUI();
         this.showStatus(i18n.t('status_reset'));
     }
@@ -619,6 +613,32 @@ class GameClient {
     // ---------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------
+
+    showGameResult(data) {
+        // data: { winner: "black"|"white", score: [black, white], reason?: string }
+        var winner = data.winner;
+        var score = data.score;
+        var reason = data.reason || 'complete';
+
+        var winnerLabel = winner === 'black' ? i18n.t('score_black') : i18n.t('score_white');
+        var reasonLabel = reason === 'resign' ? i18n.t('status_resign') : '';
+
+        var blackPct = (score[0] * 100).toFixed(1);
+        var whitePct = (score[1] * 100).toFixed(1);
+
+        var line1 = i18n.t('status_game_over') + ' ' + winnerLabel + ' ' + i18n.t('status_wins');
+        var line2 = i18n.t('score_black') + ' ' + blackPct + '% — ' + i18n.t('score_white') + ' ' + whitePct + '%';
+        if (reasonLabel) {
+            line1 += ' (' + reasonLabel + ')';
+        }
+
+        var el = document.getElementById('game-result');
+        if (el) {
+            el.textContent = line1 + '\n' + line2;
+            el.className = '';
+        }
+        this.showStatus(line1);
+    }
 
     showStatus(message) {
         console.log('[status]', message);

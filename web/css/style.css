@@ -123,6 +123,23 @@ html, body {
   color: var(--text-muted);
 }
 
+/* ── Game result banner ─────────────────────────────── */
+
+#game-result {
+  background: var(--bg-panel);
+  border: 2px solid #e8a735;
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 15px;
+  font-weight: bold;
+  text-align: center;
+  color: #e8a735;
+}
+
+#game-result.hidden {
+  display: none;
+}
+
 /* ── View map (top-right) ──────────────────────────── */
 
 #view-map {

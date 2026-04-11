@@ -1,5 +1,6 @@
 import hashlib
 import math
+import os
 from collections import OrderedDict
 from random import sample
 
@@ -18,6 +19,10 @@ from polyclash.data.data import (
 
 BLACK = 1
 WHITE = -1
+
+# Default komi as a fraction of total area (0.025 = 2.5%, ≈ 7.6 positions).
+# Override with POLYCLASH_KOMI environment variable.
+DEFAULT_KOMI: float = float(os.environ.get("POLYCLASH_KOMI", "0.025"))
 
 
 def _init_zobrist() -> tuple[list[int], list[int]]:
@@ -93,7 +98,7 @@ class Board:
 
         self.zobrist_hash: int = 0
         self.history_hashes: set[int] = set()
-        self.komi: float = 0.025
+        self.komi: float = DEFAULT_KOMI
         self.consecutive_passes: int = 0
 
     @property

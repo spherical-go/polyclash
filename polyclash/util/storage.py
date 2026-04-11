@@ -702,7 +702,13 @@ class SqliteStorage(DataStorage):
             (game_id,),
         ).fetchall()
         conn.close()
-        return [json.loads(r["play_data"]) for r in rows]
+        result = [json.loads(r["play_data"]) for r in rows]
+        if rows:
+            logger.info(
+                f"SqliteStorage.get_plays: {len(rows)} rows, "
+                f"first_raw={rows[0]['play_data']}, first_parsed={result[0]}"
+            )
+        return result
 
     def list_rooms(self, active_only: bool = False) -> list[str]:
         conn = self._get_conn()
@@ -905,10 +911,12 @@ class SqliteStorage(DataStorage):
         return bool(row["started"])
 
     def add_play(self, game_id: str, play: list) -> None:
+        serialized = json.dumps(play)
+        logger.info(f"SqliteStorage.add_play: play={play}, serialized={serialized}")
         conn = self._get_conn()
         conn.execute(
             "INSERT INTO game_plays (game_id, play_data) VALUES (?, ?)",
-            (game_id, json.dumps(play)),
+            (game_id, serialized),
         )
         conn.commit()
         conn.close()

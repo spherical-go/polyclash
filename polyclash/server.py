@@ -315,6 +315,8 @@ def genmove(game_id=None, role=None, token=None):
         point = board.genmove(player_color)
 
     if point is None:
+        board.switch_player()
+        socketio.emit("passed", {"role": role}, room=game_id)
         return {"message": "pass", "point": None, "play": None}, 200
 
     try:
@@ -322,6 +324,8 @@ def genmove(game_id=None, role=None, token=None):
     except ValueError:
         # AI's chosen move is illegal on the real board; pass instead
         logger.warning(f"AI move {point} illegal, passing")
+        board.switch_player()
+        socketio.emit("passed", {"role": role}, room=game_id)
         return {"message": "pass", "point": None, "play": None}, 200
 
     board.switch_player()

@@ -273,6 +273,13 @@ class GameClient {
             });
         });
 
+        this.socket.on('passed', function (data) {
+            console.log('Socket passed:', data);
+            self.fetchState().then(function () {
+                self.autoPlayIfAI();
+            });
+        });
+
         this.socket.on('game_over', function (data) {
             console.log('Socket game_over:', data);
             self.gameOver = true;

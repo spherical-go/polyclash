@@ -185,8 +185,9 @@ class GameClient {
                 this.showStatus(i18n.t('status_you_' + role) + ' ' + i18n.t('status_waiting'));
             }
 
-            // Connect socket for real-time updates
+            // Connect socket for real-time updates and wait for room join
             this.connectSocket(serverUrl);
+            await this._socketReady;
 
             // Auto-ready for players (not viewers)
             if (role === 'black' || role === 'white') {
@@ -222,6 +223,7 @@ class GameClient {
             this.showStatus('Joined as ' + role + '. Waiting for opponent…');
 
             this.connectSocket(serverUrl);
+            await this._socketReady;
             await this.fetchState();
         } catch (err) {
             console.error('joinGame error:', err);
@@ -239,6 +241,10 @@ class GameClient {
         this.socket = io(url);
 
         var self = this;
+        var joinedResolve = null;
+        this._socketReady = new Promise(function (resolve) {
+            joinedResolve = resolve;
+        });
 
         this.socket.on('connect', function () {
             console.log('Socket.IO connected');
@@ -250,6 +256,10 @@ class GameClient {
         this.socket.on('joined', function (data) {
             console.log('Socket joined:', data);
             self.showStatus(data.role + ' joined the game.');
+            if (joinedResolve) {
+                joinedResolve();
+                joinedResolve = null;
+            }
         });
 
         this.socket.on('ready', function (data) {

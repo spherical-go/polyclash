@@ -23,7 +23,7 @@ server_token = os.environ.get(
     "POLYCLASH_SERVER_TOKEN", secrets.token_hex(SERVER_TOKEN_LENGTH // 2)
 )
 
-WEB_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "web")
+WEB_DIR = os.path.join(os.path.dirname(__file__), "web")
 
 app = Flask(__name__, static_folder=WEB_DIR, static_url_path="/web")
 app.config["SECRET_KEY"] = secret_key

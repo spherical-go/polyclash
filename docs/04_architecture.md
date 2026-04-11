@@ -236,21 +236,21 @@ polyclash/
     auth.py            # UserStore (SQLite: users, invite_codes, sessions)
     logging.py         # loguru logging setup
     storage.py         # DataStorage ABC, MemoryStorage, RedisStorage
-web/
-  index.html           # Game page
-  lobby.html           # Team mode lobby (login/register/room list)
-  css/
-    style.css          # Game styles
-    lobby.css          # Lobby styles
-  js/
-    main.js            # App entry point
-    game-client.js     # GameClient (network client + state manager)
-    board-renderer.js  # Three.js 3D renderer
-    light-rules.js     # Client-side rule validation
-    i18n.js            # Internationalization (5 languages)
-    lobby.js           # Lobby client logic
-  vendor/              # three.min.js, socket.io.min.js, OrbitControls.js
-  data/                # Board geometry JSON
+  web/
+    index.html           # Game page
+    lobby.html           # Team mode lobby (login/register/room list)
+    css/
+      style.css          # Game styles
+      lobby.css          # Lobby styles
+    js/
+      main.js            # App entry point
+      game-client.js     # GameClient (network client + state manager)
+      board-renderer.js  # Three.js 3D renderer
+      light-rules.js     # Client-side rule validation
+      i18n.js            # Internationalization (5 languages)
+      lobby.js           # Lobby client logic
+    vendor/              # three.min.js, socket.io.min.js, OrbitControls.js
+    data/                # Board geometry JSON
 model3d/               # 3D model generation data
 scripts/               # Utility scripts
 tests/                 # Unit and integration tests

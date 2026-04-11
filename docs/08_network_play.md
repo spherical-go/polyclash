@@ -195,10 +195,10 @@ If you're having trouble with the game:
 
 The client is a web application served by the PolyClash server:
 
-- `web/js/game-client.js`: Game state manager and server communication (REST + Socket.IO)
-- `web/js/lobby.js`: Lobby UI — login, registration, game room management (team mode)
-- `web/js/board-renderer.js`: 3D board rendering
-- `web/js/light-rules.js`: Client-side move legality checks
+- `polyclash/web/js/game-client.js`: Game state manager and server communication (REST + Socket.IO)
+- `polyclash/web/js/lobby.js`: Lobby UI — login, registration, game room management (team mode)
+- `polyclash/web/js/board-renderer.js`: 3D board rendering
+- `polyclash/web/js/light-rules.js`: Client-side move legality checks
 
 ### Server-Side
 

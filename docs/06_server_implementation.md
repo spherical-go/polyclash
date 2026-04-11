@@ -6,7 +6,7 @@ This document provides details about the implementation of the PolyClash server,
 
 The PolyClash server is a Flask web application (`polyclash/server.py`) that serves the web client and provides:
 
-- Static file serving for the web client (`web/` directory)
+- Static file serving for the web client (`polyclash/web/` directory)
 - REST API endpoints for game management (`/sphgo/*`)
 - Socket.IO for real-time communication during gameplay
 - Optional team-mode user authentication and lobby

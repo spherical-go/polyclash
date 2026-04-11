@@ -32,7 +32,7 @@ PolyClash is built using Python with the following key technologies:
 
 The project is organized into several key components:
 
-- **Web Client**: A browser-based interface (`web/`) using Three.js for 3D rendering and Socket.IO for real-time communication
+- **Web Client**: A browser-based interface (`polyclash/web/`) using Three.js for 3D rendering and Socket.IO for real-time communication
 - **Server**: Flask + Socket.IO backend (`polyclash/server.py`) that manages game rooms and relays moves
 - **Game Logic**: The core rules and mechanics of the game (`polyclash/game/`)
 - **AI**: The artificial intelligence that powers the computer opponent

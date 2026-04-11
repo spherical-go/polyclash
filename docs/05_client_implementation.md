@@ -9,7 +9,7 @@ The PolyClash client is a browser-based web application served by the Flask serv
 ## File Structure
 
 ```
-web/
+polyclash/web/
 ├── index.html          — Game page: canvas, score panel, turn indicator, controls, view map, language selector
 ├── lobby.html          — Team mode lobby: login/register forms, room list, admin panel
 ├── css/

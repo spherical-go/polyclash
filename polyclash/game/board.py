@@ -321,6 +321,23 @@ class SimulatedBoard(Board):
         ranked = self.rank_moves(player)
         return ranked[0] if ranked else None
 
+    def _liberty_penalty(self, point: int, player: int) -> float:
+        """Penalise moves that fill the player's own liberties.
+
+        Returns a non-negative penalty: higher means worse.
+        * All neighbours friendly (eye) → heavy penalty (1.0)
+        * Most neighbours friendly      → moderate penalty
+        * Few / no friendly neighbours   → zero
+        """
+        nbs = self.neighbors[point]
+        friendly = sum(1 for n in nbs if self.board[n] == player)
+        ratio = friendly / len(nbs)
+        if ratio >= 1.0:
+            return 1.0
+        if ratio >= 0.8:
+            return 0.3
+        return 0.0
+
     def rank_moves(self, player: int) -> list[int]:
         """Return all candidate moves sorted by heuristic score (best first)."""
         scored: list[tuple[float, float, int]] = []
@@ -328,6 +345,7 @@ class SimulatedBoard(Board):
         for point in self.get_empties(player):
             simulated_score, gain = self.simulate_score(0, point, player)
             simulated_score = simulated_score + 2 * gain
+            simulated_score -= self._liberty_penalty(point, player)
             potential = calculate_potential(self.board, point, self.counter)
             scored.append((simulated_score, potential, point))
 

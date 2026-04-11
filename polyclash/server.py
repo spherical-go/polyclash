@@ -1,5 +1,6 @@
 import os
 import secrets
+from random import shuffle
 from threading import Thread
 from typing import Any
 
@@ -339,7 +340,9 @@ def genmove(game_id=None, role=None, token=None):
         # AI's chosen move is illegal; try remaining legal moves
         logger.warning(f"AI move {point} illegal, trying alternatives")
         point = None
-        for candidate in board.get_empties(player_color):
+        candidates = board.get_empties(player_color)
+        shuffle(candidates)
+        for candidate in candidates:
             try:
                 board.play(candidate, player_color)
                 point = candidate

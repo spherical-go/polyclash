@@ -653,9 +653,7 @@ def genmove(game_id=None, role=None, token=None):
     board.switch_player()
     _persist_board(game_id)
     encoded = encoder[point]
-    play_data = list(encoded)
-    logger.info(f"genmove: point={point}, encoded={encoded}, play_data={play_data}")
-    storage.add_play(game_id, play_data)
+    storage.add_play(game_id, list(encoded))
     plays = storage.get_plays(game_id)
     steps = len(plays) - 1
     score = board.score()

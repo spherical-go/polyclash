@@ -2,13 +2,8 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# Install only server dependencies (no Qt/VTK)
-COPY requirements.txt .
-RUN grep -vE "PyQt5|pyvista" requirements.txt > requirements-server.txt && \
-    pip install --no-cache-dir -r requirements-server.txt redis
-
 COPY . .
-RUN pip install --no-cache-dir -e . --no-deps
+RUN pip install --no-cache-dir -e ".[redis]"
 
 ENV PORT=3302
 EXPOSE 3302

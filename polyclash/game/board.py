@@ -148,6 +148,9 @@ class Board:
             self.zobrist_hash ^= ZOBRIST_WHITE[point]
         self.board[point] = 0
         self.latest_removes[-1].append(point)
+        # Removing a stone may open liberties, so clear cached suicide sets
+        self.black_suicides.discard(point)
+        self.white_suicides.discard(point)
         self.notify_observers("remove_stone", point=point, score=self.score())
 
         for neighbor in self.neighbors[point]:
@@ -190,6 +193,9 @@ class Board:
 
         # Save zobrist hash before the move for rollback on suicide
         prev_zobrist = self.zobrist_hash
+
+        # Start a new capture list for this move
+        self.latest_removes.append([])
 
         self.board[point] = player
         if player == BLACK:
@@ -337,10 +343,10 @@ class SimulatedBoard(Board):
                 total_rival_gain += rival_gain
             mean_rival_area_ratio = total_rival_area_ratio / trail
             mean_rival_gain = total_rival_gain / trail
-        except ValueError as e:
-            print(e)
-            if "suicide" in str(e):
-                raise e
+        except ValueError:
+            # Move is illegal (suicide, superko, etc.) — skip this point
+            self.latest_removes.pop()
+            return -math.inf, 0
 
         self.board[point] = 0  # 恢复棋盘状态
         gain = 0

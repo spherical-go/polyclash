@@ -25,13 +25,16 @@ class GameClient {
         this.counter = 0;
         this.gameId = null;
         this.keys = null;        // { black_key, white_key, viewer_key }
+        this.gameOver = false;
     }
 
     // ---------------------------------------------------------------
     // Local game – human (black) vs AI (white) on the server
     // ---------------------------------------------------------------
 
-    async startLocalGame(serverUrl) {
+    async startLocalGame(serverUrl, side) {
+        side = side || 'black';
+        var aiSide = side === 'black' ? 'white' : 'black';
         this.serverUrl = serverUrl.replace(/\/+$/, '');
         this.mode = 'local';
 
@@ -57,31 +60,31 @@ class GameClient {
             };
             console.log('Game created:', this.gameId);
 
-            // Join as black
+            // Join as human's side
             const joinRes = await this._post('/sphgo/join', {
-                token: this.keys.black_key,
-                role: 'black',
+                token: this.keys[side + '_key'],
+                role: side,
             });
             if (!joinRes.ok) {
-                this.showStatus('Failed to join as black: ' + (await joinRes.json()).message);
+                this.showStatus('Failed to join as ' + side + ': ' + (await joinRes.json()).message);
                 return;
             }
             const joinData = await joinRes.json();
             this.token = joinData.token;
-            this.side = 1;
-            console.log('Joined as black, token:', this.token);
+            this.side = side === 'black' ? 1 : -1;
+            console.log('Joined as ' + side + ', token:', this.token);
 
-            // Join AI as white so the game can proceed
-            const joinWhiteRes = await this._post('/sphgo/join', {
-                token: this.keys.white_key,
-                role: 'white',
+            // Join AI as the other side
+            const joinAIRes = await this._post('/sphgo/join', {
+                token: this.keys[aiSide + '_key'],
+                role: aiSide,
             });
-            if (!joinWhiteRes.ok) {
-                this.showStatus('Failed to join AI as white.');
+            if (!joinAIRes.ok) {
+                this.showStatus('Failed to join AI as ' + aiSide + '.');
                 return;
             }
-            const joinWhiteData = await joinWhiteRes.json();
-            this.gameToken = joinWhiteData.token; // keep white token for genmove
+            const joinAIData = await joinAIRes.json();
+            this.gameToken = joinAIData.token; // AI token for genmove
 
             // Mark both players ready so the game starts
             await this._post('/sphgo/ready', { token: this.token });
@@ -89,7 +92,12 @@ class GameClient {
 
             // Fetch initial state
             await this.fetchState();
-            this.showStatus(i18n.t('status_local_started'));
+            this.showStatus(i18n.t('status_you_' + side));
+
+            // If human plays white, AI (black) moves first
+            if (side === 'white') {
+                await this.requestAIMove();
+            }
         } catch (err) {
             console.error('startLocalGame error:', err);
             this.showStatus('Error starting local game: ' + err.message);
@@ -142,6 +150,52 @@ class GameClient {
         }
     }
 
+    async joinWithKey(serverUrl, key) {
+        this.serverUrl = serverUrl.replace(/\/+$/, '');
+
+        try {
+            // Discover role from key
+            var whoamiRes = await this._post('/sphgo/whoami', { key: key });
+            if (!whoamiRes.ok) {
+                this.showStatus(i18n.t('status_invalid_key'));
+                return;
+            }
+            var whoami = await whoamiRes.json();
+            var role = whoami.role;
+            this.mode = 'network';
+            this.playerKey = key;
+
+            // Join with discovered role
+            var res = await this._post('/sphgo/join', { token: key, role: role });
+            if (!res.ok) {
+                this.showStatus('Failed to join: ' + (await res.json()).message);
+                return;
+            }
+            var data = await res.json();
+            this.token = data.token;
+            this.side = role === 'black' ? 1 : (role === 'white' ? -1 : 0);
+
+            if (role === 'viewer') {
+                this.showStatus(i18n.t('status_watching'));
+            } else {
+                this.showStatus(i18n.t('status_you_' + role) + ' ' + i18n.t('status_waiting'));
+            }
+
+            // Connect socket for real-time updates
+            this.connectSocket(serverUrl);
+
+            // Auto-ready for players (not viewers)
+            if (role === 'black' || role === 'white') {
+                await this._post('/sphgo/ready', { token: this.token });
+            }
+
+            await this.fetchState();
+        } catch (err) {
+            console.error('joinWithKey error:', err);
+            this.showStatus('Error joining game: ' + err.message);
+        }
+    }
+
     async joinGame(serverUrl, key, role) {
         this.serverUrl = serverUrl.replace(/\/+$/, '');
         this.mode = 'network';
@@ -177,11 +231,14 @@ class GameClient {
         // eslint-disable-next-line no-undef
         this.socket = io(url);
 
+        var self = this;
+
         this.socket.on('connect', function () {
             console.log('Socket.IO connected');
+            if (self.playerKey) {
+                self.socket.emit('join', { key: self.playerKey });
+            }
         });
-
-        var self = this;
 
         this.socket.on('joined', function (data) {
             console.log('Socket joined:', data);
@@ -205,20 +262,57 @@ class GameClient {
             self.fetchState();
         });
 
+        this.socket.on('game_over', function (data) {
+            console.log('Socket game_over:', data);
+            self.gameOver = true;
+            self.renderer.highlightLegalMoves([]);
+            if (data.reason === 'resign') {
+                var winnerSide = data.winner === 'black' ? 1 : -1;
+                if (self.side === winnerSide) {
+                    self.showStatus(i18n.t('status_you_win'));
+                } else if (self.side === -winnerSide) {
+                    self.showStatus(i18n.t('status_you_lose'));
+                } else {
+                    self.showStatus(i18n.t('status_game_over'));
+                }
+            } else {
+                self.showStatus(i18n.t('status_game_over'));
+            }
+        });
+
         this.socket.on('error', function (data) {
             console.error('Socket error:', data);
             self.showStatus('Server error: ' + data.message);
         });
 
-        // Tell the server we want to join the room
-        if (this.playerKey) {
-            this.socket.emit('join', { key: this.playerKey });
-        }
     }
 
     // ---------------------------------------------------------------
     // Game actions
     // ---------------------------------------------------------------
+
+    async resign() {
+        if (!this.token || !this.serverUrl) {
+            this.showStatus(i18n.t('status_start_game'));
+            return;
+        }
+        if (this.gameOver) return;
+
+        try {
+            var res = await this._post('/sphgo/resign', { token: this.token });
+            if (!res.ok) {
+                var errData = await res.json();
+                this.showStatus('Resign failed: ' + errData.message);
+                return;
+            }
+            this.gameOver = true;
+            this.renderer.highlightLegalMoves([]);
+            this.showStatus(i18n.t('status_you_lose'));
+        } catch (err) {
+            console.error('resign error:', err);
+            this.showStatus('Error resigning: ' + err.message);
+        }
+    }
 
     async playMove(point) {
         // Guard: must have an active game
@@ -226,9 +320,10 @@ class GameClient {
             this.showStatus(i18n.t('status_start_game'));
             return;
         }
+        if (this.gameOver) return;
 
         // Only allow moves when it is our turn
-        if (this.mode === 'network' && this.currentPlayer !== this.side) {
+        if (this.currentPlayer !== this.side) {
             this.showStatus(i18n.t('status_not_turn'));
             return;
         }
@@ -300,11 +395,15 @@ class GameClient {
                 return;
             }
             var data = await res.json();
+            if (data.point === null) {
+                console.log('AI passed');
+                this.showStatus(i18n.t('status_ai_passed'));
+                await this.fetchState();
+                return;
+            }
             console.log('AI played at point', data.point);
             this.counter++;
-            if (data.point !== undefined) {
-                this.renderer.markLastMove(data.point);
-            }
+            this.renderer.markLastMove(data.point);
 
             // Refresh state from server
             await this.fetchState();
@@ -411,6 +510,7 @@ class GameClient {
         this.score = { black: 0, white: 0, unclaimed: 1 };
         this.counter = 0;
         this.mode = 'local';
+        this.gameOver = false;
 
         // Clear renderer
         for (var i = 0; i < 302; i++) {

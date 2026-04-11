@@ -31,21 +31,22 @@
         <span id="turn-text">Black's turn</span>
         <span id="move-counter">Move: 0</span>
       </div>
-    </div>
 
-    <div id="status-bar">Welcome to PolyClash</div>
-
-    <div id="game-controls">
-      <button id="btn-new-local">New Local Game</button>
-      <button id="btn-pass">Pass</button>
-      <button id="btn-save-record">Save Record</button>
-      <button id="btn-reset">Reset</button>
     </div>
 
     <div id="view-map">
       <div class="view-map-grid" id="view-map-grid">
         <!-- populated by main.js with i18n names -->
       </div>
+    </div>
+
+    <div id="status-bar">Welcome to PolyClash</div>
+
+    <div id="game-controls">
+      <button id="btn-pass">Pass</button>
+      <button id="btn-resign">Resign</button>
+      <button id="btn-save-record">Save Record</button>
+      <button id="btn-reset">Reset</button>
     </div>
 
     <div id="lang-selector">
@@ -57,16 +58,6 @@
         <option value="ko">한국어</option>
       </select>
     </div>
-
-    <div id="connection-panel">
-      <label for="server-url">Server URL</label>
-      <input type="text" id="server-url" value="http://localhost:3302" placeholder="http://localhost:3302">
-      <button id="btn-new-network">New Network Game</button>
-      <div class="join-row">
-        <input type="text" id="join-game-id" placeholder="Game ID">
-        <button id="btn-join-game">Join Game</button>
-      </div>
-    </div>
   </div>
 
   <script src="/web/vendor/three.min.js"></script>
@@ -77,12 +68,16 @@
   <script src="/web/js/board-renderer.js"></script>
   <script src="/web/js/game-client.js"></script>
   <script>
-    // Auto-fill server token from URL query parameter (for solo mode)
+    // Detect mode from URL parameters and set body attribute for CSS
     (function () {
       var params = new URLSearchParams(window.location.search);
       var token = params.get('token');
+      var key = params.get('key');
       if (token) {
         window._serverToken = token;
+        document.body.setAttribute('data-mode', 'solo');
+      } else if (key) {
+        document.body.setAttribute('data-mode', 'family');
       }
     })();
   </script>

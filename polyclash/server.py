@@ -3,7 +3,7 @@ import secrets
 from threading import Thread
 from typing import Any
 
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, redirect, request, send_from_directory
 from flask_socketio import SocketIO, emit, join_room
 
 from polyclash.data.data import decoder, encoder
@@ -30,6 +30,8 @@ app.config["SECRET_KEY"] = secret_key
 app.logger.addHandler(InterceptHandler())  # register loguru as handler
 socketio = SocketIO(app, cors_allowed_origins="*")
 storage = create_storage()
+# TODO: boards are in-memory only; game state is lost on restart or with
+# multiple workers.  Consider persisting to Redis/DB for production use.
 boards: dict[str, Board] = {}
 
 # Try to load HRM AI engine at startup
@@ -45,6 +47,10 @@ except Exception as e:
 
 @app.route("/")
 def serve_web_client():
+    # Solo mode: redirect to auto-start URL if params are missing
+    if os.environ.get("POLYCLASH_SOLO_MODE") and "token" not in request.args:
+        side = os.environ.get("POLYCLASH_SIDE", "black")
+        return redirect(f"/?token={server_token}&side={side}")
     return send_from_directory(WEB_DIR, "index.html")
 
 
@@ -109,7 +115,16 @@ def api_call(func):
                 "POLYCLASH_SOLO_MODE"
             )
             if skip_auth:
-                pass  # auth disabled (solo or no-auth mode)
+                # In no-auth mode, still resolve player context if possible
+                if token and storage.contains(token):
+                    game_id = storage.get_game_id(token)
+                    if not storage.exists(game_id):
+                        return jsonify({"message": "Game not found"}), 404
+                    for key, value in data.items():
+                        kwargs[key] = value
+                    role = storage.get_role(token)
+                    kwargs["game_id"] = game_id
+                    kwargs["role"] = role
             elif token == server_token:
                 pass  # server-level token, skip player auth
             elif token and storage.contains(token):
@@ -145,7 +160,6 @@ def index():
         table_of_games += f"<li>viewer: {key}</li>"
     html = f"""
     <h1>Welcome to PolyClash</h1>
-    <p>Server token: {server_token}</p>
     <h2>List of games</h2>
     <ul>
     {table_of_games}
@@ -158,6 +172,21 @@ def index():
 @app.route("/sphgo/list", methods=["GET"])
 def list_games():
     return jsonify({"rooms": storage.list_rooms()}), 200
+
+
+@app.route("/sphgo/whoami", methods=["POST"])
+def whoami():
+    """Return the role associated with a game key (no auth required)."""
+    data = request.get_json()
+    key = data.get("key")
+    if not key or not storage.contains(key):
+        return jsonify({"message": "Invalid key"}), 401
+    try:
+        role = storage.get_role(key)
+        game_id = storage.get_game_id(key)
+        return jsonify({"role": role, "game_id": game_id}), 200
+    except Exception:
+        return jsonify({"message": "Invalid key"}), 401
 
 
 @app.route("/sphgo/new", methods=["POST"])
@@ -285,7 +314,16 @@ def genmove(game_id=None, role=None, token=None):
     if point is None:
         point = board.genmove(player_color)
 
-    board.play(point, player_color)
+    if point is None:
+        return {"message": "pass", "point": None, "play": None}, 200
+
+    try:
+        board.play(point, player_color)
+    except ValueError:
+        # AI's chosen move is illegal on the real board; pass instead
+        logger.warning(f"AI move {point} illegal, passing")
+        return {"message": "pass", "point": None, "play": None}, 200
+
     board.switch_player()
     encoded = encoder[point]
     storage.add_play(game_id, list(encoded))
@@ -297,6 +335,16 @@ def genmove(game_id=None, role=None, token=None):
         {"role": role, "steps": steps, "play": list(encoded), "score": score},
         room=game_id,
     )
+
+    if board.is_game_over():
+        final = board.final_score()
+        winner = "black" if final[0] > final[1] else "white"
+        socketio.emit(
+            "game_over",
+            {"reason": "complete", "winner": winner, "score": final},
+            room=game_id,
+        )
+
     return {"point": point, "play": list(encoded)}, 200
 
 
@@ -344,7 +392,33 @@ def play(game_id=None, role=None, steps=None, play=None, token=None):
         room=game_id,
     )
 
+    if board.is_game_over():
+        final = board.final_score()
+        winner = "black" if final[0] > final[1] else "white"
+        socketio.emit(
+            "game_over",
+            {"reason": "complete", "winner": winner, "score": final},
+            room=game_id,
+        )
+
     return {"message": "Play processed"}, 200
+
+
+@app.route("/sphgo/resign", methods=["POST"])
+@api_call
+def resign(game_id=None, role=None, token=None):
+    logger.info(f"player {role} resigning... {game_id}")
+    if role not in ["black", "white"]:
+        return {"message": "Invalid role"}, 400
+    board = boards[game_id]
+    winner = "white" if role == "black" else "black"
+    final = board.final_score()
+    socketio.emit(
+        "game_over",
+        {"reason": "resign", "winner": winner, "score": final},
+        room=game_id,
+    )
+    return {"winner": winner, "score": final}, 200
 
 
 @app.route("/sphgo/record", methods=["POST"])

@@ -466,7 +466,7 @@ class TestAPIEndpoints:
         # Verify response
         assert response.status_code == 200
         assert b"Welcome to PolyClash" in response.data
-        assert bytes(f"Server token: {server_token}", "utf-8") in response.data
+        assert b"Server token" not in response.data
         assert b"viewer: viewer_key" in response.data
 
     def test_list_games(self, client, mock_storage):

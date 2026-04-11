@@ -203,6 +203,7 @@ class MemoryStorage(DataStorage):
         token = secrets.token_hex(USER_TOKEN_LENGTH // 2)
         self.rooms[token] = game["id"]
         game["viewers"].append(token)
+        return token
 
     def get_role(self, key_or_token):
         if key_or_token in self.rooms:
@@ -395,6 +396,7 @@ class RedisStorage(DataStorage):
         self.redis.hset("rooms", token, game_id)
         self.redis.rpush(f"games:{game_id}:viewer", token)
         self.redis.expire(f"games:{game_id}:viewer", 3600 * 24 * 3)
+        return token
 
     def get_role(self, key_or_token):
         game_id = self.get_game_id(key_or_token)

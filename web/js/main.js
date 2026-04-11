@@ -29,53 +29,24 @@ document.addEventListener('DOMContentLoaded', async function () {
     // ---- Update all UI labels from i18n ----
 
     function updateAllLabels() {
-        // Page title
         document.title = i18n.t('game_title');
-
-        document.getElementById('btn-new-local').textContent = i18n.t('btn_local');
         document.getElementById('btn-pass').textContent = i18n.t('btn_pass');
+        document.getElementById('btn-resign').textContent = i18n.t('btn_resign');
         document.getElementById('btn-reset').textContent = i18n.t('btn_reset');
         document.getElementById('btn-save-record').textContent = i18n.t('btn_save');
-        document.getElementById('btn-new-network').textContent = i18n.t('btn_network');
-        document.getElementById('btn-join-game').textContent = i18n.t('btn_join');
         document.getElementById('status-bar').textContent = i18n.t('status_welcome');
-        var serverLabel = document.querySelector('#connection-panel label');
-        if (serverLabel) serverLabel.textContent = i18n.t('label_server');
     }
 
     updateAllLabels();
 
     // ---- UI button wiring ----
 
-    document.getElementById('btn-new-local').addEventListener('click', function () {
-        var serverUrl = document.getElementById('server-url').value;
-        var token = prompt(i18n.t('prompt_token'));
-        if (token) {
-            window._serverToken = token;
-            client.startLocalGame(serverUrl);
-        }
-    });
-
-    document.getElementById('btn-new-network').addEventListener('click', function () {
-        var serverUrl = document.getElementById('server-url').value;
-        var token = prompt(i18n.t('prompt_token'));
-        if (token) {
-            window._serverToken = token;
-            client.createNetworkGame(serverUrl);
-        }
-    });
-
-    document.getElementById('btn-join-game').addEventListener('click', function () {
-        var serverUrl = document.getElementById('server-url').value;
-        var key = document.getElementById('join-game-id').value;
-        var role = prompt(i18n.t('prompt_role'));
-        if (key && role) {
-            client.joinGame(serverUrl, key, role);
-        }
-    });
-
     document.getElementById('btn-pass').addEventListener('click', function () {
         client.pass();
+    });
+
+    document.getElementById('btn-resign').addEventListener('click', function () {
+        client.resign();
     });
 
     document.getElementById('btn-save-record').addEventListener('click', function () {
@@ -85,15 +56,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.getElementById('btn-reset').addEventListener('click', function () {
         client.resetGame();
     });
-
-    // View map buttons
-    var viewButtons = document.querySelectorAll('.view-btn');
-    for (var i = 0; i < viewButtons.length; i++) {
-        viewButtons[i].addEventListener('click', function () {
-            var viewIndex = parseInt(this.getAttribute('data-view'), 10);
-            renderer.changeView(viewIndex);
-        });
-    }
 
     // ---- View map with i18n names ----
 
@@ -130,13 +92,27 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Start animation loop
     renderer.animate();
 
-    // Auto-start local game if token was provided via URL (solo mode)
-    if (window._serverToken) {
+    // ---- Auto-start from URL parameters ----
+
+    var params = new URLSearchParams(window.location.search);
+    var urlKey = params.get('key');
+    var urlSide = params.get('side') || 'black';
+
+    if (urlKey) {
+        // Family / network mode: auto-join with key (role inferred from server)
         var statusBar = document.getElementById('status-bar');
         statusBar.textContent = i18n.t('status_starting');
-        var serverUrl = document.getElementById('server-url').value;
+        var serverUrl = window.location.origin;
         setTimeout(function () {
-            client.startLocalGame(serverUrl);
+            client.joinWithKey(serverUrl, urlKey);
+        }, 500);
+    } else if (window._serverToken) {
+        // Solo mode: start local game with chosen side
+        var statusBar = document.getElementById('status-bar');
+        statusBar.textContent = i18n.t('status_starting');
+        var serverUrl = window.location.origin;
+        setTimeout(function () {
+            client.startLocalGame(serverUrl, urlSide);
         }, 500);
     }
 

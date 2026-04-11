@@ -45,8 +45,7 @@ html, body {
 /* ── Shared overlay behaviour ───────────────────────── */
 
 #ui-overlay,
-#game-controls,
-#connection-panel {
+#game-controls {
   position: fixed;
   z-index: 10;
   pointer-events: auto;
@@ -124,13 +123,12 @@ html, body {
   color: var(--text-muted);
 }
 
-/* ── View map (right side) ─────────────────────────── */
+/* ── View map (top-right) ──────────────────────────── */
 
 #view-map {
   position: fixed;
+  top: 16px;
   right: 16px;
-  top: 50%;
-  transform: translateY(-50%);
   z-index: 10;
   pointer-events: auto;
   background: var(--bg-panel);
@@ -179,45 +177,6 @@ html, body {
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   padding: 10px 16px;
-}
-
-/* ── Connection panel (top-right) ───────────────────── */
-
-#connection-panel {
-  top: 16px;
-  right: 16px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius);
-  padding: var(--panel-padding);
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 200px;
-}
-
-#connection-panel label {
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-#connection-panel input {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  padding: 6px 8px;
-  font-size: 13px;
-  width: 100%;
-}
-
-.join-row {
-  display: flex;
-  gap: 6px;
-}
-
-.join-row input {
-  flex: 1;
 }
 
 /* ── Buttons ────────────────────────────────────────── */
@@ -275,13 +234,6 @@ button:active {
     right: 16px;
     transform: none;
     width: auto;
-  }
-
-  #connection-panel {
-    left: 16px;
-    right: 16px;
-    top: auto;
-    bottom: 160px;
   }
 
   #ui-overlay {

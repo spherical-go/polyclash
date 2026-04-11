@@ -63,7 +63,7 @@ Join a public server or ask a friend for their server URL. Just open the link in
 
 Deploy your own team server (8 rooms, invite-only registration) in seconds:
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.com/deploy/_6HDwH)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.com/deploy/8z0qa1?referralCode=VaVw3-)
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/spherical-go/polyclash)
 
 Or with Docker:

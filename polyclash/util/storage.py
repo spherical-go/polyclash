@@ -128,6 +128,10 @@ class DataStorage(ABC):
     def get_room_number(self, game_id: str) -> int:
         pass
 
+    @abstractmethod
+    def is_completed(self, game_id: str) -> bool:
+        pass
+
 
 class MemoryStorage(DataStorage):
     def __init__(self):
@@ -325,6 +329,9 @@ class MemoryStorage(DataStorage):
 
     def get_room_number(self, game_id: str) -> int:
         return int(self.games[game_id]["room_number"])
+
+    def is_completed(self, game_id: str) -> bool:
+        return self.games[game_id].get("completed_at") is not None
 
 
 class RedisStorage(DataStorage):
@@ -533,6 +540,9 @@ class RedisStorage(DataStorage):
 
     def get_room_number(self, game_id: str) -> int:
         raise NotImplementedError("RedisStorage does not support get_room_number")
+
+    def is_completed(self, game_id: str) -> bool:
+        raise NotImplementedError("RedisStorage does not support is_completed")
 
     def reaper(self):
         for game_id in self.list_rooms():
@@ -940,6 +950,14 @@ class SqliteStorage(DataStorage):
         ).fetchone()
         conn.close()
         return int(row["room_number"]) if row and row["room_number"] else 0
+
+    def is_completed(self, game_id: str) -> bool:
+        conn = self._get_conn()
+        row = conn.execute(
+            "SELECT completed_at FROM games WHERE game_id = ?", (game_id,)
+        ).fetchone()
+        conn.close()
+        return row is not None and row["completed_at"] is not None
 
 
 def test_redis_connection(

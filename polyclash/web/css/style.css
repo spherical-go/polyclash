@@ -45,7 +45,8 @@ html, body {
 /* ── Shared overlay behaviour ───────────────────────── */
 
 #ui-overlay,
-#game-controls {
+#game-controls,
+#replay-controls {
   position: fixed;
   z-index: 10;
   pointer-events: auto;
@@ -194,6 +195,25 @@ html, body {
   border: 1px solid var(--border-color);
   border-radius: var(--radius);
   padding: 10px 16px;
+}
+
+/* ── Replay controls (bottom-center) ────────────────── */
+
+#replay-controls {
+  bottom: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  padding: 10px 16px;
+}
+
+#replay-controls button {
+  font-size: 18px;
+  padding: 6px 16px;
 }
 
 /* ── Buttons ────────────────────────────────────────── */

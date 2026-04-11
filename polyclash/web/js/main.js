@@ -57,6 +57,20 @@ document.addEventListener('DOMContentLoaded', async function () {
         client.resetGame();
     });
 
+    // Replay controls
+    document.getElementById('btn-replay-start').addEventListener('click', function () {
+        client.replayStart();
+    });
+    document.getElementById('btn-replay-back').addEventListener('click', function () {
+        client.replayBackward();
+    });
+    document.getElementById('btn-replay-fwd').addEventListener('click', function () {
+        client.replayForward();
+    });
+    document.getElementById('btn-replay-end').addEventListener('click', function () {
+        client.replayEnd();
+    });
+
     // ---- View map with i18n names ----
 
     function populateViewMap() {

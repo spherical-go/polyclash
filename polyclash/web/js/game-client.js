@@ -27,6 +27,11 @@ class GameClient {
         this.keys = null;        // { black_key, white_key, viewer_key }
         this.gameOver = false;
         this.aiMode = false;   // true when this client auto-plays via genmove
+
+        // Replay state
+        this.replayMode = false;
+        this.replayPlays = [];   // encoded plays from server
+        this.replayStep = 0;     // current step in replay (0 = empty board)
     }
 
     // ---------------------------------------------------------------
@@ -188,6 +193,21 @@ class GameClient {
             // Connect socket for real-time updates and wait for room join
             this.connectSocket(serverUrl);
             await this._socketReady;
+
+            // Check if game is already over — enter replay mode for viewers
+            var stateRes = await this._post('/sphgo/state', { token: this.token });
+            if (stateRes.ok) {
+                var stateData = await stateRes.json();
+                if (stateData.game_over && role === 'viewer') {
+                    // Fetch plays for replay
+                    var playsRes = await this._post('/sphgo/plays', { token: this.token });
+                    if (playsRes.ok) {
+                        var playsData = await playsRes.json();
+                        this.enterReplay(playsData.plays);
+                        return;
+                    }
+                }
+            }
 
             // Auto-ready for players (not viewers)
             if (role === 'black' || role === 'white') {
@@ -618,6 +638,119 @@ class GameClient {
             console.error('downloadRecord error:', err);
             this.showStatus('Error downloading record: ' + err.message);
         }
+    }
+
+    // ---------------------------------------------------------------
+    // Replay
+    // ---------------------------------------------------------------
+
+    enterReplay(plays) {
+        this.replayMode = true;
+        this.replayPlays = plays || [];
+        this.replayStep = 0;
+        this.gameOver = true;
+
+        // Build decoder: encoded tuple → point index
+        var decoder = {};
+        var enc = this.renderer.boardData.encoder;
+        for (var i = 0; i < enc.length; i++) {
+            decoder[enc[i].toString()] = i;
+        }
+        this._replayDecoder = decoder;
+
+        // Show replay controls
+        var controls = document.getElementById('replay-controls');
+        if (controls) controls.classList.remove('hidden');
+
+        // Hide play controls
+        var gameControls = document.getElementById('game-controls');
+        if (gameControls) gameControls.classList.add('hidden');
+
+        this.replayGoto(0);
+        this.showStatus('Replay: step 0 / ' + this.replayPlays.length);
+    }
+
+    replayGoto(step) {
+        if (!this.replayMode) return;
+        step = Math.max(0, Math.min(step, this.replayPlays.length));
+        this.replayStep = step;
+
+        // Rebuild board from scratch up to this step
+        var board = new Array(302).fill(0);
+        var rules = new LightRules(Object.fromEntries(this.rules.neighbors));
+        var currentPlayer = 1; // black starts
+
+        for (var i = 0; i < step; i++) {
+            var encoded = this.replayPlays[i];
+            var key = encoded.toString();
+            var point = this._replayDecoder[key];
+            if (point === undefined) {
+                // pass move
+                currentPlayer = -currentPlayer;
+                continue;
+            }
+
+            // Place stone and handle captures
+            board[point] = currentPlayer;
+            rules.setState(board);
+
+            // Remove captured opponent groups
+            var opponent = -currentPlayer;
+            var adj = rules.neighbors.get(point);
+            if (adj) {
+                for (var j = 0; j < adj.length; j++) {
+                    var neighbor = adj[j];
+                    if (board[neighbor] === opponent) {
+                        if (!rules.hasLiberty(neighbor, opponent, null)) {
+                            var group = rules.getGroup(neighbor);
+                            for (var k = 0; k < group.length; k++) {
+                                board[group[k]] = 0;
+                            }
+                        }
+                    }
+                }
+            }
+
+            rules.setState(board);
+            currentPlayer = -currentPlayer;
+        }
+
+        // Render
+        for (var i = 0; i < 302; i++) {
+            this.renderer.setStone(i, board[i]);
+        }
+        this.renderer.highlightLegalMoves([]);
+
+        // Mark last move
+        if (step > 0) {
+            var lastEncoded = this.replayPlays[step - 1];
+            var lastPoint = this._replayDecoder[lastEncoded.toString()];
+            if (lastPoint !== undefined) {
+                this.renderer.markLastMove(lastPoint);
+            }
+        }
+
+        // Update counter display
+        this.counter = step;
+        this.currentPlayer = currentPlayer;
+        this.updateUI();
+        this.showStatus('Replay: step ' + step + ' / ' + this.replayPlays.length);
+    }
+
+    replayForward() {
+        this.replayGoto(this.replayStep + 1);
+    }
+
+    replayBackward() {
+        this.replayGoto(this.replayStep - 1);
+    }
+
+    replayStart() {
+        this.replayGoto(0);
+    }
+
+    replayEnd() {
+        this.replayGoto(this.replayPlays.length);
     }
 
     // ---------------------------------------------------------------

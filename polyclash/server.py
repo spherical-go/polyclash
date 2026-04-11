@@ -218,12 +218,12 @@ def lobby_list():
         ready = storage.ready_status(game_id)
         started = storage.is_started(game_id)
 
-        if not all(joined.values()):
+        if storage.is_completed(game_id):
+            status = "completed"
+        elif not all(joined.values()):
             status = "waiting"
         elif not started:
             status = "ready"
-        elif game_id in boards and boards[game_id].is_game_over():
-            status = "completed"
         else:
             status = "playing"
 
@@ -532,6 +532,12 @@ def close(game_id=None, role=None, token=None):
         boards.pop(game_id, None)
     logger.info("game closed...")
     return {"message": "Game closed"}, 200
+
+
+@app.route("/sphgo/plays", methods=["POST"])
+@api_call
+def plays(game_id=None, role=None, token=None):
+    return {"plays": storage.get_plays(game_id)}, 200
 
 
 @app.route("/sphgo/state", methods=["POST"])

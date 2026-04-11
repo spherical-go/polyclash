@@ -133,6 +133,43 @@ isort . --profile black
 pre-commit clean && pre-commit install --overwrite && pre-commit run --all-files
 ```
 
+## Deployment
+
+PolyClash stores user accounts and game data in SQLite databases. In containerized deployments the database files must live on a **persistent volume** so they survive redeployments.
+
+The Dockerfile defaults both paths to `/data/`:
+
+| Env var | Default | Description |
+|---|---|---|
+| `POLYCLASH_STORAGE_DB` | `/data/polyclash_games.db` | Game rooms, plays, board snapshots |
+| `POLYCLASH_AUTH_DB` | `/data/polyclash_users.db` | User accounts, sessions, invite codes |
+
+### Railway
+
+1. Dashboard → Service → Settings → **Add Volume**, mount path `/data`
+2. No env var changes needed (Dockerfile defaults are correct)
+
+### Fly.io
+
+Volume and env vars are pre-configured in `fly.toml`. Create the volume once:
+
+```bash
+fly volumes create polyclash_data --region nrt --size 1
+fly deploy
+```
+
+### Render
+
+Disk mount is configured in `render.yaml` (requires paid plan).
+
+### Docker Compose
+
+Volume `polyclash_data` is pre-configured in `docker-compose.yml`. Just run:
+
+```bash
+docker compose up -d
+```
+
 ## Contributing and Communication
 
 - Open an Issue to discuss proposals or significant changes before implementation.

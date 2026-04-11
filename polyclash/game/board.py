@@ -322,18 +322,10 @@ class SimulatedBoard(Board):
         return ranked[0] if ranked else None
 
     def rank_moves(self, player: int) -> list[int]:
-        """Return all candidate moves sorted by heuristic score (best first).
-
-        Own eyes (empty points where ALL neighbours are friendly stones)
-        are excluded so the AI never fills its own liberties.
-        """
+        """Return all candidate moves sorted by heuristic score (best first)."""
         scored: list[tuple[float, float, int]] = []
 
         for point in self.get_empties(player):
-            # Skip own eyes — filling them reduces the group's liberties
-            if all(self.board[n] == player for n in self.neighbors[point]):
-                continue
-
             simulated_score, gain = self.simulate_score(0, point, player)
             simulated_score = simulated_score + 2 * gain
             potential = calculate_potential(self.board, point, self.counter)

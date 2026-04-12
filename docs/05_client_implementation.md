@@ -240,8 +240,8 @@ Typically launched via `polyclash team`.
 ### View Map
 
 The view map panel contains 8 buttons, one for each preset camera view:
-- 4 continents: Amberland, Jadeland, Goldenland, Amethyst Land
-- 4 oceans: Coral Ocean, Pearl Ocean, Sapphire Ocean, Obsidian Ocean
+- 4 continents: Dark North (玄北洲), Fertile South (沃南洲), East Wilds (东莽洲), West Gorge (西壑洲)
+- 4 oceans: Nether Sea (幽冥洋), Whalewave Sea (鲸波洋), Clearglow Sea (霁霞洋), Drifting Mist Sea (流霭洋)
 
 Clicking a button triggers a smooth 600ms camera tween to the corresponding axis position.
 

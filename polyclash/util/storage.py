@@ -555,7 +555,7 @@ class RedisStorage(DataStorage):
         raise NotImplementedError("RedisStorage does not support active_room_count")
 
     def complete_room(self, game_id: str) -> None:
-        raise NotImplementedError("RedisStorage does not support complete_room")
+        self.redis.hset(f"games:{game_id}", "completed", str(True))
 
     def cleanup_expired(self, days: int = 7) -> int:
         raise NotImplementedError("RedisStorage does not support cleanup_expired")
@@ -564,7 +564,8 @@ class RedisStorage(DataStorage):
         raise NotImplementedError("RedisStorage does not support get_room_number")
 
     def is_completed(self, game_id: str) -> bool:
-        raise NotImplementedError("RedisStorage does not support is_completed")
+        val = self.redis.hget(f"games:{game_id}", "completed")
+        return val is not None and val.decode("utf-8") == "True"
 
     def recent_completed(self, limit: int = 3) -> list[dict]:
         raise NotImplementedError("RedisStorage does not support recent_completed")

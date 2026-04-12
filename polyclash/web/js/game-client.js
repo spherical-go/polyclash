@@ -298,6 +298,18 @@ class GameClient {
 
         this.socket.on('played', function (data) {
             console.log('Socket played:', data);
+            // Rotate camera to the played point
+            if (data.play && self.renderer.boardData) {
+                var enc = self.renderer.boardData.encoder;
+                var playKey = String(data.play);
+                for (var i = 0; i < enc.length; i++) {
+                    if (String(enc[i]) === playKey) {
+                        self.renderer.markLastMove(i);
+                        self.renderer.lookAtPoint(i);
+                        break;
+                    }
+                }
+            }
             // Refresh full state from server to stay in sync
             self.fetchState().then(function () {
                 self.autoPlayIfAI();
@@ -362,6 +374,7 @@ class GameClient {
             console.log('AI played at point', data.point);
             this.counter++;
             this.renderer.markLastMove(data.point);
+            this.renderer.lookAtPoint(data.point);
             await this.fetchState();
         } catch (err) {
             console.error('_doAIMove error:', err);
@@ -432,6 +445,7 @@ class GameClient {
             console.log('Move played at point', point);
             this.counter++;
             this.renderer.markLastMove(point);
+            this.renderer.lookAtPoint(point);
 
             // Refresh state from server
             await this.fetchState();
@@ -482,6 +496,7 @@ class GameClient {
             console.log('AI played at point', data.point);
             this.counter++;
             this.renderer.markLastMove(data.point);
+            this.renderer.lookAtPoint(data.point);
 
             // Refresh state from server
             await this.fetchState();
@@ -736,6 +751,7 @@ class GameClient {
             var lastPoint = this._replayDecoder[lastEncoded.toString()];
             if (lastPoint !== undefined) {
                 this.renderer.markLastMove(lastPoint);
+                this.renderer.lookAtPoint(lastPoint);
             }
         }
 

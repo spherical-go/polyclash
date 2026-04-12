@@ -3,7 +3,7 @@
  *
  * Usage:
  *   i18n.setLang('zh');
- *   i18n.t('view_0');  // => "琥珀洲"
+ *   i18n.t('view_0');  // => "玄北洲"
  */
 
 (function () {
@@ -15,14 +15,14 @@
             game_title: "PolyClash",
 
             // View names (4 continents + 4 oceans)
-            view_0: "Amberland",
-            view_1: "Jadeland",
-            view_2: "Goldenland",
-            view_3: "Amethyst Land",
-            view_4: "Coral Ocean",
-            view_5: "Pearl Ocean",
-            view_6: "Sapphire Ocean",
-            view_7: "Obsidian Ocean",
+            view_0: "Dark North",
+            view_1: "Fertile South",
+            view_2: "East Wilds",
+            view_3: "West Gorge",
+            view_4: "Nether Sea",
+            view_5: "Whalewave Sea",
+            view_6: "Clearglow Sea",
+            view_7: "Drifting Mist Sea",
 
             // UI
             score_black: "Black",
@@ -67,14 +67,14 @@
         "zh-Hans": {
             game_title: "\u661f\u9010",
 
-            view_0: "\u7425\u73c0\u6d32",
-            view_1: "\u7fe0\u7389\u6d32",
-            view_2: "\u6d41\u91d1\u6d32",
-            view_3: "\u7d2b\u6676\u6d32",
-            view_4: "\u73ca\u745a\u6d0b",
-            view_5: "\u73cd\u73e0\u6d0b",
-            view_6: "\u84dd\u5b9d\u6d0b",
-            view_7: "\u9ed1\u66dc\u6d0b",
+            view_0: "\u7384\u5317\u6d32",
+            view_1: "\u6c83\u5357\u6d32",
+            view_2: "\u4e1c\u83bd\u6d32",
+            view_3: "\u897f\u58d1\u6d32",
+            view_4: "\u5e7d\u51a5\u6d0b",
+            view_5: "\u9cb8\u6ce2\u6d0b",
+            view_6: "\u9701\u971e\u6d0b",
+            view_7: "\u6d41\u973d\u6d0b",
 
             score_black: "\u9ed1\u65b9",
             score_white: "\u767d\u65b9",
@@ -118,14 +118,14 @@
         "zh-Hant": {
             game_title: "\u661f\u9010",
 
-            view_0: "\u7425\u73c0\u6d32",
-            view_1: "\u7fe0\u7389\u6d32",
-            view_2: "\u6d41\u91d1\u6d32",
-            view_3: "\u7d2b\u6676\u6d32",
-            view_4: "\u73ca\u745a\u6d0b",
-            view_5: "\u73cd\u73e0\u6d0b",
-            view_6: "\u85cd\u5bf6\u6d0b",
-            view_7: "\u9ed1\u66dc\u6d0b",
+            view_0: "\u7384\u5317\u6d32",
+            view_1: "\u6c83\u5357\u6d32",
+            view_2: "\u6771\u83bd\u6d32",
+            view_3: "\u897f\u58d1\u6d32",
+            view_4: "\u5e7d\u51a5\u6d0b",
+            view_5: "\u9be8\u6ce2\u6d0b",
+            view_6: "\u9744\u971e\u6d0b",
+            view_7: "\u6d41\u9744\u6d0b",
 
             score_black: "\u9ed1\u65b9",
             score_white: "\u767d\u65b9",
@@ -169,14 +169,14 @@
         ja: {
             game_title: "\u661f\u9010",
 
-            view_0: "\u7425\u73c0\u5927\u9678",
-            view_1: "\u7fe1\u7fe0\u5927\u9678",
-            view_2: "\u9ec4\u91d1\u5927\u9678",
-            view_3: "\u7d2b\u6c34\u6676\u5927\u9678",
-            view_4: "\u73ca\u745a\u6d0b",
-            view_5: "\u771f\u73e0\u6d0b",
-            view_6: "\u30b5\u30d5\u30a1\u30a4\u30a2\u6d0b",
-            view_7: "\u9ed2\u66dc\u77f3\u6d0b",
+            view_0: "\u7384\u5317\u5927\u9678",
+            view_1: "\u6c83\u5357\u5927\u9678",
+            view_2: "\u6771\u83bd\u5927\u9678",
+            view_3: "\u897f\u58d1\u5927\u9678",
+            view_4: "\u5e7d\u51a5\u6d0b",
+            view_5: "\u9be8\u6ce2\u6d0b",
+            view_6: "\u9744\u971e\u6d0b",
+            view_7: "\u6d41\u9744\u6d0b",
 
             score_black: "\u9ed2",
             score_white: "\u767d",
@@ -207,14 +207,14 @@
         ko: {
             game_title: "\u661f\u9010",
 
-            view_0: "\ud638\ubc15 \ub300\ub959",
-            view_1: "\ube44\ucde8 \ub300\ub959",
-            view_2: "\ud669\uae08 \ub300\ub959",
-            view_3: "\uc790\uc218\uc815 \ub300\ub959",
-            view_4: "\uc0b0\ud638\uc591",
-            view_5: "\uc9c4\uc8fc\uc591",
-            view_6: "\uc0ac\ud30c\uc774\uc5b4\uc591",
-            view_7: "\ud751\uc694\uc11d\uc591",
+            view_0: "\ud604\ubd81 \ub300\ub959",
+            view_1: "\uc625\ub0a8 \ub300\ub959",
+            view_2: "\ub3d9\ub9dd \ub300\ub959",
+            view_3: "\uc11c\ud559 \ub300\ub959",
+            view_4: "\uc720\uba85\uc591",
+            view_5: "\uacbd\ud30c\uc591",
+            view_6: "\uc81c\ud558\uc591",
+            view_7: "\uc720\uc560\uc591",
 
             score_black: "\ud751",
             score_white: "\ubc31",

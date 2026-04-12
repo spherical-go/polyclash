@@ -5,10 +5,10 @@
     "use strict";
 
     var CONTINENT_COLORS = {
-        0: [0.85, 0.75, 0.60], // warm earth
-        1: [0.45, 0.85, 0.45], // green
-        2: [0.80, 0.75, 0.45], // gold
-        3: [0.55, 0.60, 0.85], // purple
+        0: [0.22, 0.24, 0.35], // 玄·水 — 北方寒地，深玄青
+        1: [0.88, 0.83, 0.68], // 白·金 — 南方温带，暖白金
+        2: [0.25, 0.65, 0.60], // 青·木 — 赤道湿热，苍翠
+        3: [0.78, 0.38, 0.28], // 赤·火 — 赤道干热，朱砂
     };
     var OCEAN_COLOR = [0.3, 0.5, 0.7];
     var STONE_EMPTY_COLOR = new THREE.Color(0.5, 0.5, 0.5);
@@ -366,29 +366,34 @@
     BoardRenderer.prototype.changeView = function (index) {
         if (!this.boardData || !this.boardData.axis[index]) return;
         var ax = this.boardData.axis[index];
-        var target = new THREE.Vector3(
+        this._tweenCamera(new THREE.Vector3(
             ax[0] * CAMERA_DISTANCE,
             ax[1] * CAMERA_DISTANCE,
             ax[2] * CAMERA_DISTANCE
-        );
+        ));
+    };
+
+    BoardRenderer.prototype.lookAtPoint = function (pointIndex) {
+        if (!this.boardData || !this.boardData.cities[pointIndex]) return;
+        var city = this.boardData.cities[pointIndex];
+        var dir = new THREE.Vector3(city[0], city[1], city[2]).normalize();
+        this._tweenCamera(dir.multiplyScalar(CAMERA_DISTANCE));
+    };
+
+    BoardRenderer.prototype._tweenCamera = function (target) {
         var self = this;
         var start = self.camera.position.clone();
         var startTime = performance.now();
-        var duration = 600; // ms
-
-        function tweenStep(now) {
+        var duration = 600;
+        function step(now) {
             var t = Math.min((now - startTime) / duration, 1);
-            // Smooth ease-in-out
             t = t * t * (3 - 2 * t);
             self.camera.position.lerpVectors(start, target, t);
-            // Spherical interpolation: keep constant distance from origin
             self.camera.position.normalize().multiplyScalar(CAMERA_DISTANCE);
             self.camera.lookAt(0, 0, 0);
-            if (t < 1) {
-                requestAnimationFrame(tweenStep);
-            }
+            if (t < 1) requestAnimationFrame(step);
         }
-        requestAnimationFrame(tweenStep);
+        requestAnimationFrame(step);
     };
 
     // ── Animation loop ──────────────────────────────────────────────────

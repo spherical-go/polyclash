@@ -47,8 +47,12 @@ dev = [
   "pytest-asyncio",
   "pytest-flask",
 ]
-hrm = [
-  "hrm-polyclash",
+ai = [
+  "torch>=2.2",
+  "einops>=0.7",
+  "pydantic>=2.0",
+  "safetensors>=0.4",
+  "huggingface-hub>=0.20",
 ]
 
 [project.scripts]
@@ -79,6 +83,26 @@ warn_return_any = true
 no_implicit_optional = true
 show_error_codes = true
 pretty = true
+
+[[tool.mypy.overrides]]
+module = "polyclash.ai.nn.layers"
+disable_error_code = ["import-untyped", "no-redef", "attr-defined", "arg-type", "misc", "unused-ignore"]
+
+[[tool.mypy.overrides]]
+module = "polyclash.ai.nn.common"
+disable_error_code = ["import-untyped", "unused-ignore"]
+
+[[tool.mypy.overrides]]
+module = "polyclash.ai.nn.nnet"
+disable_error_code = ["unused-ignore"]
+
+[[tool.mypy.overrides]]
+module = "polyclash.ai.nn.model"
+disable_error_code = ["call-arg"]
+
+[[tool.mypy.overrides]]
+module = "polyclash.ai.polyclash.state"
+disable_error_code = ["no-any-return"]
 
 [tool.black]
 target-version = ["py310"]

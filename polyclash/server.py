@@ -68,12 +68,12 @@ def restore_boards() -> None:
 # Try to load HRM AI engine at startup
 _hrm_player: Any = None
 try:
-    from hrm_polyclash.bridge import HRMPlayer
+    from polyclash.ai.bridge import HRMPlayer
 
     _hrm_player = HRMPlayer()
     logger.info("Server: HRM AI engine loaded")
 except Exception as e:
-    logger.info(f"Server: HRM unavailable ({e}), using heuristic fallback")
+    logger.info(f"Server: HRM AI unavailable ({e}), using heuristic fallback")
 
 
 @app.route("/")

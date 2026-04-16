@@ -1,10 +1,11 @@
 """Graph-HRM model for spherical Go.
 
 Architecture:
-  Node features → Graph encoder (message passing) → prepend CLS token → HRM backbone → policy + value heads
+  Node features → Graph encoder (message passing) → prepend CLS token → HRM backbone → heads
 
 Input:  stones (B, 302) with values in {-1, 0, 1}
 Output: (policy_logits (B, 303), value (B, 1))
+        With return_aux=True also: score (B, 1), ownership_logits (B, 302)
 """
 
 from __future__ import annotations
@@ -57,6 +58,11 @@ class GraphHRMModel(
             nn.GELU(),
             nn.Linear(hidden, hidden),
         )
+        self.area_proj = nn.Sequential(
+            nn.Linear(1, hidden),
+            nn.GELU(),
+            nn.Linear(hidden, hidden),
+        )
 
         # Learnable CLS token
         self.cls_token = nn.Parameter(torch.zeros(1, 1, hidden))
@@ -94,18 +100,27 @@ class GraphHRMModel(
             nn.GELU(),
             nn.Linear(hidden, 1),
         )
+        # Auxiliary heads (KataGo-style)
+        self.score_head = nn.Sequential(
+            nn.Linear(hidden, hidden),
+            nn.GELU(),
+            nn.Linear(hidden, 1),
+        )
+        self.ownership_head = nn.Linear(hidden, 1, bias=False)  # per-point
 
     def _embed(
         self,
         stones: torch.Tensor,
         node_type: torch.Tensor,
         coords: torch.Tensor,
+        area_w: torch.Tensor,
     ) -> torch.Tensor:
         """Embed board into node features (B, 302, D)."""
         ids = stones.to(torch.long).clamp(-1, 1) + 1  # -> {0, 1, 2}
         x = self.stone_emb(ids)  # (B, 302, D)
         x = x + self.type_emb(node_type)  # broadcast (302, D)
         x = x + self.coord_proj(coords)  # broadcast (302, D)
+        x = x + self.area_proj(area_w.unsqueeze(-1))  # (302, 1) -> (302, D)
         return x
 
     def _init_carry(self, x: torch.Tensor) -> HierarchicalReasoningModelCarry:
@@ -120,19 +135,26 @@ class GraphHRMModel(
         edge_index: torch.Tensor,
         node_type: torch.Tensor,
         coords: torch.Tensor,
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+        area_w: torch.Tensor,
+        return_aux: bool = False,
+    ) -> tuple[torch.Tensor, ...]:
         """
         Args:
             stones: (B, 302) int values in {-1, 0, 1}
             edge_index: (2, E) int64 graph edges
             node_type: (302,) int64 node types
             coords: (302, 3) float32 3D coordinates
+            area_w: (302,) float32 per-point area weights
+            return_aux: if True, also return score and ownership predictions
         Returns:
             logits: (B, 303) policy logits
             v:      (B, 1)   value in [-1, 1]
+            (if return_aux)
+            score:  (B, 1)   predicted score diff in [-1, 1]
+            own:    (B, 302) ownership logits per point
         """
         # Embed
-        x = self._embed(stones, node_type, coords)  # (B, 302, D)
+        x = self._embed(stones, node_type, coords, area_w)  # (B, 302, D)
 
         # Graph encoding (local structure)
         x = self.graph_encoder(x, edge_index, self.num_points)  # (B, 302, D)
@@ -155,4 +177,10 @@ class GraphHRMModel(
         logits = torch.cat([board_logits, pass_logit], dim=1)  # (B, 303)
 
         v = torch.tanh(self.value_head(cls_tok))  # (B, 1)
-        return logits, v
+
+        if not return_aux:
+            return logits, v
+
+        score = torch.tanh(self.score_head(cls_tok))  # (B, 1)
+        own = self.ownership_head(board_tok).squeeze(-1)  # (B, 302)
+        return logits, v, score, own

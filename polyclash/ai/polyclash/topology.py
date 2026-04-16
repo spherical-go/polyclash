@@ -3973,6 +3973,20 @@ polysmall_area = np.float64(0.029195970735433507)
 polylarge_area = np.float64(0.06960212615343528)
 total_area = np.float64(11.183160545710159)
 
+# Per-point area weight: sum of (face_area / num_vertices_per_face) over all
+# faces containing each point.  Sums to total_area.  Reflects how much
+# territory each vertex controls — 5-degree nodes (~0.087) are worth ~4×
+# 3-degree nodes (~0.022).
+_area_weight = np.zeros(NUM_POINTS, dtype=np.float64)
+for _row in polysmalls:
+    for _v in _row:
+        _area_weight[_v] += polysmall_area / len(_row)
+for _row in polylarges:
+    for _v in _row:
+        _area_weight[_v] += polylarge_area / len(_row)
+_area_weight.flags.writeable = False
+area_weight = _area_weight
+
 
 # --- Icosahedral symmetry permutations (auto-generated) ---
 # 60 rotations of the icosahedral group A5, each a permutation of 302 points.

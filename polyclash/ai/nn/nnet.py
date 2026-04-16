@@ -15,6 +15,7 @@ import numpy as np
 from polyclash.ai.core.neural import NeuralNet
 from polyclash.ai.polyclash.state import PolyclashState
 from polyclash.ai.polyclash.topology import (
+    area_weight,
     coords_3d,
     edge_index,
     node_type,
@@ -48,6 +49,7 @@ class NNetWrapper(NeuralNet):
         self._edge_index_np = edge_index
         self._node_type_np = node_type
         self._coords_np = coords_3d.astype(np.float32)
+        self._area_weight_np = area_weight.astype(np.float32)
 
         if _TORCH_OK:
             self.torch_model = GraphHRMModel()
@@ -74,6 +76,9 @@ class NNetWrapper(NeuralNet):
             self._coords_t = torch.tensor(
                 self._coords_np, dtype=torch.float32, device=self.device
             )
+            self._area_weight_t = torch.tensor(
+                self._area_weight_np, dtype=torch.float32, device=self.device
+            )
 
             log.info(f"NeuralNet on device: {self.device}")
 
@@ -96,8 +101,13 @@ class NNetWrapper(NeuralNet):
 
         optim = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=weight_decay)
 
+        # Detect whether examples carry auxiliary targets (5-tuple vs 3-tuple).
+        # During transition, history may mix both formats; use aux only if ALL have it.
+        has_aux = all(len(ex) == 5 for ex in examples)
+
         log.info(
-            f"Training: {len(examples)} examples, {epochs} epochs, batch={batch_size}, lr={lr}"
+            f"Training: {len(examples)} examples, {epochs} epochs, "
+            f"batch={batch_size}, lr={lr}, aux={has_aux}"
         )
 
         for epoch in range(epochs):
@@ -106,7 +116,13 @@ class NNetWrapper(NeuralNet):
 
             for start in range(0, len(examples), batch_size):
                 chunk = examples[start : start + batch_size]
-                states, pis, vs = list(zip(*chunk))
+
+                scores: Optional[Tuple] = None
+                owns: Optional[Tuple] = None
+                if has_aux:
+                    states, pis, vs, scores, owns = list(zip(*chunk))
+                else:
+                    states, pis, vs = list(zip(*chunk))
 
                 # Convert states to stones tensors
                 stones_list = [self._state_to_stones(s) for s in states]
@@ -120,9 +136,19 @@ class NNetWrapper(NeuralNet):
                     np.array(vs), dtype=torch.float32, device=device
                 )
 
-                logits, pred_v = model(
-                    stones_t, self._edge_index_t, self._node_type_t, self._coords_t
+                out = model(
+                    stones_t,
+                    self._edge_index_t,
+                    self._node_type_t,
+                    self._coords_t,
+                    self._area_weight_t,
+                    return_aux=has_aux,
                 )
+
+                if has_aux:
+                    logits, pred_v, pred_score, pred_own = out
+                else:
+                    logits, pred_v = out
 
                 # Policy loss
                 log_probs = F.log_softmax(logits, dim=1)
@@ -132,6 +158,30 @@ class NNetWrapper(NeuralNet):
                 loss_v = torch.mean((target_vs - pred_v.view(-1)) ** 2)
 
                 loss = loss_pi + loss_v
+
+                # Auxiliary losses
+                if has_aux:
+                    target_scores = torch.tensor(
+                        np.array(scores), dtype=torch.float32, device=device
+                    )
+                    target_owns = torch.tensor(
+                        np.array(owns), dtype=torch.float32, device=device
+                    )
+
+                    # Score loss (MSE)
+                    loss_score = torch.mean((target_scores - pred_score.view(-1)) ** 2)
+
+                    # Ownership loss (BCE with logits, area-weighted)
+                    # target_owns in [-1, 1], convert to [0, 1] for BCE
+                    own_target_01 = (target_owns + 1.0) * 0.5
+                    loss_own = F.binary_cross_entropy_with_logits(
+                        pred_own,
+                        own_target_01,
+                        weight=self._area_weight_t.unsqueeze(0),
+                        reduction="mean",
+                    )
+
+                    loss = loss + 0.5 * loss_score + 0.5 * loss_own
 
                 optim.zero_grad()
                 loss.backward()
@@ -153,7 +203,11 @@ class NNetWrapper(NeuralNet):
                 ).unsqueeze(0)
 
                 logits, v = self.torch_model(
-                    stones_t, self._edge_index_t, self._node_type_t, self._coords_t
+                    stones_t,
+                    self._edge_index_t,
+                    self._node_type_t,
+                    self._coords_t,
+                    self._area_weight_t,
                 )
                 logits = logits[0]
                 v = v[0, 0].item()
@@ -309,7 +363,7 @@ class NNetWrapper(NeuralNet):
                         os.environ[k] = v
 
         state = load_file(local_path, device="cpu")
-        self.torch_model.load_state_dict(state)
+        self.torch_model.load_state_dict(state, strict=False)
         self.torch_model.to(self.device)
         log.info("Loaded weights from HuggingFace Hub: %s/%s", repo_id, filename)
 
@@ -416,9 +470,9 @@ class NNetWrapper(NeuralNet):
         return None
 
     def load_state_dict(self, state_dict):
-        """Load model state dict."""
+        """Load model state dict (strict=False for backward compat with old checkpoints)."""
         if self.torch_model is not None and state_dict is not None:
-            self.torch_model.load_state_dict(state_dict)
+            self.torch_model.load_state_dict(state_dict, strict=False)
 
     def load_checkpoint(self, folder="checkpoint", filename="checkpoint.pkl"):
         filepath = os.path.join(folder, filename)
@@ -430,7 +484,7 @@ class NNetWrapper(NeuralNet):
                 from safetensors.torch import load_file
 
                 state = load_file(st_path, device="cpu")
-                self.torch_model.load_state_dict(state)
+                self.torch_model.load_state_dict(state, strict=False)
                 log.info("Loaded safetensors checkpoint: %s", st_path)
                 return
             except Exception as e:
